@@ -584,6 +584,39 @@ table.gatherer-table td:nth-child(2) {
     color: #fdba74;
 }
 
+/* The dropdown POPUP is a separate rendering surface from the closed
+   control above - styling .cell-select alone only changes what's shown
+   when collapsed, so without this the open list falls back to the
+   browser's plain white/default-blue-highlight look regardless of the
+   pill colors. Chromium/Firefox both apply background-color/color set
+   directly on <option> to the popup list, so each option is tinted to
+   match its own value rather than everything sharing one flat dark box -
+   easier to tell apart while the list is open, not just once collapsed. */
+.cell-select option {
+    background: var(--panel-alt);
+    color: var(--text);
+}
+
+.cell-select option[value="Studio"] {
+    background: #241a33;
+    color: #c9a3fb;
+}
+
+.cell-select option[value="Company"] {
+    background: #2e2013;
+    color: #fdba74;
+}
+
+.cell-select option[value="Sent"] {
+    background: #123321;
+    color: #86efac;
+}
+
+.cell-select option[value="Not sent"] {
+    background: var(--panel-alt);
+    color: var(--text-muted);
+}
+
 .url-cell {
     display: flex;
     align-items: center;
