@@ -104,13 +104,32 @@
 
             <section id="page-gatherer" style="display:none;">
                 <h1 class="page-title">Gatherer</h1>
+                <p class="muted" style="margin: -10px 0 18px;">Studios and companies you're tracking - add a row, fill it in, it saves as you type.</p>
+
                 <div class="panel">
-                    <p class="muted" style="margin:0;">Nothing here yet - this tab is reserved for the next tool.</p>
+                    <div class="gatherer-table-wrap">
+                        <table class="gatherer-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>URL</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Date sent</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="gatherer-body"></tbody>
+                        </table>
+                    </div>
+                    <button class="btn" id="gatherer-add-btn" style="margin-top: 12px;">+ Add row</button>
                 </div>
             </section>
         </main>
     </div>
 
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/nav.js"></script>
+    <script src="/static/js/scrapper.js"></script>
+    <script src="/static/js/gatherer.js"></script>
 </body>
 </html>

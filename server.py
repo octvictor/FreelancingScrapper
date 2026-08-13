@@ -10,12 +10,14 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from api.gatherer import router as gatherer_router
 from api.scrapper import router as scrapper_router
 
 FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 
 app = FastAPI(title="Freelancing Tools")
 app.include_router(scrapper_router, prefix="/api/scrapper")
+app.include_router(gatherer_router, prefix="/api/gatherer")
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "static"), name="static")
 
 

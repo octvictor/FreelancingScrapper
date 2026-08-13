@@ -56,9 +56,20 @@ CREATE TABLE IF NOT EXISTS scrape_runs (
     finished_at TEXT,
     error TEXT
 );
+
+CREATE TABLE IF NOT EXISTS gatherer_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    url TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL DEFAULT 'Studio',
+    status TEXT NOT NULL DEFAULT 'Not sent',
+    sent_date TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
-_TABLES = {"companies", "people", "job_postings", "scrape_runs"}
+_TABLES = {"companies", "people", "job_postings", "scrape_runs", "gatherer_entries"}
 
 
 def _now() -> str:
@@ -168,3 +179,51 @@ def clear_table(table: str) -> None:
         raise ValueError(f"Unknown table: {table}")
     with get_connection() as conn:
         conn.execute(f"DELETE FROM {table}")
+
+
+# ---------- Gatherer: manually-curated studio/company list ----------
+
+def list_gatherer_entries() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM gatherer_entries ORDER BY id").fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_gatherer_entry() -> dict:
+    """Insert a blank row with sensible defaults - the frontend's "+"
+    button calls this, then renders the returned row as an editable
+    line the user fills in directly (Notion-style), rather than opening
+    a separate "new entry" form."""
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO gatherer_entries (title, url, type, status, created_at, updated_at) "
+            "VALUES ('', '', 'Studio', 'Not sent', ?, ?)",
+            (now, now),
+        )
+        row = conn.execute("SELECT * FROM gatherer_entries WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_gatherer_entry(entry_id: int, **fields) -> dict | None:
+    allowed = {"title", "url", "type", "status", "sent_date"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        with get_connection() as conn:
+            row = conn.execute("SELECT * FROM gatherer_entries WHERE id=?", (entry_id,)).fetchone()
+            return dict(row) if row else None
+
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE gatherer_entries SET {set_clause} WHERE id=?",
+            (*updates.values(), entry_id),
+        )
+        row = conn.execute("SELECT * FROM gatherer_entries WHERE id=?", (entry_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_gatherer_entry(entry_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM gatherer_entries WHERE id=?", (entry_id,))

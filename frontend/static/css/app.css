@@ -427,3 +427,137 @@ table.results tr:last-child td {
     gap: 12px;
     margin-top: 4px;
 }
+
+/* ---------- Gatherer table ---------- */
+
+.gatherer-table-wrap {
+    overflow-x: auto;
+}
+
+table.gatherer-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+table.gatherer-table th {
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+}
+
+table.gatherer-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: middle;
+}
+
+table.gatherer-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cell-input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 7px 8px;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.cell-input:hover {
+    background: var(--panel-alt);
+}
+
+.cell-input:focus {
+    background: var(--panel-alt);
+    border-color: var(--border);
+    outline: none;
+}
+
+.cell-input.date-input {
+    width: auto;
+    color-scheme: dark;
+}
+
+.cell-select {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.cell-select:hover {
+    background: var(--panel-alt);
+}
+
+.cell-select:focus {
+    background: var(--panel-alt);
+    border-color: var(--border);
+    outline: none;
+}
+
+.cell-select.status-pill {
+    border-radius: var(--radius-full);
+    font-weight: 500;
+}
+
+.cell-select.status-pill.not-sent {
+    background: var(--panel-alt);
+    color: var(--text-muted);
+}
+
+.cell-select.status-pill.sent {
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+}
+
+.url-cell {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.url-cell .cell-input {
+    flex: 1;
+    min-width: 120px;
+}
+
+.url-open-link {
+    color: var(--text-faint);
+    text-decoration: none;
+    padding: 6px 7px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+.url-open-link:hover {
+    color: var(--text);
+    background: var(--panel-alt);
+}
+
+.row-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    cursor: pointer;
+    font-size: 17px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.row-delete-btn:hover {
+    color: var(--danger-text);
+    background: rgba(229, 115, 115, 0.1);
+}

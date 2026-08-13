@@ -9,7 +9,11 @@ menu in the sidebar. Currently:
   Navigator, scraping a lead search you build yourself (e.g. current
   title contains "3D Artist" OR "CG Artist") into a list of people + the
   companies they work at.
-- **Gatherer** - reserved for the next tool, nothing built yet.
+- **Gatherer** - a manually-curated list of studios/companies you find
+  yourself (Behance, Instagram, wherever) - Title, clickable URL, Type
+  (Studio/Company), and outreach Status (Sent/Not sent, with a date).
+  Inline-editable like a spreadsheet: click a cell, type, it saves - no
+  separate save button. Click "+ Add row" for a new one.
 
 Each scrape's results are shown right in the app and can be exported to
 CSV. Everything also lands in a shared local SQLite database
@@ -133,14 +137,17 @@ into a venv from before that change - the fix is on both scripts now.
 
 - `server.py` - FastAPI app: mounts the frontend and the API routers.
   This is the whole "navigation shell" - the extension point for a new
-  tool is one new file under `api/`, one under `frontend/`, and one
-  `<button class="nav-item">` in `frontend/index.html`.
-- `api/scrapper.py` - HTTP routes for Scrapper, wrapping the scraper/DB
-  logic below - the only file that changed when the frontend moved off
-  Streamlit.
-- `frontend/index.html`, `frontend/static/css/app.css`,
-  `frontend/static/js/app.js` - the whole UI. Plain HTML/CSS/JS, no
-  build step.
+  tool is one new file under `api/`, one under `frontend/static/js/`,
+  and one `<button class="nav-item">` + `<section>` in
+  `frontend/index.html`.
+- `api/scrapper.py`, `api/gatherer.py` - HTTP routes per tool, wrapping
+  the storage/scraper logic below.
+- `frontend/index.html` - the whole page shell (both tools' markup live
+  here, shown/hidden by `nav.js`).
+- `frontend/static/css/app.css` - design tokens + all component styles.
+- `frontend/static/js/nav.js` - shared page/tab-switching, loaded first.
+- `frontend/static/js/scrapper.js`, `frontend/static/js/gatherer.js` -
+  one file per tool, no shared state between them beyond `nav.js`'s `$()`.
 - `scrapers/` - the actual scraping logic, independent of the UI.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data/credentials live on disk.
@@ -176,13 +183,16 @@ executable), shared across every tool:
   source, posted_date.
 - `scrape_runs` - a log of every scrape attempt (source, query, result
   count, status, error) for debugging.
+- `gatherer_entries` - title, url, type (Studio/Company), status
+  (Sent/Not sent), sent_date, created_at, updated_at. Gatherer's own
+  table, separate from `companies` since it's manually-curated data with
+  a different shape, not something a scraper writes into.
 
-Scrapper's sidebar has a "Reset all data" button to clear every table
-between test runs.
+Scrapper's sidebar has a "Reset all data" button to clear every
+Scrapper table between test runs (doesn't touch `gatherer_entries`).
 
 ## Roadmap / not built yet
 
-- Gatherer (the second tool - not started).
 - Company job-board scraping (many studios post openings on their own
   career pages) - straightforward to add per-company once you have a
   company list from Scrapper.

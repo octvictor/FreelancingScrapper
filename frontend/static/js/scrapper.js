@@ -1,34 +1,8 @@
-// Freelancing Tools frontend - plain JS, no build step. Talks to the
-// FastAPI backend under /api/scrapper.
+// Scrapper tool - talks to the FastAPI backend under /api/scrapper.
+// $() comes from nav.js, loaded first.
 
 let safeMode = true;
 let lastResults = [];
-
-function $(id) {
-    return document.getElementById(id);
-}
-
-// ---------- Page + tab navigation ----------
-
-document.querySelectorAll(".nav-item").forEach((btn) => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        const page = btn.dataset.page;
-        $("page-scrapper").style.display = page === "scrapper" ? "" : "none";
-        $("page-gatherer").style.display = page === "gatherer" ? "" : "none";
-        $("scrapper-sidebar").style.display = page === "scrapper" ? "" : "none";
-    });
-});
-
-document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
-        document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
-        btn.classList.add("active");
-        $("tab-" + btn.dataset.tab).classList.add("active");
-    });
-});
 
 // ---------- Safe mode toggle ----------
 
@@ -212,7 +186,7 @@ async function refreshStatus() {
     return data;
 }
 
-(async function init() {
+(async function initScrapper() {
     const status = await refreshStatus();
     safeMode = status.safe_mode_default;
     applySafeModeUI();
