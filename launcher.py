@@ -4,10 +4,10 @@ run from source, and what the built .exe/.app runs when double-clicked.
 This exists separately from `streamlit run app.py` because a frozen build
 has no `streamlit` CLI on PATH to invoke - it has to be driven from
 Python code instead. It also imports every scraper/storage module up
-front purely so PyInstaller's static analyzer bundles them: app.py is
-executed by Streamlit as a script path at runtime, not imported as a
-module from here, so anything only referenced inside app.py would
-otherwise be invisible to the bundler and missing from the build.
+front purely so PyInstaller's static analyzer bundles them: app.py and
+pages/*.py are executed by Streamlit as script paths at runtime, not
+imported as modules from here, so anything only referenced inside them
+would otherwise be invisible to the bundler and missing from the build.
 """
 from __future__ import annotations
 
@@ -22,7 +22,6 @@ import storage.db  # noqa: F401
 import scrapers.common  # noqa: F401
 import scrapers.mock_data  # noqa: F401
 import scrapers.linkedin_salesnav  # noqa: F401
-import scrapers.instagram  # noqa: F401
 
 
 def _bundled_app_py() -> str:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds a standalone, double-clickable app (dist/Scrapper).
+# Builds a standalone, double-clickable app (dist/FreelancingTools).
 #
 # Run this ONCE (and again only if you change requirements.txt or add new
 # scraper modules) - after that, day-to-day use is just double-clicking
@@ -20,12 +20,14 @@ pip install -q pyinstaller
 
 rm -rf build dist
 
-pyinstaller --onefile --name Scrapper \
+pyinstaller --onefile --name FreelancingTools \
     --add-data "app.py:." \
+    --add-data "pages:pages" \
+    --add-data "assets:assets" \
     --collect-all streamlit \
     launcher.py
 
 echo ""
-echo "Build finished: dist/Scrapper"
+echo "Build finished: dist/FreelancingTools"
 echo "Move/copy that file anywhere (Desktop, Applications, ...) and double-click it to run the app."
 echo "First launch will take a little longer while it downloads the browser component - that's normal, one-time (and only needed if you turn Safe mode off)."

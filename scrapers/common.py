@@ -1,4 +1,4 @@
-"""Shared helpers for the login-based scrapers (LinkedIn, Instagram)."""
+"""Shared helpers for the login-based LinkedIn scraper."""
 from __future__ import annotations
 
 import os
@@ -43,7 +43,7 @@ def ensure_chromium_installed(playwright) -> None:
     """Download Playwright's Chromium if it isn't already present.
 
     Called lazily, only from launch_persistent_context() - i.e. only when
-    a real (mock=False) LinkedIn/Instagram scrape actually runs - not on
+    a real (mock=False) LinkedIn scrape actually runs - not on
     every app launch. Safe mode and the packaged app's first boot never
     pay this cost, which can take 1-2 minutes and needs a normal internet
     connection. From source, `playwright install chromium` already covers

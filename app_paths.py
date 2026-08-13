@@ -6,7 +6,7 @@ This has to give the same answer whether the app is running from source
 onefile build, `__file__` for bundled modules points inside a temp
 directory that PyInstaller extracts fresh on every launch and deletes
 afterward - anchoring paths there would silently wipe the database and
-force a fresh LinkedIn/Instagram login (checkpoint and all) every single
+force a fresh LinkedIn login (checkpoint and all) every single
 time the app is opened. `sys.executable`'s directory, by contrast, stays
 constant between launches, so that's what frozen builds anchor to.
 """

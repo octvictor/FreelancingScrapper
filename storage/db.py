@@ -1,8 +1,8 @@
 """SQLite storage layer shared by all scrapers and the Streamlit GUI.
 
-Schema is intentionally source-agnostic: every scraper (LinkedIn,
-Instagram, ...) writes into the same `companies` / `people` /
-`job_postings` tables, tagged with a `source` column.
+Schema is intentionally source-agnostic: every scraper writes into the
+same `companies` / `people` / `job_postings` tables, tagged with a
+`source` column, so future scrapers can reuse it without changes.
 """
 import sqlite3
 from contextlib import contextmanager
