@@ -201,6 +201,13 @@ button, input, select, textarea {
     max-width: 1400px;
 }
 
+/* Tracker's cards need to center across the actual visible width next
+   to the sidebar, not within a left-pinned 900px column - a fixed
+   max-width here would leave lopsided empty space on wide windows. */
+.main.main-full {
+    max-width: none;
+}
+
 .page-title {
     font-size: 26px;
     font-weight: 700;
@@ -439,13 +446,15 @@ table.results tr:last-child td {
     overflow-x: auto;
 }
 
-table.gatherer-table {
+table.gatherer-table,
+table.task-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
 }
 
-table.gatherer-table th {
+table.gatherer-table th,
+table.task-table th {
     text-align: left;
     text-transform: uppercase;
     font-size: 10.5px;
@@ -456,13 +465,15 @@ table.gatherer-table th {
     white-space: nowrap;
 }
 
-table.gatherer-table td {
+table.gatherer-table td,
+table.task-table td {
     padding: 4px 6px;
     border-bottom: 1px solid var(--border-soft);
     vertical-align: middle;
 }
 
-table.gatherer-table tr:last-child td {
+table.gatherer-table tr:last-child td,
+table.task-table tr:last-child td {
     border-bottom: none;
 }
 
@@ -477,6 +488,24 @@ table.gatherer-table td:nth-child(1) {
 table.gatherer-table th:nth-child(2),
 table.gatherer-table td:nth-child(2) {
     min-width: 320px;
+}
+
+/* Task gets the same treatment inside the (narrower) project modal. */
+table.task-table th:nth-child(1),
+table.task-table td:nth-child(1) {
+    min-width: 260px;
+}
+
+table.task-table th:nth-child(3),
+table.task-table td:nth-child(3),
+table.task-table th:nth-child(4),
+table.task-table td:nth-child(4) {
+    min-width: 90px;
+}
+
+table.task-table th:nth-child(5),
+table.task-table td:nth-child(5) {
+    min-width: 130px;
 }
 
 .header-filter {
@@ -621,7 +650,8 @@ table.gatherer-table td:nth-child(2) {
     color: #7fb2d9;
 }
 
-.cell-select option[value="Completed"] {
+.cell-select option[value="Completed"],
+.cell-select option[value="Done"] {
     background: #123321;
     color: #86efac;
 }
@@ -634,6 +664,36 @@ table.gatherer-table td:nth-child(2) {
 .color-pill.status-completed {
     background: rgba(34, 197, 94, 0.12);
     color: #86efac;
+}
+
+.color-pill.duration-full {
+    background: rgba(229, 115, 115, 0.14);
+    color: #f2a3a3;
+}
+
+.color-pill.duration-half {
+    background: rgba(234, 179, 8, 0.14);
+    color: #fbbf24;
+}
+
+.color-pill.duration-custom {
+    background: rgba(168, 85, 247, 0.14);
+    color: #c9a3fb;
+}
+
+.cell-select option[value="Full"] {
+    background: #331a1a;
+    color: #f2a3a3;
+}
+
+.cell-select option[value="Half"] {
+    background: #332a13;
+    color: #fbbf24;
+}
+
+.cell-select option[value="Custom"] {
+    background: #241a33;
+    color: #c9a3fb;
 }
 
 .url-cell {
@@ -755,6 +815,7 @@ table.gatherer-table td:nth-child(2) {
     max-width: 460px;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
+    overflow-x: hidden;
     background: var(--panel);
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-lg);
@@ -762,6 +823,15 @@ table.gatherer-table td:nth-child(2) {
     display: flex;
     flex-direction: column;
     gap: 18px;
+}
+
+.modal.modal-wide {
+    max-width: 860px;
+}
+
+.modal-section {
+    border-top: 1px solid var(--border-soft);
+    padding-top: 18px;
 }
 
 .modal-close {
@@ -807,8 +877,13 @@ table.gatherer-table td:nth-child(2) {
 
 .modal-fields {
     display: flex;
-    flex-direction: column;
-    gap: 14px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.modal-fields .modal-field {
+    flex: 1;
+    min-width: 150px;
 }
 
 .modal-field label {

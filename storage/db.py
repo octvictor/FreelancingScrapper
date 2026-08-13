@@ -85,9 +85,24 @@ CREATE TABLE IF NOT EXISTS project_docs (
     stored_name TEXT NOT NULL,
     uploaded_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS project_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    task TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Active',
+    duration TEXT NOT NULL DEFAULT 'Full',
+    cost REAL,
+    task_date TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
-_TABLES = {"companies", "people", "job_postings", "scrape_runs", "gatherer_entries", "projects", "project_docs"}
+_TABLES = {
+    "companies", "people", "job_postings", "scrape_runs", "gatherer_entries",
+    "projects", "project_docs", "project_tasks",
+}
 
 
 def _now() -> str:
@@ -293,12 +308,13 @@ def update_project(project_id: int, **fields) -> dict | None:
 
 
 def delete_project(project_id: int) -> list[dict]:
-    """Deletes the project row and its doc rows, returning the deleted
+    """Deletes the project row and its docs/tasks, returning the deleted
     docs so the caller can also remove their files from disk - the DB
     layer doesn't touch the filesystem itself."""
     with get_connection() as conn:
         docs = [dict(r) for r in conn.execute("SELECT * FROM project_docs WHERE project_id=?", (project_id,)).fetchall()]
         conn.execute("DELETE FROM project_docs WHERE project_id=?", (project_id,))
+        conn.execute("DELETE FROM project_tasks WHERE project_id=?", (project_id,))
         conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
         return docs
 
@@ -335,3 +351,45 @@ def delete_project_doc(doc_id: int) -> dict | None:
             return None
         conn.execute("DELETE FROM project_docs WHERE id=?", (doc_id,))
         return dict(row)
+
+
+def list_project_tasks(project_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM project_tasks WHERE project_id=? ORDER BY id", (project_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_project_task(project_id: int) -> dict:
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO project_tasks (project_id, task, status, duration, created_at, updated_at) "
+            "VALUES (?, '', 'Active', 'Full', ?, ?)",
+            (project_id, now, now),
+        )
+        row = conn.execute("SELECT * FROM project_tasks WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_project_task(task_id: int, **fields) -> dict | None:
+    allowed = {"task", "status", "duration", "cost", "task_date"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        with get_connection() as conn:
+            row = conn.execute("SELECT * FROM project_tasks WHERE id=?", (task_id,)).fetchone()
+            return dict(row) if row else None
+
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE project_tasks SET {set_clause} WHERE id=?",
+            (*updates.values(), task_id),
+        )
+        row = conn.execute("SELECT * FROM project_tasks WHERE id=?", (task_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_project_task(task_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM project_tasks WHERE id=?", (task_id,))

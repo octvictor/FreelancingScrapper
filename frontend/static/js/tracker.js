@@ -7,7 +7,13 @@ let trackerProjects = [];
 let activeProjectId = null;
 
 function statusPillClass(status) {
-    return status === "Completed" ? "status-completed" : "status-active";
+    return status === "Completed" || status === "Done" ? "status-completed" : "status-active";
+}
+
+function durationPillClass(duration) {
+    if (duration === "Half") return "duration-half";
+    if (duration === "Custom") return "duration-custom";
+    return "duration-full";
 }
 
 function formatDeadline(deadline) {
@@ -78,6 +84,97 @@ function renderDocsList(docs, projectId) {
     });
 }
 
+// ---------- Task track table ----------
+
+function taskRowHtml(task) {
+    const isDone = task.status === "Done";
+    return `
+        <tr data-id="${task.id}">
+            <td><input type="text" class="cell-input" data-field="task" value="${escapeAttr(task.task)}" placeholder="Task"></td>
+            <td>
+                <select class="cell-select color-pill ${statusPillClass(task.status)}" data-field="status">
+                    <option value="Active" ${!isDone ? "selected" : ""}>&#9679; Active</option>
+                    <option value="Done" ${isDone ? "selected" : ""}>&#9679; Done</option>
+                </select>
+            </td>
+            <td>
+                <select class="cell-select color-pill ${durationPillClass(task.duration)}" data-field="duration">
+                    <option value="Full" ${task.duration === "Full" ? "selected" : ""}>&#9679; Full</option>
+                    <option value="Half" ${task.duration === "Half" ? "selected" : ""}>&#9679; Half</option>
+                    <option value="Custom" ${task.duration === "Custom" ? "selected" : ""}>&#9679; Custom</option>
+                </select>
+            </td>
+            <td><input type="number" class="cell-input" data-field="cost" min="0" step="0.01" placeholder="0.00" value="${task.cost ?? ""}"></td>
+            <td><input type="date" class="cell-input date-input" data-field="task_date" value="${task.task_date || ""}"></td>
+            <td><button class="row-delete-btn" data-role="delete" title="Delete task">&times;</button></td>
+        </tr>
+    `;
+}
+
+function renderTaskTable(tasks, projectId) {
+    $("task-table-body").innerHTML = tasks.length
+        ? tasks.map(taskRowHtml).join("")
+        : `<tr><td colspan="6" class="muted" style="padding: 14px 10px;">No tasks logged yet.</td></tr>`;
+
+    document.querySelectorAll("#task-table-body tr[data-id]").forEach((tr) => {
+        const taskId = parseInt(tr.dataset.id, 10);
+
+        const taskInput = tr.querySelector(".cell-input[data-field='task']");
+        taskInput.addEventListener("blur", () => saveTaskField(projectId, taskId, { task: taskInput.value.trim() }));
+        taskInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") taskInput.blur();
+        });
+
+        const statusSelect = tr.querySelector(".cell-select[data-field='status']");
+        statusSelect.addEventListener("change", (e) => {
+            statusSelect.classList.remove("status-active", "status-completed");
+            statusSelect.classList.add(statusPillClass(e.target.value));
+            saveTaskField(projectId, taskId, { status: e.target.value });
+        });
+
+        const durationSelect = tr.querySelector(".cell-select[data-field='duration']");
+        durationSelect.addEventListener("change", (e) => {
+            durationSelect.classList.remove("duration-full", "duration-half", "duration-custom");
+            durationSelect.classList.add(durationPillClass(e.target.value));
+            saveTaskField(projectId, taskId, { duration: e.target.value });
+        });
+
+        const costInput = tr.querySelector(".cell-input[data-field='cost']");
+        costInput.addEventListener("blur", () => {
+            const value = costInput.value === "" ? null : parseFloat(costInput.value);
+            saveTaskField(projectId, taskId, { cost: value });
+        });
+
+        const dateInput = tr.querySelector(".date-input");
+        dateInput.addEventListener("change", () => saveTaskField(projectId, taskId, { task_date: dateInput.value || null }));
+
+        tr.querySelector("[data-role='delete']").addEventListener("click", async () => {
+            if (!confirm("Delete this task?")) return;
+            await fetch(`/api/tracker/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" });
+            const project = await (await fetch(`/api/tracker/projects/${projectId}`)).json();
+            renderTaskTable(project.tasks, projectId);
+        });
+    });
+}
+
+async function saveTaskField(projectId, taskId, updates) {
+    await fetch(`/api/tracker/projects/${projectId}/tasks/${taskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+    });
+}
+
+$("task-add-btn").addEventListener("click", async () => {
+    if (activeProjectId === null) return;
+    const resp = await fetch(`/api/tracker/projects/${activeProjectId}/tasks`, { method: "POST" });
+    const task = await resp.json();
+    const project = await (await fetch(`/api/tracker/projects/${activeProjectId}`)).json();
+    renderTaskTable(project.tasks, activeProjectId);
+    const newTaskInput = document.querySelector(`#task-table-body tr[data-id="${task.id}"] .cell-input[data-field="task"]`);
+    if (newTaskInput) newTaskInput.focus();
+});
+
 async function openProjectModal(id) {
     const project = await (await fetch(`/api/tracker/projects/${id}`)).json();
     activeProjectId = id;
@@ -89,6 +186,7 @@ async function openProjectModal(id) {
     $("modal-deadline").value = project.deadline || "";
     $("modal-day-rate").value = project.day_rate ?? "";
     renderDocsList(project.docs, id);
+    renderTaskTable(project.tasks, id);
 
     $("project-modal-backdrop").style.display = "flex";
     $("modal-title").focus();
@@ -150,7 +248,7 @@ $("doc-file-input").addEventListener("change", async (e) => {
 });
 
 $("delete-project-btn").addEventListener("click", async () => {
-    if (activeProjectId === null || !confirm("Delete this project? This also deletes its attached docs.")) return;
+    if (activeProjectId === null || !confirm("Delete this project? This also deletes its attached docs and tasks.")) return;
     await fetch(`/api/tracker/projects/${activeProjectId}`, { method: "DELETE" });
     trackerProjects = trackerProjects.filter((p) => p.id !== activeProjectId);
     closeProjectModal();

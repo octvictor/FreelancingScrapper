@@ -29,6 +29,14 @@ class ProjectUpdate(BaseModel):
     day_rate: float | None = None
 
 
+class TaskUpdate(BaseModel):
+    task: str | None = None
+    status: str | None = None
+    duration: str | None = None
+    cost: float | None = None
+    task_date: str | None = None
+
+
 def _project_dir(project_id: int) -> Path:
     return PROJECT_DOCS_DIR / str(project_id)
 
@@ -49,6 +57,7 @@ def get_project(project_id: int):
     if project is None:
         raise HTTPException(404, "Project not found")
     project["docs"] = db.list_project_docs(project_id)
+    project["tasks"] = db.list_project_tasks(project_id)
     return project
 
 
@@ -101,4 +110,31 @@ def delete_doc(project_id: int, doc_id: int):
     if doc is None or doc["project_id"] != project_id:
         raise HTTPException(404, "Doc not found")
     (_project_dir(project_id) / doc["stored_name"]).unlink(missing_ok=True)
+    return {"ok": True}
+
+
+@router.get("/projects/{project_id}/tasks")
+def list_tasks(project_id: int):
+    return {"tasks": db.list_project_tasks(project_id)}
+
+
+@router.post("/projects/{project_id}/tasks")
+def create_task(project_id: int):
+    if db.get_project(project_id) is None:
+        raise HTTPException(404, "Project not found")
+    return db.create_project_task(project_id)
+
+
+@router.put("/projects/{project_id}/tasks/{task_id}")
+def update_task(project_id: int, task_id: int, payload: TaskUpdate):
+    updates = payload.model_dump(exclude_unset=True)
+    task = db.update_project_task(task_id, **updates)
+    if task is None or task["project_id"] != project_id:
+        raise HTTPException(404, "Task not found")
+    return task
+
+
+@router.delete("/projects/{project_id}/tasks/{task_id}")
+def delete_task(project_id: int, task_id: int):
+    db.delete_project_task(task_id)
     return {"ok": True}

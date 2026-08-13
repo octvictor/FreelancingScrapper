@@ -147,7 +147,7 @@
     </div>
 
     <div class="modal-backdrop" id="project-modal-backdrop" style="display:none;">
-        <div class="modal">
+        <div class="modal modal-wide">
             <button class="modal-close" id="project-modal-close" title="Close">&times;</button>
 
             <input type="text" class="modal-title-input" id="modal-title" placeholder="Untitled project">
@@ -175,6 +175,26 @@
                 <div class="docs-list" id="docs-list"></div>
                 <input type="file" id="doc-file-input" style="display:none;">
                 <button class="btn" id="doc-upload-btn" type="button">+ Add doc</button>
+            </div>
+
+            <div class="modal-section">
+                <p class="panel-label">Task track</p>
+                <div class="gatherer-table-wrap">
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Cost</th>
+                                <th>Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="task-table-body"></tbody>
+                    </table>
+                </div>
+                <button class="btn" id="task-add-btn" type="button" style="margin-top: 12px;">+ Add task</button>
             </div>
 
             <div class="modal-footer">
