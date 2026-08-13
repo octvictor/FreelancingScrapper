@@ -25,5 +25,6 @@ if not exist ".venv" (
     call .venv\Scripts\activate.bat
 )
 
-streamlit run app.py
+start /b python -c "import time, webbrowser; time.sleep(1.2); webbrowser.open('http://127.0.0.1:8501')"
+uvicorn server:app --reload --port 8501
 pause

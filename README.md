@@ -1,16 +1,15 @@
 # Freelancing Tools
 
-A personal-use suite of tools for freelance 3D artist work, built as a
-single app with a vertical tool menu in the sidebar. Currently:
+A personal-use suite of tools for freelance 3D artist work: a FastAPI
+backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
+plain static files, so nothing extra to install), with a vertical tool
+menu in the sidebar. Currently:
 
 - **Scrapper** - finds 3D artist job leads. Right now: LinkedIn Sales
   Navigator, scraping a lead search you build yourself (e.g. current
   title contains "3D Artist" OR "CG Artist") into a list of people + the
   companies they work at.
 - **Gatherer** - reserved for the next tool, nothing built yet.
-
-Adding a new tool means adding one file under `pages/` and one line in
-`app.py`'s navigation list - see that file for the extension point.
 
 Each scrape's results are shown right in the app and can be exported to
 CSV. Everything also lands in a shared local SQLite database
@@ -55,7 +54,7 @@ with Playwright and driving a real browser session - this is different
 - **Packaged app** - build once, then just double-click an icon forever.
   Best if you're not planning to edit the code.
 - **From source** - venv + a run script. Best if you're actively changing
-  scrapers/selectors, since edits take effect instantly (no rebuild).
+  scrapers/frontend, since edits take effect instantly (no rebuild).
 
 You can do both; they share the same `.env` credentials once you fill
 them in via Scrapper's in-app Settings tab.
@@ -70,7 +69,7 @@ made on Mac won't run on Windows and vice versa):
 ```
 
 This creates `dist/FreelancingTools` (`dist/FreelancingTools.exe` on
-Windows) - a single self-contained file with Python, Streamlit, and
+Windows) - a single self-contained file with Python, FastAPI, and
 Playwright all bundled in. Move it wherever you like and double-click it
 to launch; it opens in your browser automatically. Safe mode works
 immediately with no further setup. If you turn Safe mode off, first
@@ -110,16 +109,24 @@ Credentials go in Scrapper's in-app **Settings** tab (writes to a local
 ignore them and just double-click `run.bat` in File Explorer instead of
 typing commands. `run.bat` handles all of this correctly on its own.
 
-**Testing a code change:** you don't need to restart anything. The app
-auto-reloads whenever you save a file (`runOnSave = true` in
-`.streamlit/config.toml`) - edit a page or scraper, save, and the
-browser tab updates within a second or two.
+**Testing a code change:** frontend files (`frontend/index.html`,
+`frontend/static/**`) are served straight from disk - edit, save, and
+just refresh the browser tab, no restart needed. Backend files
+(`server.py`, `api/*.py`, `scrapers/*.py`) are watched by uvicorn's
+`--reload` and restart the server automatically on save.
 
 ## Project layout
 
-- `app.py` - navigation shell only (page config, logo, the tool list).
-- `pages/scrapper.py`, `pages/gatherer.py` - one file per tool in the
-  sidebar menu.
+- `server.py` - FastAPI app: mounts the frontend and the API routers.
+  This is the whole "navigation shell" - the extension point for a new
+  tool is one new file under `api/`, one under `frontend/`, and one
+  `<button class="nav-item">` in `frontend/index.html`.
+- `api/scrapper.py` - HTTP routes for Scrapper, wrapping the scraper/DB
+  logic below - the only file that changed when the frontend moved off
+  Streamlit.
+- `frontend/index.html`, `frontend/static/css/app.css`,
+  `frontend/static/js/app.js` - the whole UI. Plain HTML/CSS/JS, no
+  build step.
 - `scrapers/` - the actual scraping logic, independent of the UI.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data/credentials live on disk.
@@ -134,7 +141,7 @@ selectors.
 
 When that happens:
 
-1. Check `data/debug/` (next to `app.py` when running from source, or
+1. Check `data/debug/` (next to `server.py` when running from source, or
    next to the executable for the packaged app) - the scraper dumps the
    page HTML there automatically when it can't find any results.
 2. Open that HTML file, find the real structure for the field that's
@@ -143,7 +150,7 @@ When that happens:
 
 ## Data model
 
-SQLite (`data/scraper.db`, next to `app.py` or next to the packaged
+SQLite (`data/scraper.db`, next to `server.py` or next to the packaged
 executable), shared across every tool:
 
 - `companies` - name, source, url, industry, location, notes, first/last
@@ -156,8 +163,8 @@ executable), shared across every tool:
 - `scrape_runs` - a log of every scrape attempt (source, query, result
   count, status, error) for debugging.
 
-Scrapper's sidebar has a "Demo data" panel with a one-click "Reset all
-data" button to clear every table between test runs.
+Scrapper's sidebar has a "Reset all data" button to clear every table
+between test runs.
 
 ## Roadmap / not built yet
 

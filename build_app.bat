@@ -4,7 +4,7 @@ REM
 REM Run this ONCE (and again only if you change requirements.txt or add
 REM new scraper modules) - after that, day-to-day use is just
 REM double-clicking the .exe it produces. No terminal, no venv, no
-REM "streamlit run" needed for regular use.
+REM "uvicorn" needed for regular use.
 cd /d "%~dp0"
 
 if not exist ".venv" (
@@ -18,10 +18,8 @@ if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
 pyinstaller --onefile --name FreelancingTools ^
-    --add-data "app.py;." ^
-    --add-data "pages;pages" ^
-    --add-data "assets;assets" ^
-    --collect-all streamlit ^
+    --add-data "frontend;frontend" ^
+    --collect-all uvicorn ^
     launcher.py
 
 echo.

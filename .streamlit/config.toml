@@ -1,4 +1,0 @@
-[server]
-# Auto-rerun the app in the browser whenever a source file is saved, so
-# you don't need to stop/restart streamlit between edits while testing.
-runOnSave = true

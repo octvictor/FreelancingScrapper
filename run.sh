@@ -14,4 +14,5 @@ else
     source .venv/bin/activate
 fi
 
-streamlit run app.py
+python -c "import time, webbrowser; time.sleep(1.2); webbrowser.open('http://127.0.0.1:8501')" &
+uvicorn server:app --reload --port 8501

@@ -3,8 +3,8 @@
 #
 # Run this ONCE (and again only if you change requirements.txt or add new
 # scraper modules) - after that, day-to-day use is just double-clicking
-# the file it produces. No terminal, no venv, no `streamlit run` needed
-# for regular use.
+# the file it produces. No terminal, no venv, no `uvicorn` needed for
+# regular use.
 #
 # Must be run on the same OS you intend to use the app on - a Linux-built
 # binary won't run on macOS/Windows and vice versa.
@@ -21,10 +21,8 @@ pip install -q pyinstaller
 rm -rf build dist
 
 pyinstaller --onefile --name FreelancingTools \
-    --add-data "app.py:." \
-    --add-data "pages:pages" \
-    --add-data "assets:assets" \
-    --collect-all streamlit \
+    --add-data "frontend:frontend" \
+    --collect-all uvicorn \
     launcher.py
 
 echo ""

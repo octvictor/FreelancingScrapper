@@ -1,44 +1,35 @@
 """Entry point for the packaged (PyInstaller) build - what run.sh/run.bat
 run from source, and what the built .exe/.app runs when double-clicked.
 
-This exists separately from `streamlit run app.py` because a frozen build
-has no `streamlit` CLI on PATH to invoke - it has to be driven from
-Python code instead. It also imports every scraper/storage module up
-front purely so PyInstaller's static analyzer bundles them: app.py and
-pages/*.py are executed by Streamlit as script paths at runtime, not
-imported as modules from here, so anything only referenced inside them
-would otherwise be invisible to the bundler and missing from the build.
+Runs the same FastAPI app (server:app) `uvicorn server:app` would from a
+terminal - this just does it from Python so the frozen build doesn't
+need a `uvicorn` CLI on PATH, and opens the browser automatically since
+there's no terminal to read the URL from once packaged.
 """
 from __future__ import annotations
 
-import sys
-from pathlib import Path
+import threading
+import time
+import webbrowser
 
-import pandas  # noqa: F401
-from dotenv import load_dotenv, set_key  # noqa: F401
+import uvicorn
 
-import app_paths  # noqa: F401
-import storage.db  # noqa: F401
-import scrapers.common  # noqa: F401
-import scrapers.mock_data  # noqa: F401
+# Defensive: api/scrapper.py only imports this lazily, inside a function
+# body, when a scrape actually runs. PyInstaller's static analysis scans
+# function bodies too so this is normally redundant, but an explicit
+# top-level import here is cheap insurance against it being missed.
 import scrapers.linkedin_salesnav  # noqa: F401
+from server import app
+
+HOST = "127.0.0.1"
+PORT = 8501
 
 
-def _bundled_app_py() -> str:
-    """app.py's source is bundled as a data file (see build_app.sh/.bat)
-    and needs to be handed to Streamlit as a real file path - unlike the
-    modules above, Streamlit reads and execs this file directly rather
-    than importing it, so it has to exist on disk at runtime."""
-    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
-    return str(base / "app.py")
+def _open_browser() -> None:
+    time.sleep(1.2)
+    webbrowser.open(f"http://{HOST}:{PORT}")
 
 
 if __name__ == "__main__":
-    # Note: the browser component (Chromium) is NOT downloaded here at
-    # startup on purpose - see scrapers/common.py:ensure_chromium_installed.
-    # It's fetched lazily on first real (mock=False) scrape instead, so
-    # Safe mode and every other tab stay instant with no network dependency.
-    from streamlit.web import cli as stcli
-
-    sys.argv = ["streamlit", "run", _bundled_app_py(), "--global.developmentMode=false"]
-    sys.exit(stcli.main())
+    threading.Thread(target=_open_browser, daemon=True).start()
+    uvicorn.run(app, host=HOST, port=PORT)
