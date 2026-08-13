@@ -67,9 +67,27 @@ CREATE TABLE IF NOT EXISTS gatherer_entries (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Active',
+    deadline TEXT,
+    day_rate REAL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS project_docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    stored_name TEXT NOT NULL,
+    uploaded_at TEXT NOT NULL
+);
 """
 
-_TABLES = {"companies", "people", "job_postings", "scrape_runs", "gatherer_entries"}
+_TABLES = {"companies", "people", "job_postings", "scrape_runs", "gatherer_entries", "projects", "project_docs"}
 
 
 def _now() -> str:
@@ -227,3 +245,93 @@ def update_gatherer_entry(entry_id: int, **fields) -> dict | None:
 def delete_gatherer_entry(entry_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM gatherer_entries WHERE id=?", (entry_id,))
+
+
+# ---------- Tracker: project cards + docs ----------
+
+def list_projects() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM projects ORDER BY id DESC").fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_project() -> dict:
+    """Insert a blank project - the "+ New project" card calls this, then
+    the modal opens on the returned row for the user to fill in, same
+    create-then-edit-in-place pattern as Gatherer's rows."""
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO projects (title, status, created_at, updated_at) VALUES ('', 'Active', ?, ?)",
+            (now, now),
+        )
+        row = conn.execute("SELECT * FROM projects WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def get_project(project_id: int) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def update_project(project_id: int, **fields) -> dict | None:
+    allowed = {"title", "status", "deadline", "day_rate"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        return get_project(project_id)
+
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE projects SET {set_clause} WHERE id=?",
+            (*updates.values(), project_id),
+        )
+        row = conn.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_project(project_id: int) -> list[dict]:
+    """Deletes the project row and its doc rows, returning the deleted
+    docs so the caller can also remove their files from disk - the DB
+    layer doesn't touch the filesystem itself."""
+    with get_connection() as conn:
+        docs = [dict(r) for r in conn.execute("SELECT * FROM project_docs WHERE project_id=?", (project_id,)).fetchall()]
+        conn.execute("DELETE FROM project_docs WHERE project_id=?", (project_id,))
+        conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
+        return docs
+
+
+def list_project_docs(project_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM project_docs WHERE project_id=? ORDER BY id", (project_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def add_project_doc(project_id: int, filename: str, stored_name: str) -> dict:
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO project_docs (project_id, filename, stored_name, uploaded_at) VALUES (?, ?, ?, ?)",
+            (project_id, filename, stored_name, now),
+        )
+        row = conn.execute("SELECT * FROM project_docs WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def get_project_doc(doc_id: int) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM project_docs WHERE id=?", (doc_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_project_doc(doc_id: int) -> dict | None:
+    """Returns the deleted row (so the caller can remove its file from
+    disk) or None if it didn't exist."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM project_docs WHERE id=?", (doc_id,)).fetchone()
+        if row is None:
+            return None
+        conn.execute("DELETE FROM project_docs WHERE id=?", (doc_id,))
+        return dict(row)

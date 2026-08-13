@@ -5,7 +5,13 @@ backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install), with a vertical tool
 menu in the sidebar. Currently:
 
-- **Tracker** - empty placeholder for now, first in the sidebar.
+- **Tracker** - project cards, first in the sidebar. Cards are centered
+  on the page and start empty, with a "+ New project" card to create
+  one. Clicking a card opens a popup with the project's status
+  (Active/Completed), a deadline, a day rate, and "Docs" - a single
+  place to attach both contract and invoice files (real file uploads,
+  stored on disk next to the database). Every field autosaves on
+  blur/change, no separate save button.
 - **Gatherer** - a manually-curated list of studios/companies you find
   yourself (Behance, Instagram, wherever) - Title, clickable URL, Type
   (Studio/Company, shown as a purple/orange pill), and outreach Status
@@ -144,8 +150,11 @@ into a venv from before that change - the fix is on both scripts now.
   tool is one new file under `api/`, one under `frontend/static/js/`,
   and one `<button class="nav-item">` + `<section>` in
   `frontend/index.html`.
-- `api/scrapper.py`, `api/gatherer.py` - HTTP routes per tool, wrapping
-  the storage/scraper logic below.
+- `api/scrapper.py`, `api/gatherer.py`, `api/tracker.py` - HTTP routes
+  per tool, wrapping the storage/scraper logic below. `api/tracker.py`
+  also owns reading/writing uploaded Docs files on disk (under
+  `data/project_docs/<project_id>/`), since that's specific to Tracker
+  rather than shared storage logic.
 - `frontend/index.html` - the whole page shell (both tools' markup live
   here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
@@ -191,13 +200,24 @@ executable), shared across every tool:
   (Sent/Not sent), sent_date, created_at, updated_at. Gatherer's own
   table, separate from `companies` since it's manually-curated data with
   a different shape, not something a scraper writes into.
+- `projects` - title, status (Active/Completed), deadline, day_rate,
+  created_at, updated_at. Tracker's own table.
+- `project_docs` - project_id, filename (original name shown in the UI),
+  stored_name (the collision-proofed name it's actually saved as on
+  disk), uploaded_at. The files themselves live under
+  `data/project_docs/<project_id>/`, not in the database - this table
+  just points at them.
 
 Scrapper's sidebar has a "Reset all data" button to clear every
-Scrapper table between test runs (doesn't touch `gatherer_entries`).
+Scrapper table between test runs (doesn't touch `gatherer_entries` or
+Tracker's tables).
 
 ## Roadmap / not built yet
 
-- Tracker - nothing built yet, just an empty page reserved for it.
+- Tracker - base project cards + detail popup are built (status,
+  deadline, day rate, Docs). Everything else for this tab (e.g. tasks
+  per project, like the reference screenshot's "Task track." table) is
+  still to be discussed/designed.
 - Company job-board scraping (many studios post openings on their own
   career pages) - straightforward to add per-company once you have a
   company list from Scrapper.

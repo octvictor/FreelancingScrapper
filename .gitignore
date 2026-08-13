@@ -8,6 +8,7 @@ venv/
 data/*.db
 data/*.csv
 data/debug/
+data/project_docs/
 
 # persistent browser login sessions (contain auth cookies - never commit)
 browser_data/*
