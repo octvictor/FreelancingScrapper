@@ -198,3 +198,19 @@ Scrapper table between test runs (doesn't touch `gatherer_entries`).
   company list from Scrapper.
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+
+Gatherer polish:
+
+- Widen the row/table so longer titles and URLs display without
+  truncating as much.
+- Give Type a colored dot like Status already has - purple for Studio,
+  orange for Company.
+- Clickable filters on the Type and Status columns (click a value,
+  table narrows to just that value).
+
+New tool:
+
+- **Tracker** - empty placeholder page for now, same treatment Gatherer
+  got before it was built out.
+- Sidebar nav order becomes Tracker, then Gatherer, then Scrapper (top
+  to bottom) once Tracker exists.
