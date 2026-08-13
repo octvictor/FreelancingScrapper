@@ -3,6 +3,7 @@
 // saves itself on blur/change, Notion-style. $() comes from nav.js.
 
 let gathererEntries = [];
+const gathererFilters = { type: "", status: "" };
 
 function escapeAttr(value) {
     return String(value ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -13,8 +14,17 @@ function normalizeUrl(url) {
     return /^https?:\/\//i.test(url) ? url : "https://" + url;
 }
 
+function typePillClass(type) {
+    return type === "Company" ? "type-company" : "type-studio";
+}
+
+function statusPillClass(status) {
+    return status === "Sent" ? "status-sent" : "status-not-sent";
+}
+
 function gathererRowHtml(entry) {
     const isSent = entry.status === "Sent";
+    const isCompany = entry.type === "Company";
     return `
         <tr data-id="${entry.id}">
             <td><input type="text" class="cell-input" data-field="title" value="${escapeAttr(entry.title)}" placeholder="Studio or company name"></td>
@@ -25,13 +35,13 @@ function gathererRowHtml(entry) {
                 </div>
             </td>
             <td>
-                <select class="cell-select" data-field="type">
-                    <option value="Studio" ${entry.type === "Studio" ? "selected" : ""}>Studio</option>
-                    <option value="Company" ${entry.type === "Company" ? "selected" : ""}>Company</option>
+                <select class="cell-select color-pill ${typePillClass(entry.type)}" data-field="type">
+                    <option value="Studio" ${!isCompany ? "selected" : ""}>&#9679; Studio</option>
+                    <option value="Company" ${isCompany ? "selected" : ""}>&#9679; Company</option>
                 </select>
             </td>
             <td>
-                <select class="cell-select status-pill ${isSent ? "sent" : "not-sent"}" data-field="status">
+                <select class="cell-select color-pill ${statusPillClass(entry.status)}" data-field="status">
                     <option value="Not sent" ${!isSent ? "selected" : ""}>&#9679; Not sent</option>
                     <option value="Sent" ${isSent ? "selected" : ""}>&#9679; Sent</option>
                 </select>
@@ -42,13 +52,24 @@ function gathererRowHtml(entry) {
     `;
 }
 
+function getFilteredEntries() {
+    return gathererEntries.filter((e) => {
+        if (gathererFilters.type && e.type !== gathererFilters.type) return false;
+        if (gathererFilters.status && e.status !== gathererFilters.status) return false;
+        return true;
+    });
+}
+
 function renderGathererTable() {
-    $("gatherer-body").innerHTML = gathererEntries.map(gathererRowHtml).join("");
+    const rows = getFilteredEntries();
+    $("gatherer-body").innerHTML = rows.length
+        ? rows.map(gathererRowHtml).join("")
+        : `<tr><td colspan="6" class="muted" style="padding: 14px 10px;">No rows match this filter.</td></tr>`;
     wireGathererRowEvents();
 }
 
 function wireGathererRowEvents() {
-    document.querySelectorAll("#gatherer-body tr").forEach((tr) => {
+    document.querySelectorAll("#gatherer-body tr[data-id]").forEach((tr) => {
         const id = parseInt(tr.dataset.id, 10);
 
         const titleInput = tr.querySelector(".cell-input[data-field='title']");
@@ -65,16 +86,19 @@ function wireGathererRowEvents() {
             openLink.href = normalizeUrl(urlInput.value.trim());
         });
 
-        tr.querySelector(".cell-select[data-field='type']").addEventListener("change", (e) => {
+        const typeSelect = tr.querySelector(".cell-select[data-field='type']");
+        typeSelect.addEventListener("change", (e) => {
+            typeSelect.classList.remove("type-studio", "type-company");
+            typeSelect.classList.add(typePillClass(e.target.value));
             saveGathererFields(id, { type: e.target.value });
         });
 
         const statusSelect = tr.querySelector(".cell-select[data-field='status']");
         const dateInput = tr.querySelector(".date-input");
         statusSelect.addEventListener("change", (e) => {
+            statusSelect.classList.remove("status-sent", "status-not-sent");
+            statusSelect.classList.add(statusPillClass(e.target.value));
             const nowSent = e.target.value === "Sent";
-            statusSelect.classList.toggle("sent", nowSent);
-            statusSelect.classList.toggle("not-sent", !nowSent);
             const updates = { status: e.target.value };
             if (nowSent && !dateInput.value) {
                 dateInput.value = new Date().toISOString().slice(0, 10);
@@ -107,10 +131,40 @@ async function saveGathererFields(id, updates) {
     }
 }
 
+// ---------- Column filters ----------
+
+$("filter-type").addEventListener("change", (e) => {
+    gathererFilters.type = e.target.value;
+    e.target.classList.toggle("filter-active", !!e.target.value);
+    renderGathererTable();
+});
+
+$("filter-status").addEventListener("change", (e) => {
+    gathererFilters.status = e.target.value;
+    e.target.classList.toggle("filter-active", !!e.target.value);
+    renderGathererTable();
+});
+
+// ---------- Add row ----------
+
 $("gatherer-add-btn").addEventListener("click", async () => {
     const resp = await fetch("/api/gatherer/entries", { method: "POST" });
     const entry = await resp.json();
     gathererEntries.push(entry);
+
+    // A new row defaults to Studio/Not sent - if an active filter would
+    // hide it, clear filters so the row you just added is actually
+    // visible instead of silently vanishing.
+    if ((gathererFilters.type && gathererFilters.type !== entry.type) ||
+        (gathererFilters.status && gathererFilters.status !== entry.status)) {
+        gathererFilters.type = "";
+        gathererFilters.status = "";
+        $("filter-type").value = "";
+        $("filter-status").value = "";
+        $("filter-type").classList.remove("filter-active");
+        $("filter-status").classList.remove("filter-active");
+    }
+
     renderGathererTable();
     const newTitleInput = document.querySelector(`#gatherer-body tr[data-id="${entry.id}"] .cell-input[data-field="title"]`);
     if (newTitleInput) newTitleInput.focus();

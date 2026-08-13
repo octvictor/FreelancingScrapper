@@ -5,14 +5,20 @@ function $(id) {
     return document.getElementById(id);
 }
 
+const PAGE_IDS = ["tracker", "gatherer", "scrapper"];
+
 document.querySelectorAll(".nav-item").forEach((btn) => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         const page = btn.dataset.page;
-        $("page-scrapper").style.display = page === "scrapper" ? "" : "none";
-        $("page-gatherer").style.display = page === "gatherer" ? "" : "none";
+
+        PAGE_IDS.forEach((id) => {
+            const section = $("page-" + id);
+            if (section) section.style.display = id === page ? "" : "none";
+        });
         $("scrapper-sidebar").style.display = page === "scrapper" ? "" : "none";
+        document.querySelector(".main").classList.toggle("main-wide", page === "gatherer");
     });
 });
 

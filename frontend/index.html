@@ -12,11 +12,12 @@
         <aside class="sidebar">
             <div class="brand">Freelancing Tools</div>
             <ul class="nav-list">
-                <li><button class="nav-item active" data-page="scrapper">Scrapper</button></li>
+                <li><button class="nav-item active" data-page="tracker">Tracker</button></li>
                 <li><button class="nav-item" data-page="gatherer">Gatherer</button></li>
+                <li><button class="nav-item" data-page="scrapper">Scrapper</button></li>
             </ul>
 
-            <div class="sidebar-section" id="scrapper-sidebar">
+            <div class="sidebar-section" id="scrapper-sidebar" style="display:none;">
                 <div class="toggle-row">
                     <button class="toggle on" id="safe-mode-toggle" aria-pressed="true"></button>
                     <span>Safe mode</span>
@@ -30,7 +31,50 @@
         </aside>
 
         <main class="main">
-            <section id="page-scrapper">
+            <section id="page-tracker">
+                <h1 class="page-title">Tracker</h1>
+                <div class="panel">
+                    <p class="muted" style="margin:0;">Nothing here yet - this tab is reserved for the next tool.</p>
+                </div>
+            </section>
+
+            <section id="page-gatherer" style="display:none;">
+                <h1 class="page-title">Gatherer</h1>
+                <p class="muted" style="margin: -10px 0 18px;">Studios and companies you're tracking - add a row, fill it in, it saves as you type.</p>
+
+                <div class="panel">
+                    <div class="gatherer-table-wrap">
+                        <table class="gatherer-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>URL</th>
+                                    <th>
+                                        <select class="header-filter" id="filter-type">
+                                            <option value="">Type</option>
+                                            <option value="Studio">Studio</option>
+                                            <option value="Company">Company</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <select class="header-filter" id="filter-status">
+                                            <option value="">Status</option>
+                                            <option value="Sent">Sent</option>
+                                            <option value="Not sent">Not sent</option>
+                                        </select>
+                                    </th>
+                                    <th>Date sent</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="gatherer-body"></tbody>
+                        </table>
+                    </div>
+                    <button class="btn" id="gatherer-add-btn" style="margin-top: 12px;">+ Add row</button>
+                </div>
+            </section>
+
+            <section id="page-scrapper" style="display:none;">
                 <h1 class="page-title">Scrapper</h1>
 
                 <div class="tabs">
@@ -99,30 +143,6 @@
                         </div>
                     </div>
                     <div class="log" id="settings-log" style="display:none;"></div>
-                </div>
-            </section>
-
-            <section id="page-gatherer" style="display:none;">
-                <h1 class="page-title">Gatherer</h1>
-                <p class="muted" style="margin: -10px 0 18px;">Studios and companies you're tracking - add a row, fill it in, it saves as you type.</p>
-
-                <div class="panel">
-                    <div class="gatherer-table-wrap">
-                        <table class="gatherer-table">
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>URL</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Date sent</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="gatherer-body"></tbody>
-                        </table>
-                    </div>
-                    <button class="btn" id="gatherer-add-btn" style="margin-top: 12px;">+ Add row</button>
                 </div>
             </section>
         </main>

@@ -5,15 +5,19 @@ backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install), with a vertical tool
 menu in the sidebar. Currently:
 
+- **Tracker** - empty placeholder for now, first in the sidebar.
+- **Gatherer** - a manually-curated list of studios/companies you find
+  yourself (Behance, Instagram, wherever) - Title, clickable URL, Type
+  (Studio/Company, shown as a purple/orange pill), and outreach Status
+  (Sent/Not sent, shown as a gray/green pill, with a date). Inline-
+  editable like a spreadsheet: click a cell, type, it saves - no
+  separate save button. Click "+ Add row" for a new one. The Type and
+  Status column headers double as filters - pick a value to narrow the
+  table to just that value, blank to show everything again.
 - **Scrapper** - finds 3D artist job leads. Right now: LinkedIn Sales
   Navigator, scraping a lead search you build yourself (e.g. current
   title contains "3D Artist" OR "CG Artist") into a list of people + the
   companies they work at.
-- **Gatherer** - a manually-curated list of studios/companies you find
-  yourself (Behance, Instagram, wherever) - Title, clickable URL, Type
-  (Studio/Company), and outreach Status (Sent/Not sent, with a date).
-  Inline-editable like a spreadsheet: click a cell, type, it saves - no
-  separate save button. Click "+ Add row" for a new one.
 
 Each scrape's results are shown right in the app and can be exported to
 CSV. Everything also lands in a shared local SQLite database
@@ -193,24 +197,9 @@ Scrapper table between test runs (doesn't touch `gatherer_entries`).
 
 ## Roadmap / not built yet
 
+- Tracker - nothing built yet, just an empty page reserved for it.
 - Company job-board scraping (many studios post openings on their own
   career pages) - straightforward to add per-company once you have a
   company list from Scrapper.
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-
-Gatherer polish:
-
-- Widen the row/table so longer titles and URLs display without
-  truncating as much.
-- Give Type a colored dot like Status already has - purple for Studio,
-  orange for Company.
-- Clickable filters on the Type and Status columns (click a value,
-  table narrows to just that value).
-
-New tool:
-
-- **Tracker** - empty placeholder page for now, same treatment Gatherer
-  got before it was built out.
-- Sidebar nav order becomes Tracker, then Gatherer, then Scrapper (top
-  to bottom) once Tracker exists.
