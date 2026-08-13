@@ -6,7 +6,7 @@
 let trackerProjects = [];
 let activeProjectId = null;
 
-function statusPillClass(status) {
+function trackerStatusPillClass(status) {
     return status === "Completed" || status === "Done" ? "status-completed" : "status-active";
 }
 
@@ -28,7 +28,7 @@ function projectCardHtml(project) {
     return `
         <button class="project-card" data-id="${project.id}" type="button">
             <div class="project-card-title">${escapeAttr(project.title) || "Untitled project"}</div>
-            <span class="color-pill ${statusPillClass(project.status)}">&#9679; ${escapeAttr(project.status)}</span>
+            <span class="color-pill ${trackerStatusPillClass(project.status)}">&#9679; ${escapeAttr(project.status)}</span>
             ${deadlineHtml ? `<div class="project-card-date">${deadlineHtml}</div>` : ""}
         </button>
     `;
@@ -90,7 +90,7 @@ function taskRowHtml(task) {
         <tr data-id="${task.id}">
             <td><input type="text" class="cell-input" data-field="task" value="${escapeAttr(task.task)}" placeholder="Task"></td>
             <td>
-                <select class="cell-select color-pill ${statusPillClass(task.status)}" data-field="status">
+                <select class="cell-select color-pill ${trackerStatusPillClass(task.status)}" data-field="status">
                     <option value="Active" ${!isDone ? "selected" : ""}>&#9679; Active</option>
                     <option value="Done" ${isDone ? "selected" : ""}>&#9679; Done</option>
                 </select>
@@ -110,6 +110,7 @@ function taskRowHtml(task) {
 }
 
 function renderTaskTable(tasks, projectId) {
+    cleanupCustomSelectsIn($("task-table-body"));
     $("task-table-body").innerHTML = tasks.length
         ? tasks.map(taskRowHtml).join("")
         : `<tr><td colspan="6" class="muted" style="padding: 14px 10px;">No tasks logged yet.</td></tr>`;
@@ -126,9 +127,10 @@ function renderTaskTable(tasks, projectId) {
         const statusSelect = tr.querySelector(".cell-select[data-field='status']");
         statusSelect.addEventListener("change", (e) => {
             statusSelect.classList.remove("status-active", "status-completed");
-            statusSelect.classList.add(statusPillClass(e.target.value));
+            statusSelect.classList.add(trackerStatusPillClass(e.target.value));
             saveTaskField(projectId, taskId, { status: e.target.value });
         });
+        enhanceSelect(statusSelect);
 
         const durationSelect = tr.querySelector(".cell-select[data-field='duration']");
         durationSelect.addEventListener("change", (e) => {
@@ -136,6 +138,7 @@ function renderTaskTable(tasks, projectId) {
             durationSelect.classList.add(durationPillClass(e.target.value));
             saveTaskField(projectId, taskId, { duration: e.target.value });
         });
+        enhanceSelect(durationSelect);
 
         const costInput = tr.querySelector(".cell-input[data-field='cost']");
         costInput.addEventListener("blur", () => {
@@ -181,7 +184,8 @@ async function openProjectModal(id) {
     $("modal-description").value = project.description || "";
     $("modal-status").value = project.status;
     $("modal-status").classList.remove("status-active", "status-completed");
-    $("modal-status").classList.add(statusPillClass(project.status));
+    $("modal-status").classList.add(trackerStatusPillClass(project.status));
+    refreshCustomSelect($("modal-status"));
     $("modal-deadline").value = project.deadline || "";
     $("modal-day-rate").value = project.day_rate ?? "";
     renderDocsList(project.docs, id);
@@ -227,9 +231,10 @@ $("modal-description").addEventListener("blur", (e) => saveActiveProject({ descr
 
 $("modal-status").addEventListener("change", (e) => {
     e.target.classList.remove("status-active", "status-completed");
-    e.target.classList.add(statusPillClass(e.target.value));
+    e.target.classList.add(trackerStatusPillClass(e.target.value));
     saveActiveProject({ status: e.target.value });
 });
+enhanceSelect($("modal-status"));
 $("modal-deadline").addEventListener("change", (e) => saveActiveProject({ deadline: e.target.value || null }));
 $("modal-day-rate").addEventListener("blur", (e) => {
     const value = e.target.value === "" ? null : parseFloat(e.target.value);

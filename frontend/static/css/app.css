@@ -35,6 +35,15 @@
     box-sizing: border-box;
 }
 
+html {
+    /* Needs to be set at the document root, not just on individual date
+       inputs, or Chromium ignores it for the native calendar popup (it
+       only reliably follows a per-element color-scheme for the input
+       box itself, not the popup) - this is what actually themes that
+       popup dark instead of the browser's stark-white default. */
+    color-scheme: dark;
+}
+
 html, body {
     margin: 0;
     padding: 0;
@@ -560,7 +569,6 @@ table.task-table td:nth-child(5) {
 
 .cell-input.date-input {
     width: auto;
-    color-scheme: dark;
 }
 
 .cell-select {
@@ -625,33 +633,40 @@ table.task-table td:nth-child(5) {
     color: var(--text);
 }
 
-.cell-select option[value="Studio"] {
+.cell-select option[value="Studio"],
+.custom-select-option[data-value="Studio"] {
     background: #241a33;
     color: #c9a3fb;
 }
 
-.cell-select option[value="Company"] {
+.cell-select option[value="Company"],
+.custom-select-option[data-value="Company"] {
     background: #2e2013;
     color: #fdba74;
 }
 
-.cell-select option[value="Sent"] {
+.cell-select option[value="Sent"],
+.custom-select-option[data-value="Sent"] {
     background: #123321;
     color: #86efac;
 }
 
-.cell-select option[value="Not sent"] {
+.cell-select option[value="Not sent"],
+.custom-select-option[data-value="Not sent"] {
     background: var(--panel-alt);
     color: var(--text-muted);
 }
 
-.cell-select option[value="Active"] {
+.cell-select option[value="Active"],
+.custom-select-option[data-value="Active"] {
     background: #0f2836;
     color: #7fb2d9;
 }
 
 .cell-select option[value="Completed"],
-.cell-select option[value="Done"] {
+.cell-select option[value="Done"],
+.custom-select-option[data-value="Completed"],
+.custom-select-option[data-value="Done"] {
     background: #123321;
     color: #86efac;
 }
@@ -681,19 +696,95 @@ table.task-table td:nth-child(5) {
     color: #c9a3fb;
 }
 
-.cell-select option[value="Full"] {
+.cell-select option[value="Full"],
+.custom-select-option[data-value="Full"] {
     background: #331a1a;
     color: #f2a3a3;
 }
 
-.cell-select option[value="Half"] {
+.cell-select option[value="Half"],
+.custom-select-option[data-value="Half"] {
     background: #332a13;
     color: #fbbf24;
 }
 
-.cell-select option[value="Custom"] {
+.cell-select option[value="Custom"],
+.custom-select-option[data-value="Custom"] {
     background: #241a33;
     color: #c9a3fb;
+}
+
+/* ---------- Custom dropdown (replaces native <select> popups) ----------
+   Browsers won't let CSS override the selected/hovered option's forced
+   system highlight inside a native <select> popup, which is what made
+   every dropdown look inconsistent with the rest of the app. nav.js's
+   enhanceSelect() hides the real <select> (kept only as the state/event
+   source - existing change-listener code is untouched) and renders this
+   button+panel pair on top instead, so the open list is fully themed. */
+.custom-select-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-select-wrap select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.custom-select-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.custom-select-chevron {
+    font-size: 9px;
+    opacity: 0.7;
+}
+
+.custom-select-panel {
+    display: none;
+    position: fixed;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    z-index: 200;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.custom-select-panel.open {
+    display: block;
+}
+
+.custom-select-option {
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--text);
+    background: var(--panel);
+}
+
+/* Filter-only (not background) so this can't out-specificity-tie the
+   per-value tint rules above regardless of source order - a tinted
+   option keeps its own color and just brightens on hover. */
+.custom-select-option:hover {
+    filter: brightness(1.3);
+}
+
+.custom-select-option.active {
+    box-shadow: inset 0 0 0 1px currentColor;
 }
 
 .url-cell {
@@ -940,7 +1031,8 @@ table.task-table td:nth-child(5) {
     width: 100%;
 }
 
-.modal-field select.color-pill {
+.modal-field select.color-pill,
+.modal-field .custom-select-trigger.color-pill {
     border: none;
     border-radius: var(--radius-full);
     font-weight: 500;
@@ -950,7 +1042,6 @@ table.task-table td:nth-child(5) {
 }
 
 .modal-field input[type="date"] {
-    color-scheme: dark;
     width: auto;
 }
 

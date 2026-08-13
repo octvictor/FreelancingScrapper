@@ -61,6 +61,7 @@ function getFilteredEntries() {
 }
 
 function renderGathererTable() {
+    cleanupCustomSelectsIn($("gatherer-body"));
     const rows = getFilteredEntries();
     $("gatherer-body").innerHTML = rows.length
         ? rows.map(gathererRowHtml).join("")
@@ -92,6 +93,7 @@ function wireGathererRowEvents() {
             typeSelect.classList.add(typePillClass(e.target.value));
             saveGathererFields(id, { type: e.target.value });
         });
+        enhanceSelect(typeSelect);
 
         const statusSelect = tr.querySelector(".cell-select[data-field='status']");
         const dateInput = tr.querySelector(".date-input");
@@ -106,6 +108,7 @@ function wireGathererRowEvents() {
             }
             saveGathererFields(id, updates);
         });
+        enhanceSelect(statusSelect);
 
         dateInput.addEventListener("change", () => saveGathererFields(id, { sent_date: dateInput.value || null }));
 
@@ -138,12 +141,14 @@ $("filter-type").addEventListener("change", (e) => {
     e.target.classList.toggle("filter-active", !!e.target.value);
     renderGathererTable();
 });
+enhanceSelect($("filter-type"));
 
 $("filter-status").addEventListener("change", (e) => {
     gathererFilters.status = e.target.value;
     e.target.classList.toggle("filter-active", !!e.target.value);
     renderGathererTable();
 });
+enhanceSelect($("filter-status"));
 
 // ---------- Add row ----------
 
@@ -163,6 +168,8 @@ $("gatherer-add-btn").addEventListener("click", async () => {
         $("filter-status").value = "";
         $("filter-type").classList.remove("filter-active");
         $("filter-status").classList.remove("filter-active");
+        refreshCustomSelect($("filter-type"));
+        refreshCustomSelect($("filter-status"));
     }
 
     renderGathererTable();
