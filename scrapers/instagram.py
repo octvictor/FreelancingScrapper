@@ -27,7 +27,11 @@ the browser window is visible - solve it by hand and the script continues.
 Selectors here are best-effort and unverified against live markup (this
 was built in a sandboxed dev environment with no network access to
 instagram.com) - Instagram's DOM changes often, so check
-data/debug/instagram-*.html and adjust if a run comes back empty.
+data/debug/instagram-*.html and adjust if a mock=False run comes back
+empty.
+
+With mock=True (the app's default), none of the above applies - see
+scrapers/mock_data.py.
 """
 from __future__ import annotations
 
@@ -35,9 +39,8 @@ import json
 import time
 from datetime import datetime
 
-from playwright.sync_api import Page, sync_playwright
-
 from app_paths import DEBUG_DIR
+from scrapers import mock_data
 from scrapers.common import env, launch_persistent_context, random_delay
 from storage import db
 
@@ -53,18 +56,18 @@ BIO_SELECTORS = ["header section div.-vDIg span", "header section div[class*='bi
 EXTERNAL_LINK_SELECTORS = ["header section a[href*='l.instagram.com']", "header a[rel='me nofollow noopener noreferrer']"]
 
 
-def _dump_debug_html(page: Page, label: str) -> None:
+def _dump_debug_html(page, label: str) -> None:
     DEBUG_DIR.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     (DEBUG_DIR / f"{label}-{ts}.html").write_text(page.content(), encoding="utf-8")
 
 
-def _is_checkpoint(page: Page) -> bool:
+def _is_checkpoint(page) -> bool:
     url = page.url
     return "challenge" in url or "two_factor" in url or "checkpoint" in url
 
 
-def login(page: Page, username: str, password: str, wait_for_manual_checkpoint_sec: int = 180) -> None:
+def login(page, username: str, password: str, wait_for_manual_checkpoint_sec: int = 180) -> None:
     page.goto("https://www.instagram.com/", wait_until="domcontentloaded")
     if page.query_selector("input[name='username']") is None and "instagram.com" in page.url:
         return  # already logged in via the persisted session
@@ -89,7 +92,7 @@ def login(page: Page, username: str, password: str, wait_for_manual_checkpoint_s
             raise RuntimeError("Instagram login checkpoint was not resolved in time.")
 
 
-def _extract_ld_json(page: Page) -> dict | None:
+def _extract_ld_json(page) -> dict | None:
     """Public profile pages typically embed an application/ld+json block
     with basic name/description info - a lighter, more stable source than
     the main DOM when it's present."""
@@ -103,7 +106,7 @@ def _extract_ld_json(page: Page) -> dict | None:
     return None
 
 
-def _profile_bio_and_link(page: Page) -> tuple[str, str]:
+def _profile_bio_and_link(page) -> tuple[str, str]:
     bio = ""
     for sel in BIO_SELECTORS:
         el = page.query_selector(sel)
@@ -121,7 +124,7 @@ def _profile_bio_and_link(page: Page) -> tuple[str, str]:
     return bio, link
 
 
-def get_profile_info(page: Page, username: str) -> dict:
+def get_profile_info(page, username: str) -> dict:
     page.goto(f"https://www.instagram.com/{username}/", wait_until="domcontentloaded")
     random_delay(1.5, 3.0)
 
@@ -146,19 +149,47 @@ def get_profile_info(page: Page, username: str) -> dict:
     }
 
 
-def scan_profiles(usernames: list[str], run_label: str | None = None) -> list[dict]:
+def _save_profile(info: dict) -> None:
+    db.upsert_company(
+        info["full_name"] or info["username"],
+        "instagram",
+        url=info["external_link"] or info["profile_url"],
+        notes=info["bio"][:500],
+    )
+    if info["is_hiring"]:
+        db.insert_job(
+            title="(unspecified - see bio/profile)",
+            company_name=info["full_name"] or info["username"],
+            url=info["profile_url"],
+            location=None,
+            description=info["bio"],
+            source="instagram",
+        )
+
+
+def scan_profiles(usernames: list[str], run_label: str | None = None, mock: bool = True) -> list[dict]:
     """Log in once, then check each given Instagram handle's bio for
     hiring language. Low-volume by design - pass a curated list, not a
     firehose."""
+    db.init_db()
+    run_id = db.start_run("instagram_profiles", run_label or ", ".join(usernames) or "(mock)")
+
+    if mock:
+        results = mock_data.instagram_profiles(usernames)
+        for info in results:
+            _save_profile(info)
+        db.finish_run(run_id, len(results))
+        return results
+
     ig_user = env("INSTAGRAM_USERNAME")
     ig_pass = env("INSTAGRAM_PASSWORD")
     if not ig_user or not ig_pass:
-        raise RuntimeError("Set INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD in .env first.")
+        db.finish_run(run_id, 0, status="failed", error="missing credentials")
+        raise RuntimeError("Set INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD in .env (or the Settings tab) first.")
 
-    db.init_db()
-    run_id = db.start_run("instagram_profiles", run_label or ", ".join(usernames))
+    from playwright.sync_api import sync_playwright  # imported lazily: not needed at all in mock mode
+
     results: list[dict] = []
-
     try:
         with sync_playwright() as p:
             context = launch_persistent_context(p, "instagram")
@@ -168,21 +199,7 @@ def scan_profiles(usernames: list[str], run_label: str | None = None) -> list[di
             for username in usernames:
                 info = get_profile_info(page, username)
                 results.append(info)
-                db.upsert_company(
-                    info["full_name"] or username,
-                    "instagram",
-                    url=info["external_link"] or info["profile_url"],
-                    notes=info["bio"][:500],
-                )
-                if info["is_hiring"]:
-                    db.insert_job(
-                        title="(unspecified - see bio/profile)",
-                        company_name=info["full_name"] or username,
-                        url=info["profile_url"],
-                        location=None,
-                        description=info["bio"],
-                        source="instagram",
-                    )
+                _save_profile(info)
                 random_delay()
 
             context.close()
@@ -195,20 +212,28 @@ def scan_profiles(usernames: list[str], run_label: str | None = None) -> list[di
     return results
 
 
-def search_hashtag(tag: str, max_posts: int = 20) -> list[dict]:
+def search_hashtag(tag: str, max_posts: int = 20, mock: bool = True) -> list[dict]:
     """Best-effort hashtag discovery. Higher risk than scan_profiles - see
     module docstring. Returns post URLs found on the hashtag page; it does
     not open each post (that would multiply the request volume and risk
     further), so treat this as a list of leads to review by hand."""
+    db.init_db()
+    run_id = db.start_run("instagram_hashtag", tag or "(mock)")
+
+    if mock:
+        results = mock_data.instagram_hashtag_posts(tag, max_posts)
+        db.finish_run(run_id, len(results))
+        return results
+
     ig_user = env("INSTAGRAM_USERNAME")
     ig_pass = env("INSTAGRAM_PASSWORD")
     if not ig_user or not ig_pass:
-        raise RuntimeError("Set INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD in .env first.")
+        db.finish_run(run_id, 0, status="failed", error="missing credentials")
+        raise RuntimeError("Set INSTAGRAM_USERNAME and INSTAGRAM_PASSWORD in .env (or the Settings tab) first.")
 
-    db.init_db()
-    run_id = db.start_run("instagram_hashtag", tag)
+    from playwright.sync_api import sync_playwright  # imported lazily: not needed at all in mock mode
+
     post_urls: list[str] = []
-
     try:
         with sync_playwright() as p:
             context = launch_persistent_context(p, "instagram")

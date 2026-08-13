@@ -14,21 +14,23 @@ check the studio's own site/LinkedIn for actual job posts.
 Caveat: Behance's search UI is a JS-rendered React app. Depending on what
 the server ships in the initial HTML response, the DOM selectors below
 may come back empty for you. This was written without live network access
-to verify current markup (sandboxed dev environment) - if a search
-returns 0 results, check data/debug/behance-*.html for what was actually
-returned and update CARD_SELECTORS / NAME_SELECTORS to match. If the page
-genuinely ships empty on first load (fully client-rendered), this needs
-to be ported to Playwright the same way linkedin_salesnav.py works.
+to verify current markup (sandboxed dev environment) - if a search with
+mock=False returns 0 results, check data/debug/behance-*.html for what
+was actually returned and update CARD_SELECTORS / NAME_SELECTORS to
+match. If the page genuinely ships empty on first load (fully
+client-rendered), this needs to be ported to Playwright the same way
+linkedin_salesnav.py works.
+
+With mock=True (the app's default), none of the above applies - see
+scrapers/mock_data.py.
 """
 from __future__ import annotations
 
 import json
 from datetime import datetime
 
-import requests
-from bs4 import BeautifulSoup
-
 from app_paths import DEBUG_DIR
+from scrapers import mock_data
 from storage import db
 
 SEARCH_USERS_URL = "https://www.behance.net/search/users"
@@ -55,7 +57,7 @@ def _dump_debug_html(html: str, label: str) -> None:
     (DEBUG_DIR / f"{label}-{ts}.html").write_text(html, encoding="utf-8")
 
 
-def _find_embedded_json(soup: BeautifulSoup) -> dict | None:
+def _find_embedded_json(soup) -> dict | None:
     """Best-effort: many React/Next apps embed initial page state as JSON
     in a <script> tag - try the common patterns before giving up on a
     page that looked empty via plain DOM selectors."""
@@ -68,9 +70,13 @@ def _find_embedded_json(soup: BeautifulSoup) -> dict | None:
     return None
 
 
-def _fetch(url: str, params: dict) -> BeautifulSoup:
+def _fetch(url: str, params: dict):
+    import requests
+
     resp = requests.get(url, params=params, headers=HEADERS, timeout=20)
     resp.raise_for_status()
+    from bs4 import BeautifulSoup
+
     return BeautifulSoup(resp.text, "html.parser")
 
 
@@ -78,10 +84,18 @@ def _absolute(url: str) -> str:
     return f"https://www.behance.net{url}" if url.startswith("/") else url
 
 
-def search_users(query: str, pages: int = 1) -> list[dict]:
+def search_users(query: str, pages: int = 1, mock: bool = True) -> list[dict]:
     """Search Behance user/team profiles matching `query`, e.g. "3D studio"."""
     db.init_db()
     run_id = db.start_run("behance_users", query)
+
+    if mock:
+        results = mock_data.behance_leads(query)
+        for r in results:
+            db.upsert_company(r["name"], "behance", url=r["profile_url"], notes=f"matched user search: {query}")
+        db.finish_run(run_id, len(results))
+        return results
+
     results: list[dict] = []
     seen: set[str] = set()
     try:
@@ -122,11 +136,19 @@ def search_users(query: str, pages: int = 1) -> list[dict]:
     return results
 
 
-def search_projects_for_studios(query: str, pages: int = 1) -> list[dict]:
+def search_projects_for_studios(query: str, pages: int = 1, mock: bool = True) -> list[dict]:
     """Search Behance projects (e.g. "3D animation studio") and pull the
     owning creator/team as a possible studio lead."""
     db.init_db()
     run_id = db.start_run("behance_projects", query)
+
+    if mock:
+        results = mock_data.behance_leads(query)
+        for r in results:
+            db.upsert_company(r["name"], "behance", url=r["profile_url"], notes=f"matched project search: {query}")
+        db.finish_run(run_id, len(results))
+        return results
+
     results: list[dict] = []
     seen: set[str] = set()
     try:

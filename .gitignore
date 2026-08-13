@@ -7,12 +7,13 @@ venv/
 # scraped data / local db
 data/*.db
 data/*.csv
+data/debug/
 
 # persistent browser login sessions (contain auth cookies - never commit)
 browser_data/*
 !browser_data/.gitkeep
 
-# PyInstaller build artifacts (produced by build_app.sh / build_app.bat)
+# PyInstaller build artifacts
 build/
 dist/
 *.spec

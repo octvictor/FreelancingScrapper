@@ -8,7 +8,7 @@ shared SQLite DB. That gives you both a people list and, via the company
 names attached to each lead, a derived list of studios that employ 3D
 artists.
 
-Read this before running at any real volume:
+Read this before running with `mock=False` at any real volume:
   - This automates an *authenticated* session, a materially higher-risk
     activity than scraping public pages. LinkedIn actively detects and bans
     automation on Sales Navigator. Keep runs small (tens, not hundreds) and
@@ -22,15 +22,17 @@ Read this before running at any real volume:
     this script. With BROWSER_HEADLESS=False (the default) the browser
     window is visible - solve the checkpoint by hand and the script
     continues on its own.
+
+With `mock=True` (the app's default), none of the above applies - no
+browser, no network, no login. See scrapers/mock_data.py.
 """
 from __future__ import annotations
 
 import time
 from datetime import datetime
 
-from playwright.sync_api import Page, sync_playwright
-
 from app_paths import DEBUG_DIR
+from scrapers import mock_data
 from scrapers.common import env, launch_persistent_context, random_delay
 from storage import db
 
@@ -74,18 +76,18 @@ def _first_match_href(scope, selectors: list[str]) -> str:
     return ""
 
 
-def _dump_debug_html(page: Page, label: str) -> None:
+def _dump_debug_html(page, label: str) -> None:
     DEBUG_DIR.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     (DEBUG_DIR / f"{label}-{ts}.html").write_text(page.content(), encoding="utf-8")
 
 
-def _is_checkpoint(page: Page) -> bool:
+def _is_checkpoint(page) -> bool:
     url = page.url
     return "checkpoint" in url or "challenge" in url
 
 
-def login(page: Page, email: str, password: str, wait_for_manual_checkpoint_sec: int = 180) -> None:
+def login(page, email: str, password: str, wait_for_manual_checkpoint_sec: int = 180) -> None:
     page.goto("https://www.linkedin.com/feed/", wait_until="domcontentloaded")
     if "linkedin.com/feed" in page.url and "login" not in page.url:
         return  # already logged in via the persisted session
@@ -110,22 +112,36 @@ def login(page: Page, email: str, password: str, wait_for_manual_checkpoint_sec:
             raise RuntimeError("LinkedIn login checkpoint was not resolved in time.")
 
 
-def scrape_search(search_url: str, max_results: int = 10, run_label: str | None = None) -> list[dict]:
+def _save(results: list[dict]) -> None:
+    for r in results:
+        db.insert_person(r["name"], r["title"], r["company_name"], r["location"], r["profile_url"], "linkedin_salesnav")
+
+
+def scrape_search(search_url: str, max_results: int = 10, run_label: str | None = None, mock: bool = True) -> list[dict]:
     """Scrape up to `max_results` leads from a Sales Navigator search URL.
 
     `search_url` should be a URL you get by building/saving a search inside
     Sales Navigator itself (e.g. filtered on current title) and copying it
     from the address bar - this script doesn't build the query for you.
     """
+    db.init_db()
+    run_id = db.start_run("linkedin_salesnav", run_label or search_url or "(mock)")
+
+    if mock:
+        results = mock_data.linkedin_leads(max_results)
+        _save(results)
+        db.finish_run(run_id, len(results))
+        return results
+
     email = env("LINKEDIN_EMAIL")
     password = env("LINKEDIN_PASSWORD")
     if not email or not password:
-        raise RuntimeError("Set LINKEDIN_EMAIL and LINKEDIN_PASSWORD in .env first.")
+        db.finish_run(run_id, 0, status="failed", error="missing credentials")
+        raise RuntimeError("Set LINKEDIN_EMAIL and LINKEDIN_PASSWORD in .env (or the Settings tab) first.")
 
-    db.init_db()
-    run_id = db.start_run("linkedin_salesnav", run_label or search_url)
+    from playwright.sync_api import sync_playwright  # imported lazily: not needed at all in mock mode
+
     results: list[dict] = []
-
     try:
         with sync_playwright() as p:
             context = launch_persistent_context(p, "linkedin")

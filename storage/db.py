@@ -170,3 +170,12 @@ def fetch_table(table: str) -> pd.DataFrame:
     with get_connection() as conn:
         # table name is validated against the fixed allowlist above, not user input
         return pd.read_sql_query(f"SELECT * FROM {table} ORDER BY id DESC", conn)
+
+
+def clear_table(table: str) -> None:
+    """Wipe all rows from one table - used by the mock-mode "reset demo
+    data" control so repeated test runs don't pile up duplicate rows."""
+    if table not in _TABLES:
+        raise ValueError(f"Unknown table: {table}")
+    with get_connection() as conn:
+        conn.execute(f"DELETE FROM {table}")

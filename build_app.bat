@@ -25,4 +25,4 @@ pyinstaller --onefile --name 3DArtistScraper ^
 echo.
 echo Build finished: dist\3DArtistScraper.exe
 echo Move/copy that file anywhere (Desktop, Start Menu folder, ...) and double-click it to run the app.
-echo First launch will take a little longer while it downloads the browser component - that's normal, one-time.
+echo First launch will take a little longer while it downloads the browser component - that's normal, one-time (and only needed if you turn Mock mode off).

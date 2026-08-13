@@ -15,7 +15,17 @@ All results land in one shared SQLite database (`data/scraper.db`) so you
 can browse/filter/export everything from the "Data Browser" tab
 regardless of which source it came from.
 
-## Read this first: risk
+## Mock mode
+
+The sidebar has a **Mock mode** toggle, ON by default. With it on, every
+tab generates realistic fake data instead of touching a real site -
+no login, no network call, no risk to any real account. It's there so
+you can click through the entire app, see exactly how each tab behaves,
+and iterate on the design/workflow freely before ever pointing it at a
+real LinkedIn/Instagram account. Turn it off only when you actually want
+to run a real scrape.
+
+## Read this first: risk (applies once Mock mode is off)
 
 The LinkedIn and Instagram modules work by logging into **your own**
 account with Playwright and driving a real browser session - this is
@@ -30,24 +40,23 @@ different (and riskier) than scraping a public page:
   low volume** (tens of results per run, not hundreds), not as something
   to package up and hand to other people or run against accounts you
   don't own.
-- Keep `SCRAPE_DELAY_MIN`/`SCRAPE_DELAY_MAX` in `.env` conservative. The
-  delays exist specifically to look less like a bot - don't shorten them
-  just to finish a run faster.
+- Keep the delay settings in the Settings tab conservative. They exist
+  specifically to look less like a bot - don't shorten them just to
+  finish a run faster.
 - Login checkpoints (2FA, "verify it's you", CAPTCHA) can't be solved by
-  the script. Keep `BROWSER_HEADLESS=False` (the default) so the browser
-  window is visible and you can solve them by hand; the script waits and
-  continues automatically once you do.
+  the script. Keep "Run browser headless" OFF (the default) so the
+  browser window is visible and you can solve them by hand; the script
+  waits and continues automatically once you do.
 
 ## Two ways to run this
 
 - **Packaged app** - build once, then just double-click an icon forever.
   Best if you're not planning to edit the code.
-- **From source** - `git clone` + venv + a run script. Best if you're
-  actively changing scrapers/selectors, since edits take effect instantly
-  (no rebuild).
+- **From source** - venv + a run script. Best if you're actively changing
+  scrapers/selectors, since edits take effect instantly (no rebuild).
 
-You can do both; they don't conflict, and they share the same `.env`
-credentials once you fill them in via the in-app Settings tab.
+You can do both; they share the same `.env` credentials once you fill
+them in via the in-app Settings tab.
 
 ### Option A: packaged app (double-click, no terminal after setup)
 
@@ -55,37 +64,24 @@ One-time build, on the same OS you'll actually use the app on (a build
 made on Mac won't run on Windows and vice versa):
 
 ```bash
-./build_app.sh      # Windows: build_app.bat
+./build_app.sh      # Windows: build_app.bat / Mac: double-click build_app.command
 ```
 
 This creates `dist/3DArtistScraper` (`dist/3DArtistScraper.exe` on
 Windows) - a single self-contained file with Python, Streamlit, and
-Playwright all bundled in. Move it wherever you like (Desktop,
-Applications, a Start Menu folder) and double-click it to launch; it
-opens in your browser automatically. First launch takes a bit longer
-while it downloads the browser component it needs (one-time, needs a
-normal internet connection); after that it's instant.
+Playwright all bundled in. Move it wherever you like and double-click it
+to launch; it opens in your browser automatically. Mock mode works
+immediately with no further setup. If you turn Mock mode off, first
+launch takes a bit longer while it downloads the browser component it
+needs (needs a normal internet connection, one-time).
 
 Enter your LinkedIn/Instagram credentials from inside the app itself, in
 the **Settings** tab - no `.env` file editing required. They're written
 to a `.env` file that lives next to the executable and never leaves your
 machine.
 
-Re-run `build_app.sh`/`build_app.bat` only when you change
-`requirements.txt` or pull down new scraper code - not for regular use.
-
-**Heads up:** bundling Streamlit + Playwright together with PyInstaller
-is somewhat known to be finicky in general (this combination has real
-edge cases across different OS/Python setups). I built and verified this
-on Linux - the build completes, the app boots and serves correctly, and
-(most importantly) data/login sessions correctly persist next to the
-executable between launches rather than resetting every time. I was not
-able to verify an actual Windows or macOS build, since PyInstaller has to
-build on the OS it targets and this was built in a Linux sandbox. If your
-first build on Mac/Windows hits an error, save the full PyInstaller
-output and we'll fix it together - it's very likely a missing
-`--collect-all` flag for one dependency, not a fundamental problem with
-the approach.
+Re-run the build script only when you change `requirements.txt` or pull
+down new scraper code - not for regular use.
 
 ### Option B: from source (for actively editing the code)
 
@@ -95,11 +91,10 @@ One-time setup:
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-playwright install chromium
+playwright install chromium      # only needed if you'll turn Mock mode off
 
 cp .env.example .env
-# then edit .env and fill in your LinkedIn/Instagram credentials
-# (or skip this and use the in-app Settings tab instead)
+# then edit .env, or just use the in-app Settings tab
 ```
 
 Every time after that:
@@ -115,19 +110,16 @@ work.
 **Testing a code change:** you don't need to restart anything. The app
 auto-reloads whenever you save a file (`runOnSave = true` in
 `.streamlit/config.toml`) - edit a scraper or `app.py`, save, and the
-browser tab updates within a second or two. Stop the app with `Ctrl+C` in
-the terminal when you're done for the session; next time, it's just
-`./run.sh` again.
+browser tab updates within a second or two.
 
-## Notes on selector fragility
+## Notes on selector fragility (real scraping only, mock mode is unaffected)
 
 `scrapers/linkedin_salesnav.py`, `scrapers/instagram.py`, and
 `scrapers/behance.py` were written without live network access to verify
-current page markup (this was built in a sandboxed dev environment with
-no route to linkedin.com / instagram.com / behance.net). Each scraper
-tries several candidate CSS selectors per field as a hedge, but all three
-sites change their DOM regularly, so a run may come back with 0 results
-until you adjust the selectors.
+current page markup. Each scraper tries several candidate CSS selectors
+per field as a hedge, but all three sites change their DOM regularly, so
+a real (mock=False) run may come back with 0 results until you adjust
+the selectors.
 
 When that happens:
 
@@ -158,6 +150,9 @@ executable), shared across all sources:
 - `scrape_runs` - a log of every scrape attempt (source, query, result
   count, status, error) for debugging.
 
+The sidebar's "Demo data" panel has a one-click "Reset all data" button
+to clear every table between test runs.
+
 ## Roadmap / not built yet
 
 - Company job-board scraping (many studios post openings on their own
@@ -165,3 +160,5 @@ executable), shared across all sources:
   add per-studio once you have a company list from the above.
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+- Broader freelancing-platform features beyond 3D-artist job/studio
+  discovery (this is the planned direction long-term).

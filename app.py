@@ -1,6 +1,6 @@
 """Streamlit GUI for the 3D artist job/studio scraper.
 
-Run with: streamlit run app.py
+Run with: streamlit run app.py (or ./run.sh / run.bat)
 """
 import os
 
@@ -9,6 +9,7 @@ import streamlit as st
 from dotenv import load_dotenv, set_key
 
 from app_paths import ENV_PATH
+from scrapers.common import default_mock_mode
 from storage import db
 
 load_dotenv(ENV_PATH)
@@ -17,14 +18,34 @@ st.set_page_config(page_title="3D Artist Job Scraper", layout="wide")
 db.init_db()
 
 st.sidebar.title("3D Artist Job Scraper")
-st.sidebar.warning(
-    "Personal-use tool. The LinkedIn and Instagram modules automate a "
-    "logged-in browser session under your own account - that's a ToS "
-    "violation on both platforms and carries real risk of account "
-    "restriction. Keep run sizes small and prefer your own account only."
+
+mock = st.sidebar.toggle(
+    "Mock mode (safe demo data)",
+    value=default_mock_mode(),
+    help="ON: every tab uses realistic fake data - no login, no network, no risk. "
+    "OFF: scrapes real LinkedIn/Instagram/Behance using your saved credentials.",
 )
+
+if mock:
+    st.sidebar.success("Mock mode is ON - nothing here touches a real site or account.")
+else:
+    st.sidebar.warning(
+        "Mock mode is OFF. The LinkedIn and Instagram tabs will now log into "
+        "your real account and drive a real browser session - that's a ToS "
+        "violation on both platforms and carries real risk of account "
+        "restriction. Keep run sizes small and prefer your own account only."
+    )
+
 st.sidebar.caption(f"LinkedIn credentials: {'configured' if os.environ.get('LINKEDIN_EMAIL') else 'not set'}")
 st.sidebar.caption(f"Instagram credentials: {'configured' if os.environ.get('INSTAGRAM_USERNAME') else 'not set'}")
+
+with st.sidebar.expander("Demo data"):
+    st.caption("Clears every table - use this to reset between mock-mode test runs.")
+    if st.button("Reset all data"):
+        for table in ["companies", "people", "job_postings", "scrape_runs"]:
+            db.clear_table(table)
+        st.success("Cleared.")
+        st.rerun()
 
 tab_linkedin, tab_behance, tab_instagram, tab_data, tab_settings = st.tabs(
     ["LinkedIn Sales Navigator", "Behance", "Instagram", "Data Browser", "Settings"]
@@ -32,22 +53,29 @@ tab_linkedin, tab_behance, tab_instagram, tab_data, tab_settings = st.tabs(
 
 with tab_linkedin:
     st.subheader("LinkedIn Sales Navigator")
-    st.caption(
-        'Build/save a lead search inside Sales Navigator (e.g. current title '
-        'contains "3D Artist" OR "CG Artist"), then paste the resulting URL below.'
-    )
-    search_url = st.text_input("Sales Navigator search URL", key="li_url")
+    if mock:
+        st.caption("Mock mode: generates realistic fake leads. The search URL below is ignored.")
+    else:
+        st.caption(
+            'Build/save a lead search inside Sales Navigator (e.g. current title '
+            'contains "3D Artist" OR "CG Artist"), then paste the resulting URL below.'
+        )
+    search_url = st.text_input("Sales Navigator search URL", key="li_url", disabled=mock)
     max_results = st.number_input("Number of people to scrape", min_value=1, max_value=200, value=10, key="li_max")
     if st.button("Start Scraping", key="li_start"):
-        if not search_url:
-            st.error("Paste a Sales Navigator search URL first.")
+        if not mock and not search_url:
+            st.error("Paste a Sales Navigator search URL first (or turn on Mock mode).")
         else:
             from scrapers import linkedin_salesnav
 
-            with st.spinner("Scraping LinkedIn Sales Navigator - a browser window may open for login/checkpoints..."):
+            spinner_msg = "Generating mock leads..." if mock else (
+                "Scraping LinkedIn Sales Navigator - a browser window may open for login/checkpoints. "
+                "First real scrape ever also downloads a browser component (~1-2 min, one-time)."
+            )
+            with st.spinner(spinner_msg):
                 try:
-                    results = linkedin_salesnav.scrape_search(search_url, max_results=int(max_results))
-                    st.success(f"Scraped {len(results)} leads.")
+                    results = linkedin_salesnav.scrape_search(search_url, max_results=int(max_results), mock=mock)
+                    st.success(f"{'Generated' if mock else 'Scraped'} {len(results)} leads.")
                     df = pd.DataFrame(results)
                     st.dataframe(df, use_container_width=True)
                     if not df.empty:
@@ -57,19 +85,22 @@ with tab_linkedin:
 
 with tab_behance:
     st.subheader("Behance")
-    st.caption("Discover CG/3D studios via Behance user/team or project search.")
+    st.caption(
+        "Discover CG/3D studios via Behance user/team or project search."
+        + (" Mock mode: generates realistic fake studio leads." if mock else "")
+    )
     query = st.text_input("Search query", value="3D studio", key="be_query")
-    pages = st.number_input("Pages to fetch", min_value=1, max_value=10, value=1, key="be_pages")
+    pages = st.number_input("Pages to fetch", min_value=1, max_value=10, value=1, key="be_pages", disabled=mock)
     search_mode = st.radio("Search", ["Users/teams", "Projects"], horizontal=True, key="be_mode")
     if st.button("Start Scraping", key="be_start"):
         from scrapers import behance
 
-        with st.spinner("Searching Behance..."):
+        with st.spinner("Generating mock studio leads..." if mock else "Searching Behance..."):
             try:
                 if search_mode == "Users/teams":
-                    results = behance.search_users(query, pages=int(pages))
+                    results = behance.search_users(query, pages=int(pages), mock=mock)
                 else:
-                    results = behance.search_projects_for_studios(query, pages=int(pages))
+                    results = behance.search_projects_for_studios(query, pages=int(pages), mock=mock)
                 st.success(f"Found {len(results)} leads.")
                 df = pd.DataFrame(results)
                 st.dataframe(df, use_container_width=True)
@@ -83,9 +114,10 @@ with tab_instagram:
     st.caption(
         "Checks a curated list of studio handles for hiring language in their "
         "bio - this is the recommended, lower-risk workflow. Hashtag discovery "
-        "below is higher-risk; see the module docstring before using it."
+        "below is higher-risk; see the module docstring before using it with mock mode off."
     )
-    usernames_raw = st.text_area("Instagram handles (one per line, no @)", key="ig_usernames")
+    default_usernames = "nomadrender\npolybrushstudio\nvoxelfoundry" if mock else ""
+    usernames_raw = st.text_area("Instagram handles (one per line, no @)", value=default_usernames, key="ig_usernames")
     if st.button("Scan Profiles", key="ig_scan"):
         usernames = [u.strip().lstrip("@") for u in usernames_raw.splitlines() if u.strip()]
         if not usernames:
@@ -93,9 +125,13 @@ with tab_instagram:
         else:
             from scrapers import instagram
 
-            with st.spinner("Checking profiles - a browser window may open for login/checkpoints..."):
+            spinner_msg = "Generating mock profile data..." if mock else (
+                "Checking profiles - a browser window may open for login/checkpoints. "
+                "First real scrape ever also downloads a browser component (~1-2 min, one-time)."
+            )
+            with st.spinner(spinner_msg):
                 try:
-                    results = instagram.scan_profiles(usernames)
+                    results = instagram.scan_profiles(usernames, mock=mock)
                     st.success(f"Checked {len(results)} profiles.")
                     df = pd.DataFrame(results)
                     st.dataframe(df, use_container_width=True)
@@ -105,8 +141,8 @@ with tab_instagram:
                     st.error(f"Scan failed: {exc}")
 
     st.divider()
-    st.caption("Optional: hashtag discovery (higher risk - keep batches small)")
-    hashtag = st.text_input("Hashtag (no #)", key="ig_hashtag")
+    st.caption("Optional: hashtag discovery (higher risk with mock mode off - keep batches small)")
+    hashtag = st.text_input("Hashtag (no #)", value="3dartist" if mock else "", key="ig_hashtag")
     max_posts = st.number_input("Max posts", min_value=1, max_value=50, value=15, key="ig_max_posts")
     if st.button("Search Hashtag", key="ig_hashtag_btn"):
         if not hashtag:
@@ -114,9 +150,9 @@ with tab_instagram:
         else:
             from scrapers import instagram
 
-            with st.spinner("Searching hashtag..."):
+            with st.spinner("Generating mock posts..." if mock else "Searching hashtag..."):
                 try:
-                    results = instagram.search_hashtag(hashtag, max_posts=int(max_posts))
+                    results = instagram.search_hashtag(hashtag, max_posts=int(max_posts), mock=mock)
                     st.success(f"Found {len(results)} posts.")
                     df = pd.DataFrame(results)
                     st.dataframe(df, use_container_width=True)
