@@ -933,6 +933,37 @@ table.task-table td:nth-child(5) {
     margin: 0 0 14px 0;
 }
 
+.log-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+}
+
+.log-sum {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 6px 14px;
+}
+
+.log-sum-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+}
+
+.log-sum-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+
 .modal-close {
     position: absolute;
     top: 10px;
@@ -992,31 +1023,32 @@ table.task-table td:nth-child(5) {
     border-color: var(--border);
 }
 
+/* Vertical Notion-style property list: label column on the left,
+   control on the right, one row each - not the side-by-side row this
+   used to be. */
 .modal-fields {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
+    flex-direction: column;
+    max-width: 480px;
+}
+
+.modal-field {
+    display: flex;
+    align-items: center;
     gap: 16px;
-}
-
-.modal-fields .modal-field {
-    flex: 1;
-    min-width: 150px;
-}
-
-/* The doc-upload button has no label above it, unlike the other fields
-   in this row - align-items: flex-end on the row lines its bottom edge
-   up with the inputs instead of their labels. */
-.modal-field-btn {
-    flex: 0 0 auto;
-    min-width: 0;
+    padding: 7px 0;
 }
 
 .modal-field label {
-    display: block;
+    flex: 0 0 110px;
     font-size: 12.5px;
     color: var(--text-muted);
-    margin-bottom: 6px;
+}
+
+.modal-field-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .modal-field select,
@@ -1028,7 +1060,11 @@ table.task-table td:nth-child(5) {
     padding: 9px 11px;
     color: var(--text);
     outline: none;
-    width: 100%;
+}
+
+.modal-field input[type="date"],
+.modal-field input[type="number"] {
+    width: 140px;
 }
 
 .modal-field select.color-pill,
@@ -1036,20 +1072,33 @@ table.task-table td:nth-child(5) {
     border: none;
     border-radius: var(--radius-full);
     font-weight: 500;
-    width: auto;
     padding: 6px 12px;
     cursor: pointer;
 }
 
-.modal-field input[type="date"] {
-    width: auto;
+.currency-prefix {
+    color: var(--text-faint);
+    font-size: 13px;
 }
 
+.cost-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cost-cell .cell-input {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Aligned under the Docs row's value column, not the full modal width. */
 .docs-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-bottom: 10px;
+    margin: 0 0 10px 126px;
 }
 
 .doc-item {

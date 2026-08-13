@@ -28,6 +28,7 @@ class ProjectUpdate(BaseModel):
     status: str | None = None
     deadline: str | None = None
     day_rate: float | None = None
+    currency: str | None = None
 
 
 class TaskUpdate(BaseModel):

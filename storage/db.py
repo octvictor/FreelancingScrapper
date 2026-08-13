@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS projects (
     status TEXT NOT NULL DEFAULT 'Active',
     deadline TEXT,
     day_rate REAL,
+    currency TEXT NOT NULL DEFAULT 'USD',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -125,12 +126,15 @@ def get_connection():
 def init_db() -> None:
     with get_connection() as conn:
         conn.executescript(SCHEMA)
-        # `projects` shipped before `description` existed, so an existing
-        # local DB's table predates the column above - CREATE TABLE IF NOT
-        # EXISTS won't retroactively add it, so patch it in by hand.
+        # `projects` shipped before `description`/`currency` existed, so an
+        # existing local DB's table predates the columns above - CREATE
+        # TABLE IF NOT EXISTS won't retroactively add them, so patch them
+        # in by hand.
         columns = {row["name"] for row in conn.execute("PRAGMA table_info(projects)")}
         if "description" not in columns:
             conn.execute("ALTER TABLE projects ADD COLUMN description TEXT")
+        if "currency" not in columns:
+            conn.execute("ALTER TABLE projects ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'")
 
 
 def upsert_company(name, source, url=None, industry=None, location=None, notes=None) -> None:
@@ -298,7 +302,7 @@ def get_project(project_id: int) -> dict | None:
 
 
 def update_project(project_id: int, **fields) -> dict | None:
-    allowed = {"title", "description", "status", "deadline", "day_rate"}
+    allowed = {"title", "description", "status", "deadline", "day_rate", "currency"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return get_project(project_id)

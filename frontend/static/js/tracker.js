@@ -5,6 +5,31 @@
 
 let trackerProjects = [];
 let activeProjectId = null;
+let activeCurrency = "USD";
+
+const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
+
+function currencySymbol() {
+    return CURRENCY_SYMBOLS[activeCurrency] || "$";
+}
+
+function updateCurrencyDisplay() {
+    const symbol = currencySymbol();
+    $("day-rate-prefix").textContent = symbol;
+    document.querySelectorAll(".cost-prefix").forEach((el) => {
+        el.textContent = symbol;
+    });
+    renderLogSum();
+}
+
+function renderLogSum() {
+    let total = 0;
+    document.querySelectorAll("#task-table-body input[data-field='cost']").forEach((input) => {
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) total += value;
+    });
+    $("log-sum-value").textContent = currencySymbol() + total.toFixed(2);
+}
 
 function trackerStatusPillClass(status) {
     return status === "Completed" || status === "Done" ? "status-completed" : "status-active";
@@ -102,7 +127,12 @@ function taskRowHtml(task) {
                     <option value="Custom" ${task.duration === "Custom" ? "selected" : ""}>&#9679; Custom</option>
                 </select>
             </td>
-            <td><input type="number" class="cell-input" data-field="cost" min="0" step="0.01" placeholder="0.00" value="${task.cost ?? ""}"></td>
+            <td>
+                <div class="cost-cell">
+                    <span class="currency-prefix cost-prefix">${currencySymbol()}</span>
+                    <input type="number" class="cell-input" data-field="cost" min="0" step="0.01" placeholder="0.00" value="${task.cost ?? ""}">
+                </div>
+            </td>
             <td><input type="date" class="cell-input date-input" data-field="task_date" value="${task.task_date || ""}"></td>
             <td><button class="row-delete-btn" data-role="delete" title="Delete task">&times;</button></td>
         </tr>
@@ -141,6 +171,7 @@ function renderTaskTable(tasks, projectId) {
         enhanceSelect(durationSelect);
 
         const costInput = tr.querySelector(".cell-input[data-field='cost']");
+        costInput.addEventListener("input", renderLogSum);
         costInput.addEventListener("blur", () => {
             const value = costInput.value === "" ? null : parseFloat(costInput.value);
             saveTaskField(projectId, taskId, { cost: value });
@@ -156,6 +187,8 @@ function renderTaskTable(tasks, projectId) {
             renderTaskTable(project.tasks, projectId);
         });
     });
+
+    renderLogSum();
 }
 
 async function saveTaskField(projectId, taskId, updates) {
@@ -188,6 +221,10 @@ async function openProjectModal(id) {
     refreshCustomSelect($("modal-status"));
     $("modal-deadline").value = project.deadline || "";
     $("modal-day-rate").value = project.day_rate ?? "";
+    activeCurrency = project.currency || "USD";
+    $("modal-currency").value = activeCurrency;
+    refreshCustomSelect($("modal-currency"));
+    $("day-rate-prefix").textContent = currencySymbol();
     renderDocsList(project.docs, id);
     renderTaskTable(project.tasks, id);
 
@@ -240,6 +277,13 @@ $("modal-day-rate").addEventListener("blur", (e) => {
     const value = e.target.value === "" ? null : parseFloat(e.target.value);
     saveActiveProject({ day_rate: value });
 });
+
+$("modal-currency").addEventListener("change", (e) => {
+    activeCurrency = e.target.value;
+    updateCurrencyDisplay();
+    saveActiveProject({ currency: activeCurrency });
+});
+enhanceSelect($("modal-currency"));
 
 $("doc-upload-btn").addEventListener("click", () => $("doc-file-input").click());
 $("doc-file-input").addEventListener("change", async (e) => {
