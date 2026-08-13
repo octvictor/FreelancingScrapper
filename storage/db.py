@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS gatherer_entries (
 CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL DEFAULT '',
+    description TEXT,
     status TEXT NOT NULL DEFAULT 'Active',
     deadline TEXT,
     day_rate REAL,
@@ -124,6 +125,12 @@ def get_connection():
 def init_db() -> None:
     with get_connection() as conn:
         conn.executescript(SCHEMA)
+        # `projects` shipped before `description` existed, so an existing
+        # local DB's table predates the column above - CREATE TABLE IF NOT
+        # EXISTS won't retroactively add it, so patch it in by hand.
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(projects)")}
+        if "description" not in columns:
+            conn.execute("ALTER TABLE projects ADD COLUMN description TEXT")
 
 
 def upsert_company(name, source, url=None, industry=None, location=None, notes=None) -> None:
@@ -291,7 +298,7 @@ def get_project(project_id: int) -> dict | None:
 
 
 def update_project(project_id: int, **fields) -> dict | None:
-    allowed = {"title", "status", "deadline", "day_rate"}
+    allowed = {"title", "description", "status", "deadline", "day_rate"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return get_project(project_id)

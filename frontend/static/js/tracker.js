@@ -70,9 +70,7 @@ function docRowHtml(doc, projectId) {
 }
 
 function renderDocsList(docs, projectId) {
-    $("docs-list").innerHTML = docs.length
-        ? docs.map((d) => docRowHtml(d, projectId)).join("")
-        : `<div class="muted docs-empty">No docs attached yet.</div>`;
+    $("docs-list").innerHTML = docs.map((d) => docRowHtml(d, projectId)).join("");
 
     document.querySelectorAll(".doc-delete-btn").forEach((btn) => {
         btn.addEventListener("click", async () => {
@@ -180,6 +178,7 @@ async function openProjectModal(id) {
     activeProjectId = id;
 
     $("modal-title").value = project.title || "";
+    $("modal-description").value = project.description || "";
     $("modal-status").value = project.status;
     $("modal-status").classList.remove("status-active", "status-completed");
     $("modal-status").classList.add(statusPillClass(project.status));
@@ -223,6 +222,8 @@ $("modal-title").addEventListener("blur", (e) => saveActiveProject({ title: e.ta
 $("modal-title").addEventListener("keydown", (e) => {
     if (e.key === "Enter") e.target.blur();
 });
+
+$("modal-description").addEventListener("blur", (e) => saveActiveProject({ description: e.target.value.trim() || null }));
 
 $("modal-status").addEventListener("change", (e) => {
     e.target.classList.remove("status-active", "status-completed");

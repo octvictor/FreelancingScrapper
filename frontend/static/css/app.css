@@ -826,7 +826,7 @@ table.task-table td:nth-child(5) {
 }
 
 .modal.modal-wide {
-    max-width: 860px;
+    max-width: min(94vw, 1220px);
 }
 
 .modal-section {
@@ -875,15 +875,43 @@ table.task-table td:nth-child(5) {
     outline: none;
 }
 
+.modal-description-input {
+    background: var(--panel-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13.5px;
+    line-height: 1.5;
+    padding: 12px 14px;
+    min-height: 90px;
+    resize: vertical;
+    outline: none;
+}
+
+.modal-description-input:hover,
+.modal-description-input:focus {
+    border-color: var(--border);
+}
+
 .modal-fields {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-end;
     gap: 16px;
 }
 
 .modal-fields .modal-field {
     flex: 1;
     min-width: 150px;
+}
+
+/* The doc-upload button has no label above it, unlike the other fields
+   in this row - align-items: flex-end on the row lines its bottom edge
+   up with the inputs instead of their labels. */
+.modal-field-btn {
+    flex: 0 0 auto;
+    min-width: 0;
 }
 
 .modal-field label {
@@ -924,10 +952,6 @@ table.task-table td:nth-child(5) {
     flex-direction: column;
     gap: 6px;
     margin-bottom: 10px;
-}
-
-.docs-empty {
-    padding: 4px 0;
 }
 
 .doc-item {
