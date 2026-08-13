@@ -38,7 +38,9 @@ different (and riskier) than scraping a public page:
   window is visible and you can solve them by hand; the script waits and
   continues automatically once you do.
 
-## Setup
+## Setup (one-time only)
+
+You only do this once per machine, not every time you want to test something:
 
 ```bash
 python3 -m venv .venv
@@ -50,13 +52,22 @@ cp .env.example .env
 # then edit .env and fill in your LinkedIn/Instagram credentials
 ```
 
-Run the app:
+## Running it (every time)
 
 ```bash
-streamlit run app.py
+./run.sh       # Windows: run.bat
 ```
 
-It opens in your browser at `http://localhost:8501`.
+That activates the venv and starts the app - it opens in your browser at
+`http://localhost:8501`. Leave that terminal window running while you
+work.
+
+**Testing a code change:** you don't need to restart anything. The app
+auto-reloads whenever you save a file (`runOnSave = true` in
+`.streamlit/config.toml`) - edit a scraper or `app.py`, save, and the
+browser tab updates within a second or two. Stop the app with `Ctrl+C` in
+the terminal when you're done for the session; next time, it's just
+`./run.sh` again.
 
 ## Notes on selector fragility
 
