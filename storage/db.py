@@ -1,15 +1,12 @@
 """SQLite storage layer shared by all scrapers and the Streamlit GUI.
 
-Schema is intentionally source-agnostic: every scraper (LinkedIn, Behance,
-Instagram, ...) writes into the same `companies` / `people` / `job_postings`
-tables, tagged with a `source` column, so results from different platforms
-can be browsed and cross-referenced in one place.
+Schema is intentionally source-agnostic: every scraper (LinkedIn,
+Instagram, ...) writes into the same `companies` / `people` /
+`job_postings` tables, tagged with a `source` column.
 """
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
-
-import pandas as pd
 
 from app_paths import DB_PATH
 
@@ -164,16 +161,8 @@ def finish_run(run_id: int, result_count: int, status: str = "completed", error:
         )
 
 
-def fetch_table(table: str) -> pd.DataFrame:
-    if table not in _TABLES:
-        raise ValueError(f"Unknown table: {table}")
-    with get_connection() as conn:
-        # table name is validated against the fixed allowlist above, not user input
-        return pd.read_sql_query(f"SELECT * FROM {table} ORDER BY id DESC", conn)
-
-
 def clear_table(table: str) -> None:
-    """Wipe all rows from one table - used by the mock-mode "reset demo
+    """Wipe all rows from one table - used by the sidebar "reset demo
     data" control so repeated test runs don't pile up duplicate rows."""
     if table not in _TABLES:
         raise ValueError(f"Unknown table: {table}")

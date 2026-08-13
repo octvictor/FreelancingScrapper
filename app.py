@@ -1,4 +1,4 @@
-"""Streamlit GUI for the 3D artist job/studio scraper.
+"""Streamlit GUI for the 3D artist job scraper.
 
 Run with: streamlit run app.py (or ./run.sh / run.bat)
 """
@@ -14,10 +14,10 @@ from storage import db
 
 load_dotenv(ENV_PATH)
 
-st.set_page_config(page_title="3D Artist Job Scraper", layout="wide")
+st.set_page_config(page_title="Scrapper", layout="wide")
 db.init_db()
 
-st.sidebar.title("3D Artist Job Scraper")
+st.sidebar.title("Scrapper")
 
 # Streamlit doesn't expose a per-state color option for st.toggle, so this
 # recolors it directly. Targeted by the widget's aria-label (stable, since
@@ -27,10 +27,10 @@ st.sidebar.title("3D Artist Job Scraper")
 st.markdown(
     """
     <style>
-    label:has(input[aria-label="Mock mode (safe demo data)"]) > div:not([data-testid]) {
+    label:has(input[aria-label="Safe mode (demo data)"]) > div:not([data-testid]) {
         background-color: #e57373 !important; /* pastel/saturated red - OFF */
     }
-    label[data-selected="true"]:has(input[aria-label="Mock mode (safe demo data)"]) > div:not([data-testid]) {
+    label[data-selected="true"]:has(input[aria-label="Safe mode (demo data)"]) > div:not([data-testid]) {
         background-color: #22c55e !important; /* green - ON */
     }
     </style>
@@ -39,17 +39,17 @@ st.markdown(
 )
 
 mock = st.sidebar.toggle(
-    "Mock mode (safe demo data)",
+    "Safe mode (demo data)",
     value=default_mock_mode(),
     help="ON: every tab uses realistic fake data - no login, no network, no risk. "
-    "OFF: scrapes real LinkedIn/Instagram/Behance using your saved credentials.",
+    "OFF: scrapes real LinkedIn/Instagram using your saved credentials.",
 )
 
 if mock:
-    st.sidebar.success("Mock mode is ON - nothing here touches a real site or account.")
+    st.sidebar.success("Safe mode is ON - nothing here touches a real site or account.")
 else:
     st.sidebar.warning(
-        "Mock mode is OFF. The LinkedIn and Instagram tabs will now log into "
+        "Safe mode is OFF. The LinkedIn and Instagram tabs will now log into "
         "your real account and drive a real browser session - that's a ToS "
         "violation on both platforms and carries real risk of account "
         "restriction. Keep run sizes small and prefer your own account only."
@@ -59,21 +59,19 @@ st.sidebar.caption(f"LinkedIn credentials: {'configured' if os.environ.get('LINK
 st.sidebar.caption(f"Instagram credentials: {'configured' if os.environ.get('INSTAGRAM_USERNAME') else 'not set'}")
 
 with st.sidebar.expander("Demo data"):
-    st.caption("Clears every table - use this to reset between mock-mode test runs.")
+    st.caption("Clears every table - use this to reset between safe-mode test runs.")
     if st.button("Reset all data"):
         for table in ["companies", "people", "job_postings", "scrape_runs"]:
             db.clear_table(table)
         st.success("Cleared.")
         st.rerun()
 
-tab_linkedin, tab_behance, tab_instagram, tab_data, tab_settings = st.tabs(
-    ["LinkedIn Sales Navigator", "Behance", "Instagram", "Data Browser", "Settings"]
-)
+tab_linkedin, tab_instagram, tab_settings = st.tabs(["LinkedIn Sales Navigator", "Instagram", "Settings"])
 
 with tab_linkedin:
     st.subheader("LinkedIn Sales Navigator")
     if mock:
-        st.caption("Mock mode: generates realistic fake leads. The search URL below is ignored.")
+        st.caption("Safe mode: generates realistic fake leads. The search URL below is ignored.")
     else:
         st.caption(
             'Build/save a lead search inside Sales Navigator (e.g. current title '
@@ -83,11 +81,11 @@ with tab_linkedin:
     max_results = st.number_input("Number of people to scrape", min_value=1, max_value=200, value=10, key="li_max")
     if st.button("Start Scraping", key="li_start"):
         if not mock and not search_url:
-            st.error("Paste a Sales Navigator search URL first (or turn on Mock mode).")
+            st.error("Paste a Sales Navigator search URL first (or turn on Safe mode).")
         else:
             from scrapers import linkedin_salesnav
 
-            spinner_msg = "Generating mock leads..." if mock else (
+            spinner_msg = "Generating safe demo leads..." if mock else (
                 "Scraping LinkedIn Sales Navigator - a browser window may open for login/checkpoints. "
                 "First real scrape ever also downloads a browser component (~1-2 min, one-time)."
             )
@@ -102,46 +100,12 @@ with tab_linkedin:
                 except Exception as exc:  # noqa: BLE001 - surface scraper failures in the UI instead of crashing the app
                     st.error(f"Scrape failed: {exc}")
 
-with tab_behance:
-    st.subheader("Behance")
-    if mock:
-        st.caption("Mock mode: generates realistic fake studio leads. The URL below is ignored.")
-    else:
-        st.caption(
-            "Go to behance.net, search or filter however you like - keyword, the "
-            "**Tools** filter, their **Jobs** search, any combination - then paste "
-            "the URL from your address bar below."
-        )
-    be_url = st.text_input(
-        "Behance search URL",
-        key="be_url",
-        disabled=mock,
-        placeholder="https://www.behance.net/search/projects?search=3D&tools=Blender",
-    )
-    be_pages = st.number_input("Pages to fetch", min_value=1, max_value=10, value=1, key="be_pages", disabled=mock)
-    if st.button("Start Scraping", key="be_start"):
-        if not mock and not be_url:
-            st.error("Paste a Behance search URL first (or turn on Mock mode).")
-        else:
-            from scrapers import behance
-
-            with st.spinner("Generating mock studio leads..." if mock else "Searching Behance - a browser window may open..."):
-                try:
-                    results = behance.search(be_url, pages=int(be_pages), mock=mock)
-                    st.success(f"Found {len(results)} leads.")
-                    df = pd.DataFrame(results)
-                    st.dataframe(df, use_container_width=True)
-                    if not df.empty:
-                        st.download_button("Export CSV", df.to_csv(index=False), file_name="behance_leads.csv")
-                except Exception as exc:  # noqa: BLE001 - surface scraper failures in the UI instead of crashing the app
-                    st.error(f"Scrape failed: {exc}")
-
 with tab_instagram:
     st.subheader("Instagram")
     st.caption(
         "Checks a curated list of studio handles for hiring language in their "
         "bio - this is the recommended, lower-risk workflow. Hashtag discovery "
-        "below is higher-risk; see the module docstring before using it with mock mode off."
+        "below is higher-risk; see the module docstring before using it with safe mode off."
     )
     default_usernames = "nomadrender\npolybrushstudio\nvoxelfoundry" if mock else ""
     usernames_raw = st.text_area("Instagram handles (one per line, no @)", value=default_usernames, key="ig_usernames")
@@ -152,7 +116,7 @@ with tab_instagram:
         else:
             from scrapers import instagram
 
-            spinner_msg = "Generating mock profile data..." if mock else (
+            spinner_msg = "Generating safe demo profile data..." if mock else (
                 "Checking profiles - a browser window may open for login/checkpoints. "
                 "First real scrape ever also downloads a browser component (~1-2 min, one-time)."
             )
@@ -168,7 +132,7 @@ with tab_instagram:
                     st.error(f"Scan failed: {exc}")
 
     st.divider()
-    st.caption("Optional: hashtag discovery (higher risk with mock mode off - keep batches small)")
+    st.caption("Optional: hashtag discovery (higher risk with safe mode off - keep batches small)")
     hashtag = st.text_input("Hashtag (no #)", value="3dartist" if mock else "", key="ig_hashtag")
     max_posts = st.number_input("Max posts", min_value=1, max_value=50, value=15, key="ig_max_posts")
     if st.button("Search Hashtag", key="ig_hashtag_btn"):
@@ -177,7 +141,7 @@ with tab_instagram:
         else:
             from scrapers import instagram
 
-            with st.spinner("Generating mock posts..." if mock else "Searching hashtag..."):
+            with st.spinner("Generating safe demo posts..." if mock else "Searching hashtag..."):
                 try:
                     results = instagram.search_hashtag(hashtag, max_posts=int(max_posts), mock=mock)
                     st.success(f"Found {len(results)} posts.")
@@ -185,28 +149,6 @@ with tab_instagram:
                     st.dataframe(df, use_container_width=True)
                 except Exception as exc:  # noqa: BLE001 - surface scraper failures in the UI instead of crashing the app
                     st.error(f"Hashtag search failed: {exc}")
-
-with tab_data:
-    st.subheader("Data Browser")
-    st.caption("Shows everything scraped so far, from every source and both Mock and real runs - same shared database.")
-    table = st.selectbox("Table", ["companies", "people", "job_postings", "scrape_runs"])
-    df = db.fetch_table(table)
-    filter_text = st.text_input("Filter (matches any column, case-insensitive)")
-    if filter_text and not df.empty:
-        mask = df.astype(str).apply(lambda col: col.str.contains(filter_text, case=False, na=False)).any(axis=1)
-        df = df[mask]
-    if df.empty:
-        st.info(
-            "Nothing here yet. This fills up after you click **Start Scraping** (or "
-            "**Scan Profiles**) in one of the other tabs - it doesn't happen "
-            "automatically just by switching Mock mode on or off. Check the "
-            "**scrape_runs** table above if you did run something and still see "
-            "nothing here - it logs every attempt, including failed ones, with the "
-            "error message."
-        )
-    else:
-        st.dataframe(df, use_container_width=True)
-        st.download_button("Export CSV", df.to_csv(index=False), file_name=f"{table}.csv")
 
 with tab_settings:
     st.subheader("Settings")

@@ -8,7 +8,7 @@ reasonably well:
 
   1. `scan_profiles(usernames)` - given a list of studio Instagram handles
      you already know about (curated by you, or fed in from the
-     LinkedIn/Behance results), log in and check each profile's bio for
+     LinkedIn results), log in and check each profile's bio for
      hiring language ("we're hiring", "now hiring", "open position", ...)
      and pull the external link (often a careers page). This is the
      supported, low-volume, low-risk default.

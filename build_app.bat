@@ -1,5 +1,5 @@
 @echo off
-REM Builds a standalone, double-clickable app (dist\3DArtistScraper.exe).
+REM Builds a standalone, double-clickable app (dist\Scrapper.exe).
 REM
 REM Run this ONCE (and again only if you change requirements.txt or add
 REM new scraper modules) - after that, day-to-day use is just
@@ -17,12 +17,12 @@ pip install -q pyinstaller
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
-pyinstaller --onefile --name 3DArtistScraper ^
+pyinstaller --onefile --name Scrapper ^
     --add-data "app.py;." ^
     --collect-all streamlit ^
     launcher.py
 
 echo.
-echo Build finished: dist\3DArtistScraper.exe
+echo Build finished: dist\Scrapper.exe
 echo Move/copy that file anywhere (Desktop, Start Menu folder, ...) and double-click it to run the app.
-echo First launch will take a little longer while it downloads the browser component - that's normal, one-time (and only needed if you turn Mock mode off).
+echo First launch will take a little longer while it downloads the browser component - that's normal, one-time (and only needed if you turn Safe mode off).

@@ -22,7 +22,6 @@ import storage.db  # noqa: F401
 import scrapers.common  # noqa: F401
 import scrapers.mock_data  # noqa: F401
 import scrapers.linkedin_salesnav  # noqa: F401
-import scrapers.behance  # noqa: F401
 import scrapers.instagram  # noqa: F401
 
 
@@ -39,7 +38,7 @@ if __name__ == "__main__":
     # Note: the browser component (Chromium) is NOT downloaded here at
     # startup on purpose - see scrapers/common.py:ensure_chromium_installed.
     # It's fetched lazily on first real (mock=False) scrape instead, so
-    # Mock mode and every other tab stay instant with no network dependency.
+    # Safe mode and every other tab stay instant with no network dependency.
     from streamlit.web import cli as stcli
 
     sys.argv = ["streamlit", "run", _bundled_app_py(), "--global.developmentMode=false"]

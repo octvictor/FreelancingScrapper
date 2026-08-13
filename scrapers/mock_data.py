@@ -1,10 +1,9 @@
-"""Realistic-looking fake data for MOCK_MODE.
+"""Realistic-looking fake data for Safe mode (MOCK_MODE).
 
-Every scraper returns this instead of touching a real site when mock mode
-is on, so the whole app can be clicked through - including writing into
-the real SQLite DB, so the Data Browser tab has something to show - with
-no login, no network call, and zero risk to a real account. This is the
-default mode; real scraping is an explicit opt-in per run.
+Every scraper returns this instead of touching a real site when Safe
+mode is on, so the whole app can be clicked through with no login, no
+network call, and zero risk to a real account. This is the default mode;
+real scraping is an explicit opt-in per run.
 """
 from __future__ import annotations
 
@@ -50,17 +49,6 @@ def linkedin_leads(count: int) -> list[dict]:
                 "profile_url": f"https://www.linkedin.com/in/{slug}",
             }
         )
-    return results
-
-
-def behance_leads(query: str, count: int = 8) -> list[dict]:
-    rng = random.Random(hash(query) % (2**32))
-    results = []
-    pool = list(_STUDIOS)
-    rng.shuffle(pool)
-    for i, studio in enumerate(pool[:count]):
-        slug = studio.lower().replace(" ", "-").replace("&", "and")
-        results.append({"name": studio, "profile_url": f"https://www.behance.net/{slug}{i}"})
     return results
 
 

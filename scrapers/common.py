@@ -44,7 +44,7 @@ def ensure_chromium_installed(playwright) -> None:
 
     Called lazily, only from launch_persistent_context() - i.e. only when
     a real (mock=False) LinkedIn/Instagram scrape actually runs - not on
-    every app launch. Mock mode and the packaged app's first boot never
+    every app launch. Safe mode and the packaged app's first boot never
     pay this cost, which can take 1-2 minutes and needs a normal internet
     connection. From source, `playwright install chromium` already covers
     this in the one-time setup; this is the safety net for the packaged

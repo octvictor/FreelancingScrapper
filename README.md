@@ -1,23 +1,21 @@
-# 3D Artist Job/Studio Scraper
+# Scrapper
 
-A personal-use tool for finding CG/3D studios and job leads across three
-sources:
+A personal-use tool for finding 3D artist job leads:
 
 - **LinkedIn Sales Navigator** - scrapes a Sales Navigator lead search you
   build yourself (e.g. current title contains "3D Artist" OR "CG Artist")
   into a list of people + the companies they work at.
-- **Behance** - searches public user/team and project pages to discover
-  studios working in CG/3D.
 - **Instagram** - checks a curated list of studio handles for hiring
   language in their bio (plus optional, higher-risk hashtag discovery).
 
-All results land in one shared SQLite database (`data/scraper.db`) so you
-can browse/filter/export everything from the "Data Browser" tab
-regardless of which source it came from.
+Each scrape's results are shown right in the app and can be exported to
+CSV. Everything also lands in a shared local SQLite database
+(`data/scraper.db`) so results accumulate across runs instead of being
+lost between sessions.
 
-## Mock mode
+## Safe mode
 
-The sidebar has a **Mock mode** toggle, ON by default. With it on, every
+The sidebar has a **Safe mode** toggle, ON by default. With it on, every
 tab generates realistic fake data instead of touching a real site -
 no login, no network call, no risk to any real account. It's there so
 you can click through the entire app, see exactly how each tab behaves,
@@ -25,7 +23,7 @@ and iterate on the design/workflow freely before ever pointing it at a
 real LinkedIn/Instagram account. Turn it off only when you actually want
 to run a real scrape.
 
-## Read this first: risk (applies once Mock mode is off)
+## Read this first: risk (applies once Safe mode is off)
 
 The LinkedIn and Instagram modules work by logging into **your own**
 account with Playwright and driving a real browser session - this is
@@ -67,13 +65,13 @@ made on Mac won't run on Windows and vice versa):
 ./build_app.sh      # Windows: build_app.bat / Mac: double-click build_app.command
 ```
 
-This creates `dist/3DArtistScraper` (`dist/3DArtistScraper.exe` on
-Windows) - a single self-contained file with Python, Streamlit, and
-Playwright all bundled in. Move it wherever you like and double-click it
-to launch; it opens in your browser automatically. Mock mode works
-immediately with no further setup. If you turn Mock mode off, first
-launch takes a bit longer while it downloads the browser component it
-needs (needs a normal internet connection, one-time).
+This creates `dist/Scrapper` (`dist/Scrapper.exe` on Windows) - a single
+self-contained file with Python, Streamlit, and Playwright all bundled
+in. Move it wherever you like and double-click it to launch; it opens in
+your browser automatically. Safe mode works immediately with no further
+setup. If you turn Safe mode off, first launch takes a bit longer while
+it downloads the browser component it needs (needs a normal internet
+connection, one-time).
 
 Enter your LinkedIn/Instagram credentials from inside the app itself, in
 the **Settings** tab - no `.env` file editing required. They're written
@@ -98,7 +96,7 @@ way, it opens in your browser at `http://localhost:8501`. Leave that
 terminal window running while you work.
 
 You don't need `playwright install chromium` at all unless you plan to
-turn Mock mode off - mock mode never touches the browser component.
+turn Safe mode off - Safe mode never touches the browser component.
 
 Credentials go in the in-app **Settings** tab (writes to a local `.env`
 for you) - no manual file editing needed.
@@ -113,14 +111,13 @@ auto-reloads whenever you save a file (`runOnSave = true` in
 `.streamlit/config.toml`) - edit a scraper or `app.py`, save, and the
 browser tab updates within a second or two.
 
-## Notes on selector fragility (real scraping only, mock mode is unaffected)
+## Notes on selector fragility (real scraping only, Safe mode is unaffected)
 
-`scrapers/linkedin_salesnav.py`, `scrapers/instagram.py`, and
-`scrapers/behance.py` were written without live network access to verify
-current page markup. Each scraper tries several candidate CSS selectors
-per field as a hedge, but all three sites change their DOM regularly, so
-a real (mock=False) run may come back with 0 results until you adjust
-the selectors.
+`scrapers/linkedin_salesnav.py` and `scrapers/instagram.py` were written
+without live network access to verify current page markup. Each scraper
+tries several candidate CSS selectors per field as a hedge, but both
+sites change their DOM regularly, so a real (mock=False) run may come
+back with 0 results until you adjust the selectors.
 
 When that happens:
 
@@ -130,21 +127,17 @@ When that happens:
 2. Open that HTML file, find the real structure for the field that's
    missing, and update the relevant `*_SELECTORS` list at the top of the
    scraper file.
-3. If a page is shipping essentially empty HTML (fully client-rendered),
-   the DOM approach won't work at all for it - see the note in
-   `behance.py` about porting it to Playwright the same way the
-   LinkedIn/Instagram modules work.
 
 ## Data model
 
 SQLite (`data/scraper.db`, next to `app.py` or next to the packaged
-executable), shared across all sources:
+executable):
 
 - `companies` - name, source, url, industry, location, notes, first/last
   seen. Upserted by name, so the same studio discovered via multiple
-  sources accumulates notes rather than duplicating.
+  scrapes accumulates notes rather than duplicating.
 - `people` - name, title, company_name, location, profile_url, source.
-  Mainly populated by the LinkedIn scraper.
+  Populated by the LinkedIn scraper.
 - `job_postings` - title, company_name, url, location, description,
   source, posted_date. Populated when a source has an actual posting/
   hiring signal (e.g. an Instagram bio flagged as hiring).
@@ -157,9 +150,9 @@ to clear every table between test runs.
 ## Roadmap / not built yet
 
 - Company job-board scraping (many studios post openings on their own
-  career pages, not just LinkedIn/Behance/Instagram) - straightforward to
-  add per-studio once you have a company list from the above.
+  career pages, not just LinkedIn/Instagram) - straightforward to add
+  per-studio once you have a company list from the above.
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- Broader freelancing-platform features beyond 3D-artist job/studio
-  discovery (this is the planned direction long-term).
+- Broader freelancing-platform features beyond 3D-artist job discovery
+  (this is the planned direction long-term).
