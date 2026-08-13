@@ -4,14 +4,12 @@ from __future__ import annotations
 import os
 import random
 import time
-from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+from app_paths import BROWSER_DATA_DIR, ENV_PATH
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BROWSER_DATA_DIR = PROJECT_ROOT / "browser_data"
+load_dotenv(ENV_PATH)
 
 
 def env(name: str, default: str = "") -> str:

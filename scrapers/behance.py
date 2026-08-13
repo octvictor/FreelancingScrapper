@@ -24,16 +24,15 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 
+from app_paths import DEBUG_DIR
 from storage import db
 
 SEARCH_USERS_URL = "https://www.behance.net/search/users"
 SEARCH_PROJECTS_URL = "https://www.behance.net/search/projects"
-DEBUG_DIR = Path(__file__).resolve().parent.parent / "data" / "debug"
 
 HEADERS = {
     "User-Agent": (

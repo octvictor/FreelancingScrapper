@@ -8,11 +8,10 @@ can be browsed and cross-referenced in one place.
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 
 import pandas as pd
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "scraper.db"
+from app_paths import DB_PATH
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS companies (

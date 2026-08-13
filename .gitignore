@@ -12,4 +12,9 @@ data/*.csv
 browser_data/*
 !browser_data/.gitkeep
 
+# PyInstaller build artifacts (produced by build_app.sh / build_app.bat)
+build/
+dist/
+*.spec
+
 .DS_Store

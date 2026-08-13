@@ -34,15 +34,14 @@ from __future__ import annotations
 import json
 import time
 from datetime import datetime
-from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
+from app_paths import DEBUG_DIR
 from scrapers.common import env, launch_persistent_context, random_delay
 from storage import db
 
 LOGIN_URL = "https://www.instagram.com/accounts/login/"
-DEBUG_DIR = Path(__file__).resolve().parent.parent / "data" / "debug"
 
 HIRING_KEYWORDS = [
     "we're hiring", "we are hiring", "now hiring", "hiring now",

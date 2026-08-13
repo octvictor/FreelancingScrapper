@@ -27,15 +27,14 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
-from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
+from app_paths import DEBUG_DIR
 from scrapers.common import env, launch_persistent_context, random_delay
 from storage import db
 
 LOGIN_URL = "https://www.linkedin.com/login"
-DEBUG_DIR = Path(__file__).resolve().parent.parent / "data" / "debug"
 
 # Candidate selectors per field, tried in order. Sales Navigator's markup
 # shifts between rollouts, so we don't rely on a single selector.

@@ -6,8 +6,12 @@ import os
 
 import pandas as pd
 import streamlit as st
+from dotenv import load_dotenv, set_key
 
+from app_paths import ENV_PATH
 from storage import db
+
+load_dotenv(ENV_PATH)
 
 st.set_page_config(page_title="3D Artist Job Scraper", layout="wide")
 db.init_db()
@@ -22,8 +26,8 @@ st.sidebar.warning(
 st.sidebar.caption(f"LinkedIn credentials: {'configured' if os.environ.get('LINKEDIN_EMAIL') else 'not set'}")
 st.sidebar.caption(f"Instagram credentials: {'configured' if os.environ.get('INSTAGRAM_USERNAME') else 'not set'}")
 
-tab_linkedin, tab_behance, tab_instagram, tab_data = st.tabs(
-    ["LinkedIn Sales Navigator", "Behance", "Instagram", "Data Browser"]
+tab_linkedin, tab_behance, tab_instagram, tab_data, tab_settings = st.tabs(
+    ["LinkedIn Sales Navigator", "Behance", "Instagram", "Data Browser", "Settings"]
 )
 
 with tab_linkedin:
@@ -130,3 +134,58 @@ with tab_data:
     st.dataframe(df, use_container_width=True)
     if not df.empty:
         st.download_button("Export CSV", df.to_csv(index=False), file_name=f"{table}.csv")
+
+with tab_settings:
+    st.subheader("Settings")
+    st.caption(
+        f"Saved to {ENV_PATH} on this machine only - never sent anywhere else. "
+        "Leave a field blank to keep its current saved value."
+    )
+
+    with st.form("settings_form"):
+        st.markdown("**LinkedIn**")
+        li_email = st.text_input("LinkedIn email", value=os.environ.get("LINKEDIN_EMAIL", ""))
+        li_password = st.text_input("LinkedIn password", type="password", placeholder="leave blank to keep current")
+
+        st.markdown("**Instagram**")
+        ig_username = st.text_input("Instagram username", value=os.environ.get("INSTAGRAM_USERNAME", ""))
+        ig_password = st.text_input("Instagram password", type="password", placeholder="leave blank to keep current")
+
+        st.markdown("**Scraping behavior**")
+        headless = st.checkbox(
+            "Run browser headless (hidden)",
+            value=os.environ.get("BROWSER_HEADLESS", "False").strip().lower() in {"1", "true", "yes"},
+            help="Keep this OFF so you can see and solve login checkpoints (2FA, CAPTCHA) by hand.",
+        )
+        delay_min, delay_max = st.slider(
+            "Delay between page actions (seconds)",
+            min_value=0.5,
+            max_value=15.0,
+            value=(
+                float(os.environ.get("SCRAPE_DELAY_MIN", 2.0)),
+                float(os.environ.get("SCRAPE_DELAY_MAX", 5.0)),
+            ),
+            help="Longer delays look less like a bot. Don't shorten this just to finish runs faster.",
+        )
+
+        saved = st.form_submit_button("Save settings")
+
+    if saved:
+        updates = {
+            "BROWSER_HEADLESS": str(headless),
+            "SCRAPE_DELAY_MIN": str(delay_min),
+            "SCRAPE_DELAY_MAX": str(delay_max),
+        }
+        if li_email:
+            updates["LINKEDIN_EMAIL"] = li_email
+        if li_password:
+            updates["LINKEDIN_PASSWORD"] = li_password
+        if ig_username:
+            updates["INSTAGRAM_USERNAME"] = ig_username
+        if ig_password:
+            updates["INSTAGRAM_PASSWORD"] = ig_password
+
+        for key, value in updates.items():
+            set_key(str(ENV_PATH), key, value)
+        load_dotenv(ENV_PATH, override=True)
+        st.success("Saved. Other tabs will pick this up on their next run.")

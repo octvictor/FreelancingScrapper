@@ -38,9 +38,58 @@ different (and riskier) than scraping a public page:
   window is visible and you can solve them by hand; the script waits and
   continues automatically once you do.
 
-## Setup (one-time only)
+## Two ways to run this
 
-You only do this once per machine, not every time you want to test something:
+- **Packaged app** - build once, then just double-click an icon forever.
+  Best if you're not planning to edit the code.
+- **From source** - `git clone` + venv + a run script. Best if you're
+  actively changing scrapers/selectors, since edits take effect instantly
+  (no rebuild).
+
+You can do both; they don't conflict, and they share the same `.env`
+credentials once you fill them in via the in-app Settings tab.
+
+### Option A: packaged app (double-click, no terminal after setup)
+
+One-time build, on the same OS you'll actually use the app on (a build
+made on Mac won't run on Windows and vice versa):
+
+```bash
+./build_app.sh      # Windows: build_app.bat
+```
+
+This creates `dist/3DArtistScraper` (`dist/3DArtistScraper.exe` on
+Windows) - a single self-contained file with Python, Streamlit, and
+Playwright all bundled in. Move it wherever you like (Desktop,
+Applications, a Start Menu folder) and double-click it to launch; it
+opens in your browser automatically. First launch takes a bit longer
+while it downloads the browser component it needs (one-time, needs a
+normal internet connection); after that it's instant.
+
+Enter your LinkedIn/Instagram credentials from inside the app itself, in
+the **Settings** tab - no `.env` file editing required. They're written
+to a `.env` file that lives next to the executable and never leaves your
+machine.
+
+Re-run `build_app.sh`/`build_app.bat` only when you change
+`requirements.txt` or pull down new scraper code - not for regular use.
+
+**Heads up:** bundling Streamlit + Playwright together with PyInstaller
+is somewhat known to be finicky in general (this combination has real
+edge cases across different OS/Python setups). I built and verified this
+on Linux - the build completes, the app boots and serves correctly, and
+(most importantly) data/login sessions correctly persist next to the
+executable between launches rather than resetting every time. I was not
+able to verify an actual Windows or macOS build, since PyInstaller has to
+build on the OS it targets and this was built in a Linux sandbox. If your
+first build on Mac/Windows hits an error, save the full PyInstaller
+output and we'll fix it together - it's very likely a missing
+`--collect-all` flag for one dependency, not a fundamental problem with
+the approach.
+
+### Option B: from source (for actively editing the code)
+
+One-time setup:
 
 ```bash
 python3 -m venv .venv
@@ -50,9 +99,10 @@ playwright install chromium
 
 cp .env.example .env
 # then edit .env and fill in your LinkedIn/Instagram credentials
+# (or skip this and use the in-app Settings tab instead)
 ```
 
-## Running it (every time)
+Every time after that:
 
 ```bash
 ./run.sh       # Windows: run.bat
@@ -81,8 +131,9 @@ until you adjust the selectors.
 
 When that happens:
 
-1. Check `data/debug/` - each scraper dumps the page HTML there
-   automatically when it can't find any results.
+1. Check `data/debug/` (next to `app.py` when running from source, or
+   next to the executable for the packaged app) - each scraper dumps the
+   page HTML there automatically when it can't find any results.
 2. Open that HTML file, find the real structure for the field that's
    missing, and update the relevant `*_SELECTORS` list at the top of the
    scraper file.
@@ -93,7 +144,8 @@ When that happens:
 
 ## Data model
 
-SQLite (`data/scraper.db`), shared across all sources:
+SQLite (`data/scraper.db`, next to `app.py` or next to the packaged
+executable), shared across all sources:
 
 - `companies` - name, source, url, industry, location, notes, first/last
   seen. Upserted by name, so the same studio discovered via multiple
