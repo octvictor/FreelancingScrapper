@@ -1,7 +1,13 @@
 @echo off
-REM Double-click this file to start the app. First run also sets itself up
-REM (creates a virtual environment, installs packages) - that only happens
-REM once and takes a minute or two; every run after that just starts the app.
+REM Double-click this file to start the app. Creates a virtual environment
+REM the first time (takes a minute or two); every run - including this
+REM one - re-checks dependencies against requirements.txt, since a plain
+REM "pip install" is a fast no-op when everything's already satisfied.
+REM That's deliberate: skipping it whenever .venv already existed used to
+REM mean a requirements.txt change (like a new dependency) silently never
+REM got installed into an existing venv - which is exactly what caused a
+REM "No module named 'fastapi'" error here even after fastapi was added
+REM to requirements.txt.
 cd /d "%~dp0"
 
 if not exist ".venv" (
@@ -13,26 +19,23 @@ if not exist ".venv" (
         pause
         exit /b 1
     )
-    call .venv\Scripts\activate.bat
-    pip install -r requirements.txt
-    if errorlevel 1 (
-        echo.
-        echo Setup failed while installing packages - see the error above.
-        pause
-        exit /b 1
-    )
-) else (
-    call .venv\Scripts\activate.bat
+)
+call .venv\Scripts\activate.bat
+pip install -q -r requirements.txt
+if errorlevel 1 (
+    echo.
+    echo Setup failed while installing packages - see the error above.
+    pause
+    exit /b 1
 )
 
-REM No --reload here on purpose: uvicorn's reload spawns a subprocess to
-REM run the actual server, and on some Windows Python installs (notably
-REM the newer per-version "pythoncore-X.Y-64" layout) that subprocess
-REM doesn't correctly inherit this venv, causing "ModuleNotFoundError:
-REM No module named 'fastapi'" even though it's installed. Backend (.py)
-REM edits need a restart (Ctrl+C, then run.bat again) to take effect;
-REM frontend files (frontend/**) still update on a plain browser refresh,
-REM no restart needed either way.
+REM No --reload here: uvicorn's reload uses a subprocess-based file
+REM watcher, and there's a known class of issue where that subprocess
+REM doesn't correctly inherit an active venv on some Windows setups.
+REM Staying conservative here rather than risk another confusing crash -
+REM backend (.py) edits need a manual restart (Ctrl+C, then run.bat
+REM again) to take effect. Frontend files (frontend/**) always update on
+REM a plain browser refresh, no restart needed either way.
 start /b python -c "import time, webbrowser; time.sleep(1.2); webbrowser.open('http://127.0.0.1:8501')"
 uvicorn server:app --port 8501
 pause

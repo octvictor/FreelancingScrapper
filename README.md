@@ -116,12 +116,18 @@ just refresh the browser tab, no restart needed, on any OS.
 Backend files (`server.py`, `api/*.py`, `scrapers/*.py`): on Mac/Linux,
 `run.sh` passes uvicorn `--reload`, which watches those files and
 restarts the server automatically on save. `run.bat` does **not** use
-`--reload` - uvicorn's reload mechanism spawns a subprocess that, on
-some Windows Python installs (the newer per-version
-`pythoncore-X.Y-64` layout in particular), fails to inherit the venv
-and crashes with `ModuleNotFoundError: No module named 'fastapi'`. So
-on Windows, a backend edit needs a manual restart: `Ctrl+C` in the
-`run.bat` window, then run it again.
+`--reload`, staying conservative around a known class of issue where its
+subprocess-based file watcher doesn't correctly inherit an active venv
+on some Windows setups. So on Windows, a backend edit needs a manual
+restart: `Ctrl+C` in the `run.bat` window, then run it again.
+
+Both `run.sh` and `run.bat` re-run `pip install -r requirements.txt`
+every time (not just the first time `.venv` is created) - a plain-satisfied
+install is a fast no-op, and this is what actually picks up a
+`requirements.txt` change (like a new dependency) into an existing venv.
+An earlier version of these scripts only installed once, which meant
+pulling a change that added a new dependency didn't actually install it
+into a venv from before that change - the fix is on both scripts now.
 
 ## Project layout
 
