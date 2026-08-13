@@ -111,9 +111,17 @@ typing commands. `run.bat` handles all of this correctly on its own.
 
 **Testing a code change:** frontend files (`frontend/index.html`,
 `frontend/static/**`) are served straight from disk - edit, save, and
-just refresh the browser tab, no restart needed. Backend files
-(`server.py`, `api/*.py`, `scrapers/*.py`) are watched by uvicorn's
-`--reload` and restart the server automatically on save.
+just refresh the browser tab, no restart needed, on any OS.
+
+Backend files (`server.py`, `api/*.py`, `scrapers/*.py`): on Mac/Linux,
+`run.sh` passes uvicorn `--reload`, which watches those files and
+restarts the server automatically on save. `run.bat` does **not** use
+`--reload` - uvicorn's reload mechanism spawns a subprocess that, on
+some Windows Python installs (the newer per-version
+`pythoncore-X.Y-64` layout in particular), fails to inherit the venv
+and crashes with `ModuleNotFoundError: No module named 'fastapi'`. So
+on Windows, a backend edit needs a manual restart: `Ctrl+C` in the
+`run.bat` window, then run it again.
 
 ## Project layout
 

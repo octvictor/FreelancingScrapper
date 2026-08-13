@@ -25,6 +25,14 @@ if not exist ".venv" (
     call .venv\Scripts\activate.bat
 )
 
+REM No --reload here on purpose: uvicorn's reload spawns a subprocess to
+REM run the actual server, and on some Windows Python installs (notably
+REM the newer per-version "pythoncore-X.Y-64" layout) that subprocess
+REM doesn't correctly inherit this venv, causing "ModuleNotFoundError:
+REM No module named 'fastapi'" even though it's installed. Backend (.py)
+REM edits need a restart (Ctrl+C, then run.bat again) to take effect;
+REM frontend files (frontend/**) still update on a plain browser refresh,
+REM no restart needed either way.
 start /b python -c "import time, webbrowser; time.sleep(1.2); webbrowser.open('http://127.0.0.1:8501')"
-uvicorn server:app --reload --port 8501
+uvicorn server:app --port 8501
 pause
