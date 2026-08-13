@@ -85,27 +85,28 @@ down new scraper code - not for regular use.
 
 ### Option B: from source (for actively editing the code)
 
-One-time setup:
+Just run:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-playwright install chromium      # only needed if you'll turn Mock mode off
-
-cp .env.example .env
-# then edit .env, or just use the in-app Settings tab
+./run.sh       # Windows: run.bat (double-click it) / Mac: run.command (double-click it)
 ```
 
-Every time after that:
+**First time**, this sets itself up automatically - creates a virtual
+environment and installs everything - which takes a minute or two.
+**Every time after that**, it just starts the app straight away. Either
+way, it opens in your browser at `http://localhost:8501`. Leave that
+terminal window running while you work.
 
-```bash
-./run.sh       # Windows: run.bat
-```
+You don't need `playwright install chromium` at all unless you plan to
+turn Mock mode off - mock mode never touches the browser component.
 
-That activates the venv and starts the app - it opens in your browser at
-`http://localhost:8501`. Leave that terminal window running while you
-work.
+Credentials go in the in-app **Settings** tab (writes to a local `.env`
+for you) - no manual file editing needed.
+
+**Windows note:** if you're using PowerShell and see errors about
+`source` not being recognized, or about running scripts being disabled -
+ignore them and just double-click `run.bat` in File Explorer instead of
+typing commands. `run.bat` handles all of this correctly on its own.
 
 **Testing a code change:** you don't need to restart anything. The app
 auto-reloads whenever you save a file (`runOnSave = true` in
