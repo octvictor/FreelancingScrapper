@@ -1,24 +1,23 @@
 /* Design tokens - adjust these to retune the whole app's look.
-   Tuned to match a reference dark desktop-tool screenshot: truly
-   neutral grays (R=G=B - the previous pass had B running a couple
-   points above R/G on every gray, which reads as a blue cast once it's
-   everywhere), and noticeably brighter panels/borders/text than a
-   generic "as dark as possible" theme - the reference's card borders
-   are clearly visible, not barely-there. Blue is reserved for
-   checkboxes/small controls only, kept separate from the near-white
-   accent on primary buttons. */
+   Warm greys throughout - every gray is nudged toward yellow-brown
+   instead of blue (R > G > B by a few points on each step), which is
+   what gives the palette its character over a flat neutral (R=G=B)
+   theme, at basically no cost. Panels/borders/text stay bright enough
+   that card borders read as clearly visible, not barely-there. Blue is
+   reserved for checkboxes/small controls only, kept separate from the
+   near-white accent on primary buttons. */
 :root {
-    --bg: #111111;
-    --panel: #171717;
-    --panel-alt: #202020;
-    --border: #363636;
-    --border-soft: #292929;
-    --text: #f2f2f2;
-    --text-muted: #a8a8a8;
-    --text-faint: #7a7a7a;
-    --accent: #f5f5f5;
-    --accent-text: #111111;
-    --accent-blue: #3b82f6;
+    --bg: #191917;
+    --panel: #201f1e;
+    --panel-alt: #242322;
+    --border: #3a3a38;
+    --border-soft: #2b2a28;
+    --text: #f5f4f1;
+    --text-muted: #8c8a83;
+    --text-faint: #78766f;
+    --accent: #f5f4f1;
+    --accent-text: #191917;
+    --accent-blue: #7fb2d9;
     --green: #22c55e;
     --red: #e57373;
     --danger-text: #f2a3a3;
