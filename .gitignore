@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# scraped data / local db
+data/*.db
+data/*.csv
+
+# persistent browser login sessions (contain auth cookies - never commit)
+browser_data/*
+!browser_data/.gitkeep
+
+.DS_Store

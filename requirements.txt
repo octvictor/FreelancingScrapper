@@ -1,0 +1,6 @@
+streamlit>=1.37
+playwright>=1.46
+pandas>=2.2
+beautifulsoup4>=4.12
+requests>=2.32
+python-dotenv>=1.0
