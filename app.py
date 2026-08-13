@@ -19,6 +19,25 @@ db.init_db()
 
 st.sidebar.title("3D Artist Job Scraper")
 
+# Streamlit doesn't expose a per-state color option for st.toggle, so this
+# recolors it directly. Targeted by the widget's aria-label (stable, since
+# it's just the label text we pass below) rather than Streamlit's hashed
+# CSS class names (those change between versions) - the toggle's on/off
+# state shows up as a data-selected attribute on its <label>.
+st.markdown(
+    """
+    <style>
+    label:has(input[aria-label="Mock mode (safe demo data)"]) > div:not([data-testid]) {
+        background-color: #e57373 !important; /* pastel/saturated red - OFF */
+    }
+    label[data-selected="true"]:has(input[aria-label="Mock mode (safe demo data)"]) > div:not([data-testid]) {
+        background-color: #22c55e !important; /* green - ON */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 mock = st.sidebar.toggle(
     "Mock mode (safe demo data)",
     value=default_mock_mode(),
@@ -85,29 +104,37 @@ with tab_linkedin:
 
 with tab_behance:
     st.subheader("Behance")
-    st.caption(
-        "Discover CG/3D studios via Behance user/team or project search."
-        + (" Mock mode: generates realistic fake studio leads." if mock else "")
+    if mock:
+        st.caption("Mock mode: generates realistic fake studio leads. The URL below is ignored.")
+    else:
+        st.caption(
+            "Go to behance.net, search or filter however you like - keyword, the "
+            "**Tools** filter, their **Jobs** search, any combination - then paste "
+            "the URL from your address bar below."
+        )
+    be_url = st.text_input(
+        "Behance search URL",
+        key="be_url",
+        disabled=mock,
+        placeholder="https://www.behance.net/search/projects?search=3D&tools=Blender",
     )
-    query = st.text_input("Search query", value="3D studio", key="be_query")
-    pages = st.number_input("Pages to fetch", min_value=1, max_value=10, value=1, key="be_pages", disabled=mock)
-    search_mode = st.radio("Search", ["Users/teams", "Projects"], horizontal=True, key="be_mode")
+    be_pages = st.number_input("Pages to fetch", min_value=1, max_value=10, value=1, key="be_pages", disabled=mock)
     if st.button("Start Scraping", key="be_start"):
-        from scrapers import behance
+        if not mock and not be_url:
+            st.error("Paste a Behance search URL first (or turn on Mock mode).")
+        else:
+            from scrapers import behance
 
-        with st.spinner("Generating mock studio leads..." if mock else "Searching Behance..."):
-            try:
-                if search_mode == "Users/teams":
-                    results = behance.search_users(query, pages=int(pages), mock=mock)
-                else:
-                    results = behance.search_projects_for_studios(query, pages=int(pages), mock=mock)
-                st.success(f"Found {len(results)} leads.")
-                df = pd.DataFrame(results)
-                st.dataframe(df, use_container_width=True)
-                if not df.empty:
-                    st.download_button("Export CSV", df.to_csv(index=False), file_name="behance_studios.csv")
-            except Exception as exc:  # noqa: BLE001 - surface scraper failures in the UI instead of crashing the app
-                st.error(f"Scrape failed: {exc}")
+            with st.spinner("Generating mock studio leads..." if mock else "Searching Behance - a browser window may open..."):
+                try:
+                    results = behance.search(be_url, pages=int(be_pages), mock=mock)
+                    st.success(f"Found {len(results)} leads.")
+                    df = pd.DataFrame(results)
+                    st.dataframe(df, use_container_width=True)
+                    if not df.empty:
+                        st.download_button("Export CSV", df.to_csv(index=False), file_name="behance_leads.csv")
+                except Exception as exc:  # noqa: BLE001 - surface scraper failures in the UI instead of crashing the app
+                    st.error(f"Scrape failed: {exc}")
 
 with tab_instagram:
     st.subheader("Instagram")
@@ -161,14 +188,24 @@ with tab_instagram:
 
 with tab_data:
     st.subheader("Data Browser")
+    st.caption("Shows everything scraped so far, from every source and both Mock and real runs - same shared database.")
     table = st.selectbox("Table", ["companies", "people", "job_postings", "scrape_runs"])
     df = db.fetch_table(table)
     filter_text = st.text_input("Filter (matches any column, case-insensitive)")
     if filter_text and not df.empty:
         mask = df.astype(str).apply(lambda col: col.str.contains(filter_text, case=False, na=False)).any(axis=1)
         df = df[mask]
-    st.dataframe(df, use_container_width=True)
-    if not df.empty:
+    if df.empty:
+        st.info(
+            "Nothing here yet. This fills up after you click **Start Scraping** (or "
+            "**Scan Profiles**) in one of the other tabs - it doesn't happen "
+            "automatically just by switching Mock mode on or off. Check the "
+            "**scrape_runs** table above if you did run something and still see "
+            "nothing here - it logs every attempt, including failed ones, with the "
+            "error message."
+        )
+    else:
+        st.dataframe(df, use_container_width=True)
         st.download_button("Export CSV", df.to_csv(index=False), file_name=f"{table}.csv")
 
 with tab_settings:

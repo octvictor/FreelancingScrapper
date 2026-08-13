@@ -15,8 +15,6 @@ import sys
 from pathlib import Path
 
 import pandas  # noqa: F401
-import requests  # noqa: F401
-from bs4 import BeautifulSoup  # noqa: F401
 from dotenv import load_dotenv, set_key  # noqa: F401
 
 import app_paths  # noqa: F401
