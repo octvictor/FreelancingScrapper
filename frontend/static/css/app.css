@@ -107,6 +107,14 @@ button, input, select, textarea {
     width: 100%;
 }
 
+/* Shown in a sidebar group that has no real nav items wired up yet. */
+.nav-empty-placeholder {
+    padding: 8px 10px;
+    color: var(--text-faint);
+    font-size: 13px;
+    font-style: italic;
+}
+
 .nav-item:hover {
     background: var(--panel-alt);
     color: var(--text);
@@ -571,25 +579,23 @@ table.task-table td:nth-child(6) {
     color: var(--text-muted);
 }
 
-/* Duration is a magnitude (how much of a day), not a status judgment -
-   a neutral blue tonal ramp (strongest for Full, faint for Half) reads
-   as "how much" without accidentally implying "good/bad" the way a
-   red/amber/purple rainbow would. Custom isn't on that scale at all
-   (it's "manual", not a fraction of a day), so it stays plain grey -
-   same treatment as other non-judgmental fields like Paid/Type. */
+/* Duration's Full/Half are a magnitude (how much of a day) on the same
+   blue scale; Custom isn't on that scale at all (it's "manual", not a
+   fraction of a day), so it gets its own distinct hue (purple) rather
+   than reading as a third, even-fainter step of the same blue. */
 .color-pill.duration-full {
     background: rgba(127, 178, 217, 0.32);
     color: var(--text);
 }
 
 .color-pill.duration-half {
-    background: rgba(127, 178, 217, 0.09);
-    color: var(--text-faint);
+    background: rgba(127, 178, 217, 0.16);
+    color: #8fb4d4;
 }
 
 .color-pill.duration-custom {
-    background: var(--panel-alt);
-    color: var(--text-muted);
+    background: rgba(168, 85, 247, 0.14);
+    color: #c9a3fb;
 }
 
 .cell-select option[value="Full"],
@@ -600,14 +606,14 @@ table.task-table td:nth-child(6) {
 
 .cell-select option[value="Half"],
 .custom-select-option[data-value="Half"] {
-    background: var(--panel-alt);
-    color: var(--text-faint);
+    background: #1a262f;
+    color: #8fb4d4;
 }
 
 .cell-select option[value="Custom"],
 .custom-select-option[data-value="Custom"] {
-    background: var(--panel-alt);
-    color: var(--text-muted);
+    background: #241a33;
+    color: #c9a3fb;
 }
 
 /* ---------- Custom dropdown (replaces native <select> popups) ----------

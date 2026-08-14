@@ -6,7 +6,9 @@ plain static files, so nothing extra to install), with a vertical tool
 menu in the sidebar. Currently:
 
 Both tools live under a collapsible **Tools** section in the sidebar
-(click the section header to fold/unfold it):
+(click the section header to fold/unfold it). Below it sits a second,
+currently-empty collapsible section, **Management** - a placeholder
+shell for future non-tool items, not wired up to anything yet.
 
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
