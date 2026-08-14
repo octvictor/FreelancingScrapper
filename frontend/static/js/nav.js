@@ -12,8 +12,7 @@ function showPage(page) {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    document.querySelector(".main").classList.toggle("main-wide", page === "gatherer");
-    document.querySelector(".main").classList.toggle("main-full", page === "tracker");
+    document.querySelector(".main").classList.toggle("main-wide", page === "gatherer" || page === "tracker");
 }
 
 document.querySelectorAll(".nav-item").forEach((btn) => {
@@ -27,6 +26,17 @@ document.querySelectorAll(".nav-item").forEach((btn) => {
 // The nav-item marked "active" in the HTML never fires a click, so the
 // layout classes above would otherwise never apply to it on first load.
 showPage(document.querySelector(".nav-item.active").dataset.page);
+
+// ---------- Collapsible sidebar groups ----------
+
+document.querySelectorAll(".sidebar-group-header").forEach((header) => {
+    header.addEventListener("click", () => {
+        const target = $(header.dataset.collapseTarget);
+        if (!target) return;
+        target.classList.toggle("collapsed");
+        header.classList.toggle("collapsed");
+    });
+});
 
 // ---------- Custom dropdown ----------
 // Replaces a native <select>'s popup, which browsers won't let CSS fully

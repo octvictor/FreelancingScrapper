@@ -26,6 +26,7 @@ class ProjectUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     status: str | None = None
+    paid: str | None = None
     client: str | None = None
     deadline: str | None = None
     day_rate: float | None = None
@@ -33,6 +34,10 @@ class ProjectUpdate(BaseModel):
     assets_text: str | None = None
     notes_text: str | None = None
     briefing_text: str | None = None
+
+
+class ReorderPayload(BaseModel):
+    ids: list[int]
 
 
 class TaskUpdate(BaseModel):
@@ -56,6 +61,12 @@ def list_projects():
 @router.post("/projects")
 def create_project():
     return db.create_project()
+
+
+@router.put("/projects/reorder")
+def reorder_projects(payload: ReorderPayload):
+    db.reorder_projects(payload.ids)
+    return {"ok": True}
 
 
 @router.get("/projects/{project_id}")

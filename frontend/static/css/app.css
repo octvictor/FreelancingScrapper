@@ -118,13 +118,69 @@ button, input, select, textarea {
     font-weight: 600;
 }
 
-.sidebar-section {
-    border-top: 1px solid var(--border-soft);
-    padding-top: 16px;
-    margin-top: auto;
+/* ---------- Collapsible sidebar group ---------- */
+
+.sidebar-group {
+    margin-bottom: 16px;
+}
+
+.sidebar-group-header {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px 8px;
+    cursor: pointer;
+}
+
+.sidebar-group-header:hover {
+    color: var(--text-muted);
+}
+
+.sidebar-group-chevron {
+    display: inline-block;
+    font-size: 9px;
+    transition: transform 0.15s ease;
+}
+
+.sidebar-group-header.collapsed .sidebar-group-chevron {
+    transform: rotate(-90deg);
+}
+
+.nav-list.collapsed {
+    display: none;
+}
+
+/* Chip-styled nav buttons - bordered rounded box with a small icon,
+   instead of the plain borderless row this used to be. */
+.nav-item-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    margin-bottom: 4px;
+}
+
+.nav-item-chip:last-child {
+    margin-bottom: 0;
+}
+
+.nav-item-chip.active {
+    border-color: var(--border);
+}
+
+.nav-item-icon {
+    font-size: 13px;
+    color: var(--text-faint);
+    flex-shrink: 0;
 }
 
 .muted {
@@ -145,13 +201,6 @@ button, input, select, textarea {
    on other pages do - toggled by nav.js when Gatherer is the active page. */
 .main.main-wide {
     max-width: 1400px;
-}
-
-/* Tracker's cards need to center across the actual visible width next
-   to the sidebar, not within a left-pinned 900px column - a fixed
-   max-width here would leave lopsided empty space on wide windows. */
-.main.main-full {
-    max-width: none;
 }
 
 .page-title {
@@ -231,14 +280,16 @@ input[type="url"]:focus {
 }
 
 table.gatherer-table,
-table.task-table {
+table.task-table,
+table.project-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
 }
 
 table.gatherer-table th,
-table.task-table th {
+table.task-table th,
+table.project-table th {
     text-align: left;
     text-transform: uppercase;
     font-size: 10.5px;
@@ -250,14 +301,16 @@ table.task-table th {
 }
 
 table.gatherer-table td,
-table.task-table td {
+table.task-table td,
+table.project-table td {
     padding: 4px 6px;
     border-bottom: 1px solid var(--border-soft);
     vertical-align: middle;
 }
 
 table.gatherer-table tr:last-child td,
-table.task-table tr:last-child td {
+table.task-table tr:last-child td,
+table.project-table tr:last-child td {
     border-bottom: none;
 }
 
@@ -447,6 +500,18 @@ table.task-table td:nth-child(6) {
     color: var(--text-muted);
 }
 
+.cell-select option[value="Paid"],
+.custom-select-option[data-value="Paid"] {
+    background: #123321;
+    color: #86efac;
+}
+
+.cell-select option[value="Unpaid"],
+.custom-select-option[data-value="Unpaid"] {
+    background: var(--panel-alt);
+    color: var(--text-muted);
+}
+
 .cell-select option[value="Active"],
 .custom-select-option[data-value="Active"] {
     background: #3d2a0d;
@@ -469,6 +534,16 @@ table.task-table td:nth-child(6) {
 .color-pill.status-completed {
     background: rgba(34, 197, 94, 0.12);
     color: #86efac;
+}
+
+.color-pill.paid-paid {
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+}
+
+.color-pill.paid-unpaid {
+    background: var(--panel-alt);
+    color: var(--text-muted);
 }
 
 .color-pill.duration-full {
@@ -618,12 +693,18 @@ table.task-table td:nth-child(6) {
     background: rgba(229, 115, 115, 0.1);
 }
 
-/* ---------- Tracker: project cards ---------- */
+/* ---------- Tracker: project table ---------- */
+
+.tracker-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
 
 .view-toggle {
     display: flex;
     gap: 8px;
-    margin-bottom: 20px;
 }
 
 .view-toggle-btn {
@@ -661,60 +742,62 @@ table.task-table td:nth-child(6) {
     color: #86efac;
 }
 
-.project-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+table.project-table th:nth-child(1),
+table.project-table td:nth-child(1) {
+    width: 32px;
+    min-width: 32px;
+    padding-right: 0;
 }
 
-.project-card {
-    width: 260px;
-    min-height: 110px;
-    background: var(--panel);
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-lg);
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+table.project-table th:nth-child(2),
+table.project-table td:nth-child(2) {
+    min-width: 200px;
+}
+
+table.project-table th:nth-child(3),
+table.project-table td:nth-child(3) {
+    min-width: 260px;
+    max-width: 420px;
+}
+
+table.project-table td.project-row-title {
+    font-weight: 600;
+    color: var(--text);
     cursor: pointer;
-    text-align: left;
-    font-family: inherit;
 }
 
-.project-card:hover {
-    border-color: var(--border);
+table.project-table td.project-row-desc {
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+table.project-table tr.dragging {
+    opacity: 0.4;
+}
+
+.row-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    color: var(--text-faint);
+    font-size: 16px;
+    line-height: 1;
+    cursor: grab;
+    border-radius: var(--radius-sm);
+}
+
+.row-drag-handle:hover {
+    color: var(--text-muted);
     background: var(--panel-alt);
 }
 
-.project-card-title {
-    font-size: 14.5px;
-    font-weight: 600;
-    color: var(--text);
-}
-
-.project-card-date {
-    font-size: 12px;
-    color: var(--text-faint);
-    margin-top: auto;
-}
-
-.project-card-new {
-    justify-content: center;
-    align-items: center;
-    border-style: dashed;
-    color: var(--text-faint);
-    gap: 4px;
-}
-
-.project-card-new:hover {
-    color: var(--text);
-}
-
-.project-card-new-plus {
-    font-size: 22px;
-    line-height: 1;
+.row-drag-handle:active {
+    cursor: grabbing;
 }
 
 /* ---------- Project detail modal ---------- */

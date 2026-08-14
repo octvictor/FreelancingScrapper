@@ -11,24 +11,52 @@
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand">Freelancing Tools</div>
-            <ul class="nav-list">
-                <li><button class="nav-item active" data-page="tracker">Tracker</button></li>
-                <li><button class="nav-item" data-page="gatherer">Gatherer</button></li>
-            </ul>
+            <div class="sidebar-group">
+                <button class="sidebar-group-header" type="button" data-collapse-target="nav-group-management">
+                    <span class="sidebar-group-chevron">&#9662;</span>
+                    <span>Management</span>
+                </button>
+                <ul class="nav-list" id="nav-group-management">
+                    <li><button class="nav-item nav-item-chip active" data-page="tracker">
+                        <span class="nav-item-icon">&#9635;</span> Project Manager
+                    </button></li>
+                    <li><button class="nav-item nav-item-chip" data-page="gatherer">
+                        <span class="nav-item-icon">&#9638;</span> Studio Database
+                    </button></li>
+                </ul>
+            </div>
         </aside>
 
         <main class="main">
             <section id="page-tracker">
-                <h1 class="page-title">Tracker</h1>
-                <div class="view-toggle">
-                    <button class="view-toggle-btn active" id="view-toggle-active" type="button" data-view="Active">Active</button>
-                    <button class="view-toggle-btn" id="view-toggle-completed" type="button" data-view="Completed">Completed</button>
+                <h1 class="page-title">Project Manager</h1>
+                <div class="tracker-toolbar">
+                    <button class="btn" id="new-project-btn" type="button">+ New project</button>
+                    <div class="view-toggle">
+                        <button class="view-toggle-btn active" id="view-toggle-active" type="button" data-view="Active">Active</button>
+                        <button class="view-toggle-btn" id="view-toggle-completed" type="button" data-view="Completed">Completed</button>
+                    </div>
                 </div>
-                <div class="project-grid" id="project-grid"></div>
+                <div class="panel">
+                    <div class="gatherer-table-wrap">
+                        <table class="project-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Paid</th>
+                                </tr>
+                            </thead>
+                            <tbody id="project-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <section id="page-gatherer" style="display:none;">
-                <h1 class="page-title">Gatherer</h1>
+                <h1 class="page-title">Studio Database</h1>
                 <p class="muted" style="margin: -10px 0 18px;">Studios and companies you're tracking - add a row, fill it in, it saves as you type.</p>
 
                 <div class="panel">

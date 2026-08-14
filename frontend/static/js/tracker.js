@@ -1,7 +1,8 @@
-// Tracker tool - project cards backed by /api/tracker. Cards show
-// title + status; clicking one opens a modal with the full detail form
-// (status/deadline/day rate/Docs). Fields autosave on blur/change, same
-// Notion-style pattern as Gatherer. $() comes from nav.js.
+// Tracker tool - a project table backed by /api/tracker. Rows show
+// title/description/status/paid, with Status and Paid directly
+// editable inline (same pattern as Gatherer); clicking anywhere else on
+// a row opens a modal with the full detail form (status/deadline/day
+// rate/Docs/Log). Fields autosave on blur/change. $() comes from nav.js.
 
 let trackerProjects = [];
 let activeProjectId = null;
@@ -52,39 +53,136 @@ function computeAutoCost(duration) {
     return null;
 }
 
-function formatDeadline(deadline) {
-    if (!deadline) return "";
-    const [y, m, d] = deadline.split("-").map(Number);
-    if (!y || !m || !d) return "";
-    return new Date(y, m - 1, d).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+function paidPillClass(paid) {
+    return paid === "Paid" ? "paid-paid" : "paid-unpaid";
 }
 
-function projectCardHtml(project) {
-    const deadlineHtml = formatDeadline(project.deadline);
+function projectRowHtml(project) {
+    const isCompleted = project.status === "Completed";
+    const isPaid = project.paid === "Paid";
     return `
-        <button class="project-card" data-id="${project.id}" type="button">
-            <div class="project-card-title">${escapeAttr(project.title) || "Untitled project"}</div>
-            <span class="color-pill ${trackerStatusPillClass(project.status)}">&#9679; ${escapeAttr(project.status)}</span>
-            ${deadlineHtml ? `<div class="project-card-date">${deadlineHtml}</div>` : ""}
-        </button>
+        <tr data-id="${project.id}">
+            <td class="row-drag-handle-cell"><span class="row-drag-handle" title="Drag to reorder">&#8942;</span></td>
+            <td class="project-row-title">${escapeAttr(project.title) || "Untitled project"}</td>
+            <td class="project-row-desc">${escapeAttr(project.description || "")}</td>
+            <td>
+                <select class="cell-select color-pill ${trackerStatusPillClass(project.status)}" data-field="status">
+                    <option value="Active" ${!isCompleted ? "selected" : ""}>&#9679; Active</option>
+                    <option value="Completed" ${isCompleted ? "selected" : ""}>&#9679; Completed</option>
+                </select>
+            </td>
+            <td>
+                <select class="cell-select color-pill ${paidPillClass(project.paid)}" data-field="paid">
+                    <option value="Unpaid" ${!isPaid ? "selected" : ""}>&#9679; Unpaid</option>
+                    <option value="Paid" ${isPaid ? "selected" : ""}>&#9679; Paid</option>
+                </select>
+            </td>
+        </tr>
     `;
 }
 
-function renderProjectGrid() {
+function renderProjectTable() {
+    cleanupCustomSelectsIn($("project-table-body"));
     const visible = trackerProjects.filter((p) => p.status === activeView);
-    const cards = visible.map(projectCardHtml).join("");
-    $("project-grid").innerHTML = `
-        ${cards}
-        <button class="project-card project-card-new" id="new-project-btn" type="button">
-            <span class="project-card-new-plus">+</span>
-            <span>New project</span>
-        </button>
-    `;
+    $("project-table-body").innerHTML = visible.length
+        ? visible.map(projectRowHtml).join("")
+        : `<tr><td colspan="5" class="muted" style="padding: 14px 10px;">No projects yet.</td></tr>`;
 
-    document.querySelectorAll(".project-card[data-id]").forEach((card) => {
-        card.addEventListener("click", () => openProjectModal(parseInt(card.dataset.id, 10)));
+    document.querySelectorAll("#project-table-body tr[data-id]").forEach((tr) => {
+        const projectId = parseInt(tr.dataset.id, 10);
+
+        tr.addEventListener("click", (e) => {
+            if (e.target.closest(".custom-select-wrap, .row-drag-handle")) return;
+            openProjectModal(projectId);
+        });
+
+        const statusSelect = tr.querySelector(".cell-select[data-field='status']");
+        statusSelect.addEventListener("change", (e) => {
+            statusSelect.classList.remove("status-active", "status-completed");
+            statusSelect.classList.add(trackerStatusPillClass(e.target.value));
+            saveProjectField(projectId, { status: e.target.value });
+        });
+        enhanceSelect(statusSelect);
+
+        const paidSelect = tr.querySelector(".cell-select[data-field='paid']");
+        paidSelect.addEventListener("change", (e) => {
+            paidSelect.classList.remove("paid-paid", "paid-unpaid");
+            paidSelect.classList.add(paidPillClass(e.target.value));
+            saveProjectField(projectId, { paid: e.target.value });
+        });
+        enhanceSelect(paidSelect);
+
+        wireRowDrag(tr);
     });
-    $("new-project-btn").addEventListener("click", createProject);
+}
+
+async function saveProjectField(projectId, updates) {
+    const resp = await fetch(`/api/tracker/projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+    });
+    if (!resp.ok) return;
+    const updated = await resp.json();
+    const idx = trackerProjects.findIndex((p) => p.id === updated.id);
+    if (idx !== -1) trackerProjects[idx] = updated;
+    // A status change can move the row out of the currently visible
+    // tab - re-render so it disappears/appears immediately rather than
+    // waiting for the next unrelated refresh.
+    if (updates.status !== undefined) renderProjectTable();
+}
+
+// ---------- Drag-to-reorder ----------
+// Native HTML5 drag-and-drop, but only armed from the grip handle (not
+// the whole row) - mousedown on the handle flips the row's `draggable`
+// on, dragend flips it back off.
+
+let draggedRow = null;
+
+function wireRowDrag(tr) {
+    const handle = tr.querySelector(".row-drag-handle");
+    handle.addEventListener("mousedown", () => {
+        tr.draggable = true;
+    });
+
+    tr.addEventListener("dragstart", (e) => {
+        draggedRow = tr;
+        tr.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+    });
+
+    tr.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (!draggedRow || draggedRow === tr) return;
+        const rect = tr.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        if (e.clientY < midpoint) {
+            tr.parentNode.insertBefore(draggedRow, tr);
+        } else {
+            tr.parentNode.insertBefore(draggedRow, tr.nextSibling);
+        }
+    });
+
+    tr.addEventListener("dragend", () => {
+        tr.draggable = false;
+        tr.classList.remove("dragging");
+        if (draggedRow === tr) {
+            draggedRow = null;
+            persistRowOrder();
+        }
+    });
+}
+
+async function persistRowOrder() {
+    const ids = Array.from(document.querySelectorAll("#project-table-body tr[data-id]")).map((tr) => parseInt(tr.dataset.id, 10));
+    await fetch("/api/tracker/projects/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+    });
+    const resp = await fetch("/api/tracker/projects");
+    const data = await resp.json();
+    trackerProjects = data.projects;
 }
 
 document.querySelectorAll(".view-toggle-btn").forEach((btn) => {
@@ -92,7 +190,7 @@ document.querySelectorAll(".view-toggle-btn").forEach((btn) => {
         activeView = btn.dataset.view;
         document.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        renderProjectGrid();
+        renderProjectTable();
     });
 });
 
@@ -109,9 +207,11 @@ async function createProject() {
         document.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === "Active"));
     }
 
-    renderProjectGrid();
+    renderProjectTable();
     openProjectModal(project.id);
 }
+
+$("new-project-btn").addEventListener("click", createProject);
 
 // ---------- Modal ----------
 
@@ -314,7 +414,7 @@ async function saveActiveProject(updates) {
     const updated = await resp.json();
     const idx = trackerProjects.findIndex((p) => p.id === updated.id);
     if (idx !== -1) trackerProjects[idx] = updated;
-    renderProjectGrid();
+    renderProjectTable();
 }
 
 // ---------- Side panel: Assets/Notes/Briefing ----------
@@ -408,12 +508,12 @@ $("delete-project-btn").addEventListener("click", async () => {
     await fetch(`/api/tracker/projects/${activeProjectId}`, { method: "DELETE" });
     trackerProjects = trackerProjects.filter((p) => p.id !== activeProjectId);
     closeProjectModal();
-    renderProjectGrid();
+    renderProjectTable();
 });
 
 (async function initTracker() {
     const resp = await fetch("/api/tracker/projects");
     const data = await resp.json();
     trackerProjects = data.projects;
-    renderProjectGrid();
+    renderProjectTable();
 })();

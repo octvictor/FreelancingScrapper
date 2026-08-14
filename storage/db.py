@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS projects (
     title TEXT NOT NULL DEFAULT '',
     description TEXT,
     status TEXT NOT NULL DEFAULT 'Active',
+    paid TEXT NOT NULL DEFAULT 'Unpaid',
     client TEXT,
     deadline TEXT,
     day_rate REAL,
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS projects (
     assets_text TEXT,
     notes_text TEXT,
     briefing_text TEXT,
+    position INTEGER,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -89,6 +91,17 @@ def init_db() -> None:
         for side_field in ("assets_text", "notes_text", "briefing_text"):
             if side_field not in columns:
                 conn.execute(f"ALTER TABLE projects ADD COLUMN {side_field} TEXT")
+        if "paid" not in columns:
+            conn.execute("ALTER TABLE projects ADD COLUMN paid TEXT NOT NULL DEFAULT 'Unpaid'")
+        if "position" not in columns:
+            conn.execute("ALTER TABLE projects ADD COLUMN position INTEGER")
+            # Existing rows all land on NULL, which sorts before real
+            # values in the new position-ordered listing - backfill them
+            # so their current (id-DESC, newest-first) order is preserved
+            # instead of being scrambled the first time this runs.
+            rows = conn.execute("SELECT id FROM projects ORDER BY id DESC").fetchall()
+            for i, row in enumerate(rows):
+                conn.execute("UPDATE projects SET position=? WHERE id=?", (i, row["id"]))
 
         # `project_tasks` shipped before `observation` existed - same
         # patch-in-by-hand story as above.
@@ -149,22 +162,38 @@ def delete_gatherer_entry(entry_id: int) -> None:
 
 def list_projects() -> list[dict]:
     with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM projects ORDER BY id DESC").fetchall()
+        rows = conn.execute("SELECT * FROM projects ORDER BY position ASC, id DESC").fetchall()
         return [dict(row) for row in rows]
 
 
 def create_project() -> dict:
-    """Insert a blank project - the "+ New project" card calls this, then
+    """Insert a blank project - the "+ New project" row calls this, then
     the modal opens on the returned row for the user to fill in, same
-    create-then-edit-in-place pattern as Gatherer's rows."""
+    create-then-edit-in-place pattern as Gatherer's rows. Gets the lowest
+    position of any project so it lands at the top of the list, same
+    spot a brand new row always used to appear in before drag-reordering
+    existed."""
     now = _now()
     with get_connection() as conn:
+        min_position = conn.execute("SELECT MIN(position) FROM projects").fetchone()[0]
+        position = (min_position - 1) if min_position is not None else 0
         cur = conn.execute(
-            "INSERT INTO projects (title, status, created_at, updated_at) VALUES ('', 'Active', ?, ?)",
-            (now, now),
+            "INSERT INTO projects (title, status, position, created_at, updated_at) VALUES ('', 'Active', ?, ?, ?)",
+            (position, now, now),
         )
         row = conn.execute("SELECT * FROM projects WHERE id=?", (cur.lastrowid,)).fetchone()
         return dict(row)
+
+
+def reorder_projects(ids: list[int]) -> None:
+    """Assigns sequential positions matching the given id order - called
+    after a drag-and-drop reorder in the UI. ids is only ever the
+    currently-visible (Active or Completed) subset, never the full
+    table; since the two views never render together, their position
+    numbers are free to overlap without it being visible anywhere."""
+    with get_connection() as conn:
+        for position, project_id in enumerate(ids):
+            conn.execute("UPDATE projects SET position=? WHERE id=?", (position, project_id))
 
 
 def get_project(project_id: int) -> dict | None:
@@ -175,7 +204,7 @@ def get_project(project_id: int) -> dict | None:
 
 def update_project(project_id: int, **fields) -> dict | None:
     allowed = {
-        "title", "description", "status", "client", "deadline", "day_rate", "currency",
+        "title", "description", "status", "paid", "client", "deadline", "day_rate", "currency",
         "assets_text", "notes_text", "briefing_text",
     }
     updates = {k: v for k, v in fields.items() if k in allowed}

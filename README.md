@@ -5,19 +5,30 @@ backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install), with a vertical tool
 menu in the sidebar. Currently:
 
-- **Tracker** - project cards, first in the sidebar. Cards are centered
-  on the page, with an Active/Completed toggle above the grid to filter
-  which ones show, and a "+ New project" card to create one. Clicking a
-  card opens a popup: a description, project status (Active/Completed),
-  a deadline, a day rate (with a USD/EUR/GBP/BRL currency picker), and
-  "Docs" - a single place to attach both contract and invoice files
-  (real file uploads, stored on disk next to the database). Below that,
-  a "Log" table for logging work sessions (Task, Status, Duration, Cost,
-  Date), inline-editable like a spreadsheet, with a running cost Sum in
-  the selected currency. Every field autosaves on blur/change, no
-  separate save button.
-- **Gatherer** - a manually-curated list of studios/companies you find
-  yourself (Behance, Instagram, wherever) - Title, clickable URL, Type
+Both tools live under a collapsible **Management** section in the
+sidebar (click the section header to fold/unfold it):
+
+- **Tracker** (shown in the sidebar as "Project Manager") - a project
+  table with a drag handle, Title, Description, Status
+  (Active/Completed), and Paid/Unpaid, each pill directly editable
+  inline like Gatherer's. An Active/Completed toggle above the table
+  filters which rows show, and a "+ New project" button creates one.
+  Rows can be dragged by the handle to reorder them - the order
+  persists. Clicking a row anywhere else opens a popup: a description,
+  project status, a client name, a deadline, a day rate (with a
+  USD/EUR/GBP/BRL currency picker), "Docs" - a single place to attach
+  both contract and invoice files (real file uploads, stored on disk
+  next to the database) - and a side panel with Assets/Notes/Briefing
+  tabs, each a freeform autosaving text area. Below that, a "Log" table
+  for logging work sessions (Task, Status, Duration, Observation, Cost,
+  Date), inline-editable like a spreadsheet - Duration auto-fills Cost
+  from the day rate (Full = full rate, Half = half, Custom = manual,
+  and unlocks the Observation cell) - with a running cost Sum in the
+  selected currency. Every field autosaves on blur/change, no separate
+  save button.
+- **Gatherer** (shown in the sidebar as "Studio Database") - a
+  manually-curated list of studios/companies you find yourself
+  (Behance, Instagram, wherever) - Title, clickable URL, Type
   (Studio/Company, shown as a purple/orange pill), and outreach Status
   (Sent/Not sent, shown as a gray/green pill, with a date). Inline-
   editable like a spreadsheet: click a cell, type, it saves - no
@@ -122,17 +133,20 @@ executable), shared across every tool:
 - `gatherer_entries` - title, url, type (Studio/Company), status
   (Sent/Not sent), sent_date, created_at, updated_at. Gatherer's own
   table.
-- `projects` - title, description, status (Active/Completed), deadline,
-  day_rate, currency (USD/EUR/GBP/BRL), created_at, updated_at.
-  Tracker's own table.
+- `projects` - title, description, status (Active/Completed), paid
+  (Paid/Unpaid), client, deadline, day_rate, currency
+  (USD/EUR/GBP/BRL), assets_text/notes_text/briefing_text (the side
+  panel's three tabs), position (manual drag order within a status
+  view), created_at, updated_at. Tracker's own table.
 - `project_docs` - project_id, filename (original name shown in the UI),
   stored_name (the collision-proofed name it's actually saved as on
   disk), uploaded_at. The files themselves live under
   `data/project_docs/<project_id>/`, not in the database - this table
   just points at them.
 - `project_tasks` - project_id, task, status (Active/Done), duration
-  (Full/Half/Custom), cost, task_date, created_at, updated_at. Backs a
-  project's Log table.
+  (Full/Half/Custom), cost, observation (only usable when duration is
+  Custom), task_date, created_at, updated_at. Backs a project's Log
+  table.
 
 ## Roadmap / not built yet
 
