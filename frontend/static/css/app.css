@@ -468,14 +468,10 @@ table.task-table td:nth-child(6) {
     color: #86efac;
 }
 
-.cell-select.color-pill.type-studio {
-    background: rgba(204, 255, 0, 0.16);
-    color: #d5f542;
-}
-
+.cell-select.color-pill.type-studio,
 .cell-select.color-pill.type-company {
-    background: rgba(234, 179, 8, 0.16);
-    color: #fbbf24;
+    background: var(--panel-alt);
+    color: var(--text-muted);
 }
 
 /* The dropdown POPUP is a separate rendering surface from the closed
@@ -492,15 +488,11 @@ table.task-table td:nth-child(6) {
 }
 
 .cell-select option[value="Studio"],
-.custom-select-option[data-value="Studio"] {
-    background: #262d0e;
-    color: #d5f542;
-}
-
+.custom-select-option[data-value="Studio"],
 .cell-select option[value="Company"],
 .custom-select-option[data-value="Company"] {
-    background: #332a13;
-    color: #fbbf24;
+    background: var(--panel-alt);
+    color: var(--text-muted);
 }
 
 .cell-select option[value="Sent"],
@@ -913,7 +905,7 @@ table.project-table tbody tr:hover td {
 }
 
 .modal.modal-personal {
-    max-width: 880px;
+    max-width: 1100px;
 }
 
 .modal-section {
@@ -1290,4 +1282,51 @@ table.project-table tbody tr:hover td {
 
 .btn-danger-text:hover {
     text-decoration: underline;
+}
+
+.btn-danger {
+    background: rgba(229, 115, 115, 0.14);
+    border-color: rgba(229, 115, 115, 0.4);
+    color: var(--danger-text);
+}
+
+.btn-danger:hover {
+    background: rgba(229, 115, 115, 0.22);
+    border-color: var(--red);
+}
+
+/* ---------- Confirm dialog ---------- */
+
+.confirm-backdrop {
+    z-index: 300;
+}
+
+.confirm-dialog {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    max-width: 380px;
+    width: 100%;
+}
+
+.confirm-dialog-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin: 0 0 8px 0;
+}
+
+.confirm-dialog-message {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 20px 0;
+}
+
+.confirm-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
 }

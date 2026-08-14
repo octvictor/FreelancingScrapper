@@ -113,7 +113,7 @@ function wireGathererRowEvents() {
         dateInput.addEventListener("change", () => saveGathererFields(id, { sent_date: dateInput.value || null }));
 
         tr.querySelector("[data-role='delete']").addEventListener("click", async () => {
-            if (!confirm("Delete this row?")) return;
+            if (!(await confirmDialog("This can't be undone.", { title: "Delete this row?" }))) return;
             await fetch(`/api/gatherer/entries/${id}`, { method: "DELETE" });
             gathererEntries = gathererEntries.filter((e) => e.id !== id);
             renderGathererTable();

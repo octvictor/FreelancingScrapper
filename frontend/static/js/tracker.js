@@ -250,7 +250,7 @@ function renderDocsList(docs, projectId) {
 
     document.querySelectorAll(".doc-delete-btn").forEach((btn) => {
         btn.addEventListener("click", async () => {
-            if (!confirm("Delete this doc?")) return;
+            if (!(await confirmDialog("This can't be undone.", { title: "Delete this doc?" }))) return;
             await fetch(`/api/tracker/projects/${projectId}/docs/${btn.dataset.docId}`, { method: "DELETE" });
             const project = await (await fetch(`/api/tracker/projects/${projectId}`)).json();
             renderDocsList(project.docs, projectId);
@@ -356,7 +356,7 @@ function renderTaskTable(tasks, projectId) {
         dateInput.addEventListener("change", () => saveTaskField(projectId, taskId, { task_date: dateInput.value || null }));
 
         tr.querySelector("[data-role='delete']").addEventListener("click", async () => {
-            if (!confirm("Delete this task?")) return;
+            if (!(await confirmDialog("This can't be undone.", { title: "Delete this task?" }))) return;
             await fetch(`/api/tracker/projects/${projectId}/tasks/${taskId}`, { method: "DELETE" });
             const project = await (await fetch(`/api/tracker/projects/${projectId}`)).json();
             renderTaskTable(project.tasks, projectId);
@@ -525,7 +525,9 @@ $("doc-file-input").addEventListener("change", async (e) => {
 });
 
 $("delete-project-btn").addEventListener("click", async () => {
-    if (activeProjectId === null || !confirm("Delete this project? This also deletes its attached docs and tasks.")) return;
+    if (activeProjectId === null) return;
+    const ok = await confirmDialog("This also deletes its attached docs and tasks. This can't be undone.", { title: "Delete this project?" });
+    if (!ok) return;
     await fetch(`/api/tracker/projects/${activeProjectId}`, { method: "DELETE" });
     trackerProjects = trackerProjects.filter((p) => p.id !== activeProjectId);
     closeProjectModal();
@@ -763,7 +765,9 @@ $("personal-modal-status").addEventListener("change", (e) => {
 enhanceSelect($("personal-modal-status"));
 
 $("delete-personal-project-btn").addEventListener("click", async () => {
-    if (activePersonalProjectId === null || !confirm("Delete this personal project?")) return;
+    if (activePersonalProjectId === null) return;
+    const ok = await confirmDialog("This can't be undone.", { title: "Delete this personal project?" });
+    if (!ok) return;
     await fetch(`/api/tracker/personal-projects/${activePersonalProjectId}`, { method: "DELETE" });
     personalProjects = personalProjects.filter((p) => p.id !== activePersonalProjectId);
     closePersonalProjectModal();

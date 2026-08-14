@@ -132,8 +132,10 @@ into a venv from before that change - the fix is on both scripts now.
 - `frontend/index.html` - the whole page shell (both tools' markup live
   here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
-- `frontend/static/js/nav.js` - shared page navigation and the custom
-  dropdown component both tools use, loaded first.
+- `frontend/static/js/nav.js` - shared page navigation, the custom
+  dropdown component, and a themed `confirmDialog()` (used in place of
+  the browser's native `confirm()` for every delete action) - loaded
+  first since every tool depends on it.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js` -
   one file per tool, no shared state between them beyond `nav.js`'s `$()`.
 - `storage/db.py` - shared SQLite layer any tool can write into.

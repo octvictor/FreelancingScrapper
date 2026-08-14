@@ -155,3 +155,52 @@ function cleanupCustomSelectsIn(container) {
         if (idx !== -1) _customSelectClosers.splice(idx, 1);
     });
 }
+
+// ---------- Confirm dialog ----------
+// A themed stand-in for the browser's native confirm() (which renders as
+// an ugly, unstyled "127.0.0.1:8501 says" box) for destructive actions
+// like deleting a project. Returns a Promise<boolean> so call sites just
+// swap `confirm(msg)` for `await confirmDialog(msg)`.
+
+function confirmDialog(message, { title = "Are you sure?", confirmText = "Delete", cancelText = "Cancel" } = {}) {
+    return new Promise((resolve) => {
+        const backdrop = document.createElement("div");
+        backdrop.className = "modal-backdrop confirm-backdrop";
+
+        const box = document.createElement("div");
+        box.className = "confirm-dialog";
+        box.innerHTML = `
+            <p class="confirm-dialog-title"></p>
+            <p class="confirm-dialog-message"></p>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn confirm-dialog-cancel"></button>
+                <button type="button" class="btn btn-danger confirm-dialog-confirm"></button>
+            </div>
+        `;
+        box.querySelector(".confirm-dialog-title").textContent = title;
+        box.querySelector(".confirm-dialog-message").textContent = message;
+        box.querySelector(".confirm-dialog-cancel").textContent = cancelText;
+        box.querySelector(".confirm-dialog-confirm").textContent = confirmText;
+        backdrop.appendChild(box);
+        document.body.appendChild(backdrop);
+
+        function finish(result) {
+            document.removeEventListener("keydown", onKeydown);
+            backdrop.remove();
+            resolve(result);
+        }
+
+        function onKeydown(e) {
+            if (e.key === "Escape") finish(false);
+            if (e.key === "Enter") finish(true);
+        }
+
+        backdrop.addEventListener("click", (e) => {
+            if (e.target === backdrop) finish(false);
+        });
+        box.querySelector(".confirm-dialog-cancel").addEventListener("click", () => finish(false));
+        box.querySelector(".confirm-dialog-confirm").addEventListener("click", () => finish(true));
+        document.addEventListener("keydown", onKeydown);
+        box.querySelector(".confirm-dialog-confirm").focus();
+    });
+}
