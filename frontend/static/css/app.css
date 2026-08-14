@@ -190,16 +190,28 @@ button, input, select, textarea {
 
 /* ---------- Main content ---------- */
 
+/* EXPERIMENT: centered layout (vs. the original left-aligned one) -
+   .main fills the space next to the sidebar as before, but now centers
+   its page section within that space instead of letting it sit flush
+   against the sidebar. Revert by restoring max-width directly on
+   .main and dropping the flex/align-items/> section rules below. */
 .main {
     flex: 1;
     min-width: 0;
     padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.main > section {
+    width: 100%;
     max-width: 900px;
 }
 
 /* Gatherer's table needs more room for long titles/URLs than the forms
    on other pages do - toggled by nav.js when Gatherer is the active page. */
-.main.main-wide {
+.main.main-wide > section {
     max-width: 1400px;
 }
 
