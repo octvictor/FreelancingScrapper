@@ -18,6 +18,7 @@ router = APIRouter()
 class TodoListUpdate(BaseModel):
     title: str | None = None
     favorite: bool | None = None
+    color: str | None = None
 
 
 class TodoTaskUpdate(BaseModel):

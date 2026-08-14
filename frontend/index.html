@@ -139,33 +139,29 @@
                 <div class="panel todo-panel">
                     <div class="todo-layout">
                         <div class="todo-lists-rail">
-                            <button class="todo-filter-toggle" id="todo-favorites-filter" type="button">
-                                <span>&#9733;</span> Favorites
-                            </button>
+                            <button class="todo-icon-toggle" id="todo-favorites-filter" type="button" title="Favorites only">&#9733;</button>
                             <div id="todo-lists"></div>
                             <button class="btn" id="todo-list-add-btn" type="button">+ New list</button>
                         </div>
                         <div class="todo-tasks-pane" id="todo-tasks-pane">
                             <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
                             <div class="todo-tasks-controls">
+                                <button class="todo-icon-toggle" id="todo-filter-important" type="button" title="Important only">&#9733;</button>
+                                <button class="todo-swatch-btn" id="todo-list-color-btn" type="button" title="List color"></button>
                                 <button class="todo-star-btn" id="todo-list-favorite-btn" type="button" title="Mark list favorite">&#9734;</button>
                                 <button class="btn-danger-text" id="todo-list-delete-btn" type="button">Delete list</button>
                             </div>
 
-                            <div class="todo-task-filter-row">
-                                <button class="todo-filter-toggle" id="todo-filter-important" type="button">
-                                    <span>&#9733;</span> Important
-                                </button>
-                            </div>
-                            <button class="btn" id="todo-clean-list-btn" type="button">Clean list</button>
-
                             <div id="todo-task-list"></div>
                             <button class="btn" id="todo-task-add-btn" type="button">+ Add task</button>
                             <div class="todo-completed-wrap" id="todo-completed-wrap">
-                                <button class="todo-completed-toggle" id="todo-completed-toggle" type="button">
-                                    <span class="todo-completed-chevron">&#9662;</span>
-                                    <span id="todo-completed-label">Completed (0)</span>
-                                </button>
+                                <div class="todo-completed-header">
+                                    <button class="todo-completed-toggle" id="todo-completed-toggle" type="button">
+                                        <span class="todo-completed-chevron">&#9662;</span>
+                                        <span id="todo-completed-label">Completed (0)</span>
+                                    </button>
+                                    <button class="btn-danger-text" id="todo-clean-list-btn" type="button">Clean</button>
+                                </div>
                                 <div id="todo-completed-list" style="display:none;"></div>
                             </div>
                         </div>

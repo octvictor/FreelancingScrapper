@@ -17,9 +17,15 @@ let todoImportantOnly = false;
 
 function todoListItemHtml(list) {
     const isActive = list.id === activeListId;
+    const dotStyle = list.color
+        ? `background:${list.color}; border-color:transparent;`
+        : "background:transparent;";
     return `
         <button class="todo-list-item ${isActive ? "active" : ""}" data-id="${list.id}" type="button">
-            <span class="todo-list-item-title">${list.favorite ? "&#9733; " : ""}${escapeAttr(list.title) || "Untitled list"}</span>
+            <span class="todo-list-item-main">
+                <span class="todo-list-dot" style="${dotStyle}"></span>
+                <span class="todo-list-item-title">${list.favorite ? "&#9733; " : ""}${escapeAttr(list.title) || "Untitled list"}</span>
+            </span>
             ${list.open_count > 0 ? `<span class="todo-list-count">${list.open_count}</span>` : ""}
         </button>
     `;
@@ -53,6 +59,7 @@ async function selectTodoList(id) {
     $("todo-list-title").value = list ? list.title || "" : "";
     $("todo-list-favorite-btn").classList.toggle("active", !!(list && list.favorite));
     $("todo-list-favorite-btn").innerHTML = list && list.favorite ? "&#9733;" : "&#9734;";
+    updateTodoColorBtn(list && list.color);
     $("todo-tasks-pane").style.display = "";
     renderTodoLists();
     await loadTodoTasks();
@@ -74,6 +81,84 @@ $("todo-list-favorite-btn").addEventListener("click", async () => {
     $("todo-list-favorite-btn").classList.toggle("active", willBeFavorite);
     $("todo-list-favorite-btn").innerHTML = willBeFavorite ? "&#9733;" : "&#9734;";
     renderTodoLists();
+});
+
+// ---------- List color ----------
+// A small popover (built and torn down on demand, like nav.js's custom
+// dropdown panels) offering a preset palette plus a "no color" swatch.
+
+const TODO_LIST_COLORS = ["#7fb2d9", "#86efac", "#fbbf24", "#f0a848", "#e57373", "#c9a3fb"];
+let todoColorPopover = null;
+
+function updateTodoColorBtn(color) {
+    $("todo-list-color-btn").style.background = color || "transparent";
+}
+
+function closeTodoColorPopover() {
+    if (!todoColorPopover) return;
+    todoColorPopover.remove();
+    todoColorPopover = null;
+    document.removeEventListener("click", onTodoColorPopoverOutsideClick);
+}
+
+function onTodoColorPopoverOutsideClick(e) {
+    if (todoColorPopover && !todoColorPopover.contains(e.target) && e.target.id !== "todo-list-color-btn") {
+        closeTodoColorPopover();
+    }
+}
+
+function openTodoColorPopover() {
+    closeTodoColorPopover();
+    const btn = $("todo-list-color-btn");
+    const rect = btn.getBoundingClientRect();
+
+    const panel = document.createElement("div");
+    panel.className = "todo-color-popover open";
+    panel.style.left = rect.left + "px";
+    panel.style.top = rect.bottom + 6 + "px";
+
+    const noneSwatch = document.createElement("button");
+    noneSwatch.type = "button";
+    noneSwatch.className = "todo-color-swatch none";
+    noneSwatch.title = "No color";
+    noneSwatch.addEventListener("click", () => setTodoListColor(null));
+    panel.appendChild(noneSwatch);
+
+    TODO_LIST_COLORS.forEach((color) => {
+        const swatch = document.createElement("button");
+        swatch.type = "button";
+        swatch.className = "todo-color-swatch";
+        swatch.style.background = color;
+        swatch.title = color;
+        swatch.addEventListener("click", () => setTodoListColor(color));
+        panel.appendChild(swatch);
+    });
+
+    document.body.appendChild(panel);
+    todoColorPopover = panel;
+    setTimeout(() => document.addEventListener("click", onTodoColorPopoverOutsideClick));
+}
+
+async function setTodoListColor(color) {
+    if (activeListId === null) return;
+    const resp = await fetch(`/api/todo/lists/${activeListId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color }),
+    });
+    if (!resp.ok) return;
+    const updated = await resp.json();
+    const idx = todoLists.findIndex((l) => l.id === updated.id);
+    if (idx !== -1) todoLists[idx] = updated;
+    updateTodoColorBtn(updated.color);
+    renderTodoLists();
+    closeTodoColorPopover();
+}
+
+$("todo-list-color-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (todoColorPopover) closeTodoColorPopover();
+    else openTodoColorPopover();
 });
 
 async function refreshTodoLists() {
@@ -178,19 +263,19 @@ function renderTodoTasks() {
     const base = todoImportantOnly ? activeTodoTasks.filter((t) => t.important) : activeTodoTasks;
     const active = base.filter((t) => !t.completed);
     const completed = base.filter((t) => t.completed);
-    const allCompletedCount = activeTodoTasks.filter((t) => t.completed).length;
 
     $("todo-task-list").innerHTML = active.length
         ? active.map(todoTaskRowHtml).join("")
         : `<p class="todo-empty-state">${todoImportantOnly ? "No important tasks." : "No tasks yet."}</p>`;
 
+    // The whole Completed section (Clean included, now that it lives in
+    // its header) hides itself when there's nothing completed to show -
+    // no separate disabled-state needed on the Clean button.
     $("todo-completed-wrap").style.display = completed.length > 0 ? "" : "none";
     $("todo-completed-label").textContent = `Completed (${completed.length})`;
     $("todo-completed-list").innerHTML = completed.map(todoTaskRowHtml).join("");
     $("todo-completed-list").style.display = todoCompletedExpanded ? "" : "none";
     $("todo-completed-toggle").classList.toggle("expanded", todoCompletedExpanded);
-
-    $("todo-clean-list-btn").disabled = allCompletedCount === 0;
 
     wireTodoTaskRows($("todo-task-list"));
     wireTodoTaskRows($("todo-completed-list"));

@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS todo_lists (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL DEFAULT '',
     favorite INTEGER NOT NULL DEFAULT 0,
+    color TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -160,10 +161,12 @@ def init_db() -> None:
         if "observation" not in task_columns:
             conn.execute("ALTER TABLE project_tasks ADD COLUMN observation TEXT")
 
-        # `todo_lists` shipped before `favorite` existed - same story.
+        # `todo_lists` shipped before `favorite`/`color` existed - same story.
         todo_list_columns = {row["name"] for row in conn.execute("PRAGMA table_info(todo_lists)")}
         if "favorite" not in todo_list_columns:
             conn.execute("ALTER TABLE todo_lists ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
+        if "color" not in todo_list_columns:
+            conn.execute("ALTER TABLE todo_lists ADD COLUMN color TEXT")
 
 
 # ---------- Gatherer: manually-curated studio/company list ----------
@@ -501,7 +504,7 @@ def create_todo_list() -> dict:
 
 
 def update_todo_list(list_id: int, **fields) -> dict | None:
-    allowed = {"title", "favorite"}
+    allowed = {"title", "favorite", "color"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         with get_connection() as conn:

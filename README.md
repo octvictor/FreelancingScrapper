@@ -52,22 +52,24 @@ items - currently just To Do.
   separate save button. Click "+ Add row" for a new one. The Type and
   Status column headers double as filters - pick a value to narrow the
   table to just that value, blank to show everything again.
-- **To Do** (under Management) - inspired by Microsoft To Do. Multiple
-  lists (a rail on the left, "+ New list" to add one, click a list's
-  name in the tasks pane to rename it, a star next to it marks the
-  list a Favorite, "Delete list" removes it and its tasks). A
-  "Favorites" toggle above the rail narrows it to just favorited
-  lists. Each list is a set of checkbox tasks - check one off and it
-  drops into a collapsed "Completed (n)" section below the active
-  ones; a star icon on each row toggles Importance right from the
-  list, and an "Important" toggle above the tasks narrows them to just
-  starred ones. "Clean list" clears out every completed task in one
-  go (with a confirm showing how many). Clicking a task (anywhere but
-  its checkbox/star/delete) opens a detail view: the same
-  checkbox/title/star in a header row, a Steps checklist (a mini
-  to-do list within the task, same checkbox-and-title pattern as
-  Personal Projects' Checklist), and a freeform Notes text area.
-  Everything autosaves on blur/change.
+- **To Do** (under Management, noticeably wider than the other tools -
+  not full-width, just roomier) - inspired by Microsoft To Do.
+  Multiple lists (a rail on the left, "+ New list" to add one, click a
+  list's name in the tasks pane to rename it; its header holds a
+  compact icon-only Important filter, a color swatch - click it for a
+  small preset-palette popover, shown as a dot next to the list's name
+  in the rail - a star to mark it Favorite, and "Delete list"). A
+  matching icon-only Favorites toggle above the rail narrows it to
+  just favorited lists. Each list is a set of checkbox tasks - check
+  one off and it drops into a collapsed "Completed (n)" section below
+  the active ones, with a "Clean" link right in that section's header
+  to clear out every completed task in one go (confirms first, shows
+  how many); a star icon on each row toggles Importance right from the
+  list. Clicking a task (anywhere but its checkbox/star/delete) opens
+  a detail view: the same checkbox/title/star in a header row, a Steps
+  checklist (a mini to-do list within the task, same
+  checkbox-and-title pattern as Personal Projects' Checklist), and a
+  freeform Notes text area. Everything autosaves on blur/change.
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -192,7 +194,8 @@ executable), shared across every tool:
   bill anyone.
 - `personal_checklist_items` - personal_project_id, text, checked,
   created_at, updated_at. Backs a personal project's Checklist.
-- `todo_lists` - title, favorite, created_at, updated_at. To Do's lists.
+- `todo_lists` - title, favorite, color, created_at, updated_at. To
+  Do's lists.
 - `todo_tasks` - list_id, title, completed, important, notes,
   position (manual create-order, newest on top), created_at,
   updated_at. A list's tasks.
@@ -203,15 +206,10 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- A more intuitive To Do design - the current version accumulated a
-  fair amount of chrome (Favorites/Important filter pills, Clean list,
-  stars everywhere) across several rounds and could use a simplification
-  pass.
-- Per-list color coding for To Do - a small icon/swatch on each list to
-  assign it a color, shown next to its name in the rail.
-- Sharp square corners app-wide, replacing the current rounded corners
-  - an experiment to see how it looks, not a settled decision.
-- Wider content area generally (To Do first, possibly the other tools
-  after) - not full-width, just noticeably roomier than today.
-- A "Notes" page, Google Keep-style - placement undecided (its own
-  sidebar section vs. nested under To Do's Management group).
+- Sharp square corners app-wide, replacing the previous rounded corners,
+  is live (--radius-* tokens zeroed out in app.css) but still an
+  experiment - not a fully settled decision.
+- Wider content area for the other tools too (To Do already got this) -
+  not full-width, just noticeably roomier than today.
+- A "Notes" page, Google Keep-style: draggable, responsively-sized,
+  custom-colored cards. Landing under Management, alongside To Do.
