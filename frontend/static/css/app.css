@@ -565,37 +565,43 @@ table.task-table td:nth-child(6) {
     color: var(--text-muted);
 }
 
+/* Duration is a magnitude (how much of a day), not a status judgment -
+   a neutral blue tonal ramp (strongest for Full, faint for Half) reads
+   as "how much" without accidentally implying "good/bad" the way a
+   red/amber/purple rainbow would. Custom isn't on that scale at all
+   (it's "manual", not a fraction of a day), so it stays plain grey -
+   same treatment as other non-judgmental fields like Paid/Type. */
 .color-pill.duration-full {
-    background: rgba(229, 90, 90, 0.18);
-    color: #f28787;
+    background: rgba(127, 178, 217, 0.22);
+    color: #a9cfec;
 }
 
 .color-pill.duration-half {
-    background: rgba(234, 179, 8, 0.14);
-    color: #fbbf24;
+    background: rgba(127, 178, 217, 0.11);
+    color: #8fb4d4;
 }
 
 .color-pill.duration-custom {
-    background: rgba(168, 85, 247, 0.14);
-    color: #c9a3fb;
+    background: var(--panel-alt);
+    color: var(--text-muted);
 }
 
 .cell-select option[value="Full"],
 .custom-select-option[data-value="Full"] {
-    background: #341717;
-    color: #f28787;
+    background: #1c2d3a;
+    color: #a9cfec;
 }
 
 .cell-select option[value="Half"],
 .custom-select-option[data-value="Half"] {
-    background: #332a13;
-    color: #fbbf24;
+    background: #1a262f;
+    color: #8fb4d4;
 }
 
 .cell-select option[value="Custom"],
 .custom-select-option[data-value="Custom"] {
-    background: #241a33;
-    color: #c9a3fb;
+    background: var(--panel-alt);
+    color: var(--text-muted);
 }
 
 /* ---------- Custom dropdown (replaces native <select> popups) ----------
