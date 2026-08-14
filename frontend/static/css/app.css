@@ -158,14 +158,13 @@ button, input, select, textarea {
     display: none;
 }
 
-/* Chip-styled nav buttons - bordered rounded box with a small icon,
-   instead of the plain borderless row this used to be. */
+/* Plain text nav items with a small icon - no button/chip box. Hover
+   and active states are carried entirely by text color/weight, so the
+   base .nav-item background-fill states are explicitly turned off. */
 .nav-item-chip {
     display: flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-md);
     margin-bottom: 4px;
 }
 
@@ -173,8 +172,15 @@ button, input, select, textarea {
     margin-bottom: 0;
 }
 
+.nav-item-chip:hover {
+    background: none;
+    color: var(--text);
+}
+
 .nav-item-chip.active {
-    border-color: var(--border);
+    background: none;
+    color: var(--text);
+    font-weight: 600;
 }
 
 .nav-item-icon {
@@ -572,13 +578,13 @@ table.task-table td:nth-child(6) {
    (it's "manual", not a fraction of a day), so it stays plain grey -
    same treatment as other non-judgmental fields like Paid/Type. */
 .color-pill.duration-full {
-    background: rgba(127, 178, 217, 0.22);
-    color: #a9cfec;
+    background: rgba(127, 178, 217, 0.32);
+    color: var(--text);
 }
 
 .color-pill.duration-half {
-    background: rgba(127, 178, 217, 0.11);
-    color: #8fb4d4;
+    background: rgba(127, 178, 217, 0.09);
+    color: var(--text-faint);
 }
 
 .color-pill.duration-custom {
@@ -588,14 +594,14 @@ table.task-table td:nth-child(6) {
 
 .cell-select option[value="Full"],
 .custom-select-option[data-value="Full"] {
-    background: #1c2d3a;
-    color: #a9cfec;
+    background: #223a4c;
+    color: var(--text);
 }
 
 .cell-select option[value="Half"],
 .custom-select-option[data-value="Half"] {
-    background: #1a262f;
-    color: #8fb4d4;
+    background: var(--panel-alt);
+    color: var(--text-faint);
 }
 
 .cell-select option[value="Custom"],
