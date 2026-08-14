@@ -870,7 +870,7 @@ table.task-table td:nth-child(6) {
 .modal-side-panel {
     flex: 1;
     min-width: 260px;
-    min-height: 420px;
+    min-height: 280px;
     background: var(--panel-alt);
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-lg);
