@@ -4,8 +4,8 @@
    what gives the palette its character over a flat neutral (R=G=B)
    theme, at basically no cost. Panels/borders/text stay bright enough
    that card borders read as clearly visible, not barely-there. Blue is
-   reserved for checkboxes/small controls only, kept separate from the
-   near-white accent on primary buttons. */
+   reserved for small accents (e.g. the Active status pill), kept
+   separate from the near-white accent on primary buttons. */
 :root {
     --bg: #191917;
     --panel: #201f1e;
@@ -127,69 +127,6 @@ button, input, select, textarea {
     gap: 12px;
 }
 
-/* ---------- Toggle switch ---------- */
-
-.toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-}
-
-.toggle {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    border-radius: var(--radius-full);
-    background: var(--red);
-    border: none;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.15s ease;
-}
-
-.toggle::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    transition: transform 0.15s ease;
-}
-
-.toggle.on {
-    background: var(--green);
-}
-
-.toggle.on::after {
-    transform: translateX(16px);
-}
-
-/* ---------- Status banners ---------- */
-
-.banner {
-    font-size: 12.5px;
-    line-height: 1.5;
-    padding: 10px 12px;
-    border-radius: var(--radius-md);
-    border: 1px solid transparent;
-}
-
-.banner-success {
-    background: rgba(34, 197, 94, 0.1);
-    border-color: rgba(34, 197, 94, 0.25);
-    color: #86efac;
-}
-
-.banner-warning {
-    background: rgba(229, 115, 115, 0.1);
-    border-color: rgba(229, 115, 115, 0.3);
-    color: var(--danger-text);
-}
-
 .muted {
     color: var(--text-muted);
     font-size: 12.5px;
@@ -224,41 +161,6 @@ button, input, select, textarea {
     letter-spacing: -0.01em;
 }
 
-/* ---------- Segmented tab control ---------- */
-
-.tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: 1px solid var(--border-soft);
-    margin-bottom: 22px;
-}
-
-.tab-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    padding: 8px 4px;
-    margin-right: 18px;
-    font-size: 13.5px;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-}
-
-.tab-btn.active {
-    color: var(--text);
-    border-bottom-color: var(--accent);
-    font-weight: 600;
-}
-
-.tab-panel {
-    display: none;
-}
-
-.tab-panel.active {
-    display: block;
-}
-
 /* ---------- Panels / cards ---------- */
 
 .panel {
@@ -276,27 +178,6 @@ button, input, select, textarea {
     font-weight: 600;
     color: var(--text-faint);
     margin: 0 0 14px 0;
-}
-
-.field {
-    margin-bottom: 16px;
-}
-
-.field:last-child {
-    margin-bottom: 0;
-}
-
-.field label {
-    display: block;
-    font-size: 12.5px;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-}
-
-.field .hint {
-    font-size: 12px;
-    color: var(--text-faint);
-    margin-top: 6px;
 }
 
 input[type="text"],
@@ -322,39 +203,6 @@ input[type="url"]:focus {
     border-color: var(--text-muted);
 }
 
-input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent-blue);
-}
-
-.checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--text);
-}
-
-.range-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.range-row input[type="range"] {
-    flex: 1;
-    accent-color: var(--accent);
-}
-
-.range-value {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    width: 34px;
-    text-align: right;
-}
-
 /* ---------- Buttons ---------- */
 
 .btn {
@@ -374,79 +222,6 @@ input[type="checkbox"] {
 .btn:disabled {
     opacity: 0.5;
     cursor: default;
-}
-
-.btn-primary {
-    background: var(--accent);
-    color: var(--accent-text);
-    border-color: var(--accent);
-    font-weight: 600;
-}
-
-.btn-primary:hover {
-    opacity: 0.9;
-}
-
-/* ---------- Results table ---------- */
-
-.results-table-wrap {
-    overflow-x: auto;
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-lg);
-}
-
-table.results {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-}
-
-table.results th {
-    text-align: left;
-    text-transform: uppercase;
-    font-size: 10.5px;
-    letter-spacing: 0.05em;
-    color: var(--text-faint);
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border-soft);
-    white-space: nowrap;
-}
-
-table.results td {
-    padding: 9px 14px;
-    border-bottom: 1px solid var(--border-soft);
-    color: var(--text);
-    white-space: nowrap;
-}
-
-table.results tr:last-child td {
-    border-bottom: none;
-}
-
-/* ---------- Log console ---------- */
-
-.log {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text-muted);
-    background: var(--panel);
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-lg);
-    padding: 14px 16px;
-    margin-top: 18px;
-    min-height: 60px;
-    white-space: pre-wrap;
-    line-height: 1.6;
-}
-
-.log .ok { color: #86efac; }
-.log .err { color: var(--danger-text); }
-
-.spacer-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 4px;
 }
 
 /* ---------- Gatherer table ---------- */
@@ -830,6 +605,34 @@ table.task-table td:nth-child(5) {
 
 /* ---------- Tracker: project cards ---------- */
 
+.view-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.view-toggle-btn {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    cursor: pointer;
+}
+
+.view-toggle-btn:hover {
+    border-color: var(--border);
+    color: var(--text);
+}
+
+.view-toggle-btn.active {
+    background: var(--panel-alt);
+    border-color: var(--border);
+    color: var(--text);
+}
+
 .project-grid {
     display: flex;
     flex-wrap: wrap;
@@ -1074,6 +877,26 @@ table.task-table td:nth-child(5) {
     font-weight: 500;
     padding: 6px 12px;
     cursor: pointer;
+}
+
+/* Overlays the $ inside the number input's own padding rather than
+   sitting before it in the flex row - that used to push the input's
+   left edge past every other property row's, breaking the column
+   alignment the whole list otherwise has. */
+.currency-input-wrap {
+    position: relative;
+}
+
+.currency-input-wrap .currency-prefix {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.currency-input-wrap input[type="number"] {
+    padding-left: 22px;
 }
 
 .currency-prefix {

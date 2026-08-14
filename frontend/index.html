@@ -14,25 +14,16 @@
             <ul class="nav-list">
                 <li><button class="nav-item active" data-page="tracker">Tracker</button></li>
                 <li><button class="nav-item" data-page="gatherer">Gatherer</button></li>
-                <li><button class="nav-item" data-page="scrapper">Scrapper</button></li>
             </ul>
-
-            <div class="sidebar-section" id="scrapper-sidebar" style="display:none;">
-                <div class="toggle-row">
-                    <button class="toggle on" id="safe-mode-toggle" aria-pressed="true"></button>
-                    <span>Safe mode</span>
-                </div>
-                <div class="banner banner-success" id="safe-mode-banner">
-                    Safe mode is ON - nothing here touches a real site or account.
-                </div>
-                <div class="muted" id="linkedin-status">LinkedIn credentials: not set</div>
-                <button class="btn" id="reset-data-btn" style="align-self: flex-start;">Reset all data</button>
-            </div>
         </aside>
 
         <main class="main">
             <section id="page-tracker">
                 <h1 class="page-title">Tracker</h1>
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active" id="view-toggle-active" type="button" data-view="Active">Active</button>
+                    <button class="view-toggle-btn" id="view-toggle-completed" type="button" data-view="Completed">Completed</button>
+                </div>
                 <div class="project-grid" id="project-grid"></div>
             </section>
 
@@ -71,78 +62,6 @@
                     <button class="btn" id="gatherer-add-btn" style="margin-top: 12px;">+ Add row</button>
                 </div>
             </section>
-
-            <section id="page-scrapper" style="display:none;">
-                <h1 class="page-title">Scrapper</h1>
-
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="scrape">LinkedIn Sales Navigator</button>
-                    <button class="tab-btn" data-tab="settings">Settings</button>
-                </div>
-
-                <div class="tab-panel active" id="tab-scrape">
-                    <div class="panel">
-                        <p class="panel-label">Source</p>
-                        <div class="field">
-                            <label for="search-url">Sales Navigator search URL</label>
-                            <input type="url" id="search-url" placeholder="https://www.linkedin.com/sales/search/people?...">
-                            <div class="hint" id="search-url-hint">Safe mode: generates realistic fake leads. The URL above is ignored.</div>
-                        </div>
-                        <div class="field">
-                            <label for="max-results">Number of people to scrape</label>
-                            <input type="number" id="max-results" value="10" min="1" max="200" style="max-width: 140px;">
-                        </div>
-                        <div class="spacer-row">
-                            <button class="btn btn-primary" id="scrape-btn">Start Scraping</button>
-                        </div>
-                    </div>
-
-                    <div class="results-table-wrap" id="results-wrap" style="display:none;">
-                        <table class="results" id="results-table">
-                            <thead><tr id="results-head"></tr></thead>
-                            <tbody id="results-body"></tbody>
-                        </table>
-                    </div>
-                    <div class="spacer-row" id="export-row" style="display:none;">
-                        <button class="btn" id="export-csv-btn">Export CSV</button>
-                    </div>
-
-                    <div class="log" id="scrape-log">Ready.</div>
-                </div>
-
-                <div class="tab-panel" id="tab-settings">
-                    <div class="panel">
-                        <p class="panel-label">LinkedIn</p>
-                        <div class="field">
-                            <label for="li-email">LinkedIn email</label>
-                            <input type="text" id="li-email">
-                        </div>
-                        <div class="field">
-                            <label for="li-password">LinkedIn password</label>
-                            <input type="password" id="li-password" placeholder="leave blank to keep current">
-                        </div>
-                    </div>
-                    <div class="panel">
-                        <p class="panel-label">Scraping behavior</p>
-                        <div class="field">
-                            <label class="checkbox-row"><input type="checkbox" id="headless-checkbox"> Run browser headless (hidden)</label>
-                        </div>
-                        <div class="field">
-                            <label>Delay between page actions (seconds)</label>
-                            <div class="range-row">
-                                <span class="range-value" id="delay-min-value">2.0</span>
-                                <input type="range" id="delay-min" min="0.5" max="15" step="0.5" value="2">
-                                <input type="range" id="delay-max" min="0.5" max="15" step="0.5" value="5">
-                                <span class="range-value" id="delay-max-value">5.0</span>
-                            </div>
-                        </div>
-                        <div class="spacer-row">
-                            <button class="btn btn-primary" id="save-settings-btn">Save settings</button>
-                        </div>
-                    </div>
-                    <div class="log" id="settings-log" style="display:none;"></div>
-                </div>
-            </section>
         </main>
     </div>
 
@@ -169,8 +88,10 @@
                 <div class="modal-field">
                     <label for="modal-day-rate">Day rate</label>
                     <div class="modal-field-group">
-                        <span class="currency-prefix" id="day-rate-prefix">$</span>
-                        <input type="number" id="modal-day-rate" min="0" step="0.01" placeholder="0.00">
+                        <div class="currency-input-wrap">
+                            <span class="currency-prefix" id="day-rate-prefix">$</span>
+                            <input type="number" id="modal-day-rate" min="0" step="0.01" placeholder="0.00">
+                        </div>
                         <select class="cell-select" id="modal-currency">
                             <option value="USD">USD</option>
                             <option value="EUR">EUR</option>
@@ -223,7 +144,6 @@
     </div>
 
     <script src="/static/js/nav.js"></script>
-    <script src="/static/js/scrapper.js"></script>
     <script src="/static/js/gatherer.js"></script>
     <script src="/static/js/tracker.js"></script>
 </body>

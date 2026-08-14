@@ -14,11 +14,6 @@ import webbrowser
 
 import uvicorn
 
-# Defensive: api/scrapper.py only imports this lazily, inside a function
-# body, when a scrape actually runs. PyInstaller's static analysis scans
-# function bodies too so this is normally redundant, but an explicit
-# top-level import here is cheap insurance against it being missed.
-import scrapers.linkedin_salesnav  # noqa: F401
 from server import app
 
 HOST = "127.0.0.1"

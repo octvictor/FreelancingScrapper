@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Builds a standalone, double-clickable app (dist/FreelancingTools).
 #
-# Run this ONCE (and again only if you change requirements.txt or add new
-# scraper modules) - after that, day-to-day use is just double-clicking
-# the file it produces. No terminal, no venv, no `uvicorn` needed for
+# Run this ONCE (and again only if you change requirements.txt or the
+# app's code) - after that, day-to-day use is just double-clicking the
+# file it produces. No terminal, no venv, no `uvicorn` needed for
 # regular use.
 #
 # Must be run on the same OS you intend to use the app on - a Linux-built
@@ -28,4 +28,3 @@ pyinstaller --onefile --name FreelancingTools \
 echo ""
 echo "Build finished: dist/FreelancingTools"
 echo "Move/copy that file anywhere (Desktop, Applications, ...) and double-click it to run the app."
-echo "First launch will take a little longer while it downloads the browser component - that's normal, one-time (and only needed if you turn Safe mode off)."

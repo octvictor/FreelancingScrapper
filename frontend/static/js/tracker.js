@@ -6,6 +6,7 @@
 let trackerProjects = [];
 let activeProjectId = null;
 let activeCurrency = "USD";
+let activeView = "Active";
 
 const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
 
@@ -60,7 +61,8 @@ function projectCardHtml(project) {
 }
 
 function renderProjectGrid() {
-    const cards = trackerProjects.map(projectCardHtml).join("");
+    const visible = trackerProjects.filter((p) => p.status === activeView);
+    const cards = visible.map(projectCardHtml).join("");
     $("project-grid").innerHTML = `
         ${cards}
         <button class="project-card project-card-new" id="new-project-btn" type="button">
@@ -75,10 +77,28 @@ function renderProjectGrid() {
     $("new-project-btn").addEventListener("click", createProject);
 }
 
+document.querySelectorAll(".view-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        activeView = btn.dataset.view;
+        document.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderProjectGrid();
+    });
+});
+
 async function createProject() {
     const resp = await fetch("/api/tracker/projects", { method: "POST" });
     const project = await resp.json();
     trackerProjects.unshift(project);
+
+    // A new project defaults to Active - if the Completed tab is showing,
+    // switch to Active so the project you just created is actually
+    // visible instead of silently landing on a hidden tab.
+    if (activeView !== "Active") {
+        activeView = "Active";
+        document.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === "Active"));
+    }
+
     renderProjectGrid();
     openProjectModal(project.id);
 }

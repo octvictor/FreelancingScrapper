@@ -1,6 +1,6 @@
 """API routes for the Gatherer tool: a manually-curated list of studios/
 companies (title, URL, type, outreach status, date sent). Thin HTTP
-wrapper around storage/db.py, same pattern as api/scrapper.py.
+wrapper around storage/db.py, same pattern as api/tracker.py.
 """
 from __future__ import annotations
 

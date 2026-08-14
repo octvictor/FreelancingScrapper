@@ -4,15 +4,9 @@ __pycache__/
 .venv/
 venv/
 
-# scraped data / local db
+# local db / uploaded project docs
 data/*.db
-data/*.csv
-data/debug/
 data/project_docs/
-
-# persistent browser login sessions (contain auth cookies - never commit)
-browser_data/*
-!browser_data/.gitkeep
 
 # PyInstaller build artifacts
 build/

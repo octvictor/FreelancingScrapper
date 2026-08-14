@@ -1,9 +1,4 @@
-"""SQLite storage layer shared by all scrapers and the Streamlit GUI.
-
-Schema is intentionally source-agnostic: every scraper writes into the
-same `companies` / `people` / `job_postings` tables, tagged with a
-`source` column, so future scrapers can reuse it without changes.
-"""
+"""SQLite storage layer shared by every tool (Gatherer, Tracker)."""
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -11,52 +6,6 @@ from datetime import datetime, timezone
 from app_paths import DB_PATH
 
 SCHEMA = """
-CREATE TABLE IF NOT EXISTS companies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    source TEXT,
-    url TEXT,
-    industry TEXT,
-    location TEXT,
-    notes TEXT,
-    first_seen TEXT NOT NULL,
-    last_seen TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS people (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    title TEXT,
-    company_name TEXT,
-    location TEXT,
-    profile_url TEXT UNIQUE,
-    source TEXT NOT NULL,
-    scraped_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS job_postings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    company_name TEXT,
-    url TEXT UNIQUE,
-    location TEXT,
-    description TEXT,
-    source TEXT NOT NULL,
-    posted_date TEXT,
-    scraped_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS scrape_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    source TEXT NOT NULL,
-    query TEXT,
-    result_count INTEGER DEFAULT 0,
-    status TEXT NOT NULL,
-    started_at TEXT NOT NULL,
-    finished_at TEXT,
-    error TEXT
-);
-
 CREATE TABLE IF NOT EXISTS gatherer_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL DEFAULT '',
@@ -101,11 +50,6 @@ CREATE TABLE IF NOT EXISTS project_tasks (
 );
 """
 
-_TABLES = {
-    "companies", "people", "job_postings", "scrape_runs", "gatherer_entries",
-    "projects", "project_docs", "project_tasks",
-}
-
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -135,94 +79,6 @@ def init_db() -> None:
             conn.execute("ALTER TABLE projects ADD COLUMN description TEXT")
         if "currency" not in columns:
             conn.execute("ALTER TABLE projects ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'")
-
-
-def upsert_company(name, source, url=None, industry=None, location=None, notes=None) -> None:
-    if not name:
-        return
-    now = _now()
-    with get_connection() as conn:
-        conn.execute(
-            """
-            INSERT INTO companies (name, source, url, industry, location, notes, first_seen, last_seen)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(name) DO UPDATE SET
-                source=excluded.source,
-                url=COALESCE(excluded.url, companies.url),
-                industry=COALESCE(excluded.industry, companies.industry),
-                location=COALESCE(excluded.location, companies.location),
-                notes=COALESCE(excluded.notes, companies.notes),
-                last_seen=excluded.last_seen
-            """,
-            (name, source, url, industry, location, notes, now, now),
-        )
-
-
-def insert_person(name, title, company_name, location, profile_url, source) -> None:
-    now = _now()
-    with get_connection() as conn:
-        conn.execute(
-            """
-            INSERT INTO people (name, title, company_name, location, profile_url, source, scraped_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(profile_url) DO UPDATE SET
-                name=excluded.name,
-                title=excluded.title,
-                company_name=excluded.company_name,
-                location=excluded.location,
-                scraped_at=excluded.scraped_at
-            """,
-            (name, title, company_name, location, profile_url, source, now),
-        )
-    if company_name:
-        upsert_company(company_name, source)
-
-
-def insert_job(title, company_name, url, location, description, source, posted_date=None) -> None:
-    now = _now()
-    with get_connection() as conn:
-        conn.execute(
-            """
-            INSERT INTO job_postings (title, company_name, url, location, description, source, posted_date, scraped_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(url) DO UPDATE SET
-                title=excluded.title,
-                company_name=excluded.company_name,
-                location=excluded.location,
-                description=excluded.description,
-                posted_date=excluded.posted_date,
-                scraped_at=excluded.scraped_at
-            """,
-            (title, company_name, url, location, description, source, posted_date, now),
-        )
-    if company_name:
-        upsert_company(company_name, source)
-
-
-def start_run(source: str, query: str) -> int:
-    with get_connection() as conn:
-        cur = conn.execute(
-            "INSERT INTO scrape_runs (source, query, status, started_at) VALUES (?, ?, 'running', ?)",
-            (source, query, _now()),
-        )
-        return cur.lastrowid
-
-
-def finish_run(run_id: int, result_count: int, status: str = "completed", error: str | None = None) -> None:
-    with get_connection() as conn:
-        conn.execute(
-            "UPDATE scrape_runs SET result_count=?, status=?, finished_at=?, error=? WHERE id=?",
-            (result_count, status, _now(), error, run_id),
-        )
-
-
-def clear_table(table: str) -> None:
-    """Wipe all rows from one table - used by the sidebar "reset demo
-    data" control so repeated test runs don't pile up duplicate rows."""
-    if table not in _TABLES:
-        raise ValueError(f"Unknown table: {table}")
-    with get_connection() as conn:
-        conn.execute(f"DELETE FROM {table}")
 
 
 # ---------- Gatherer: manually-curated studio/company list ----------
