@@ -73,43 +73,61 @@
 
             <textarea class="modal-description-input" id="modal-description" placeholder="Add a description..."></textarea>
 
-            <div class="modal-fields">
-                <div class="modal-field">
-                    <label for="modal-status">Project status</label>
-                    <select class="cell-select color-pill" id="modal-status">
-                        <option value="Active">&#9679; Active</option>
-                        <option value="Completed">&#9679; Completed</option>
-                    </select>
-                </div>
-                <div class="modal-field">
-                    <label for="modal-deadline">Deadline</label>
-                    <input type="date" id="modal-deadline">
-                </div>
-                <div class="modal-field">
-                    <label for="modal-day-rate">Day rate</label>
-                    <div class="modal-field-group">
-                        <div class="currency-input-wrap">
-                            <span class="currency-prefix" id="day-rate-prefix">$</span>
-                            <input type="number" id="modal-day-rate" min="0" step="0.01" placeholder="0.00">
+            <div class="modal-top-row">
+                <div class="modal-left-col">
+                    <div class="modal-fields">
+                        <div class="modal-field">
+                            <label for="modal-status">Project status</label>
+                            <select class="cell-select color-pill" id="modal-status">
+                                <option value="Active">&#9679; Active</option>
+                                <option value="Completed">&#9679; Completed</option>
+                            </select>
                         </div>
-                        <select class="cell-select" id="modal-currency">
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                            <option value="GBP">GBP</option>
-                            <option value="BRL">BRL</option>
-                        </select>
+                        <div class="modal-field">
+                            <label for="modal-client">Client</label>
+                            <input type="text" id="modal-client" placeholder="Client name">
+                        </div>
+                        <div class="modal-field">
+                            <label for="modal-deadline">Deadline</label>
+                            <input type="date" id="modal-deadline">
+                        </div>
+                        <div class="modal-field">
+                            <label for="modal-day-rate">Day rate</label>
+                            <div class="modal-field-group">
+                                <div class="currency-input-wrap">
+                                    <span class="currency-prefix" id="day-rate-prefix">$</span>
+                                    <input type="number" id="modal-day-rate" min="0" step="0.01" placeholder="0.00">
+                                </div>
+                                <select class="cell-select" id="modal-currency">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="GBP">GBP</option>
+                                    <option value="BRL">BRL</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-field">
+                            <label>Docs</label>
+                            <div class="modal-field-group">
+                                <input type="file" id="doc-file-input" style="display:none;">
+                                <button class="btn" id="doc-upload-btn" type="button">+ Add doc</button>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="docs-list" id="docs-list"></div>
                 </div>
-                <div class="modal-field">
-                    <label>Docs</label>
-                    <div class="modal-field-group">
-                        <input type="file" id="doc-file-input" style="display:none;">
-                        <button class="btn" id="doc-upload-btn" type="button">+ Add doc</button>
+
+                <!-- Placeholder only - not wired up to anything yet. -->
+                <div class="modal-side-panel">
+                    <div class="modal-side-tabs">
+                        <button class="modal-side-tab active" type="button" data-side-tab="assets">Assets</button>
+                        <button class="modal-side-tab" type="button" data-side-tab="notes">Notes</button>
+                        <button class="modal-side-tab" type="button" data-side-tab="briefing">Briefing</button>
                     </div>
+                    <div class="modal-side-content" id="modal-side-content"></div>
                 </div>
             </div>
-
-            <div class="docs-list" id="docs-list"></div>
 
             <div class="modal-section">
                 <p class="modal-section-title">Log</p>

@@ -215,11 +215,17 @@ function renderTaskTable(tasks, projectId) {
             observationInput.disabled = !isCustom;
 
             const updates = { duration: e.target.value };
-            const autoCost = computeAutoCost(e.target.value);
-            if (autoCost !== null) {
-                costInput.value = autoCost;
-                updates.cost = autoCost;
+            if (isCustom) {
+                costInput.value = 0;
+                updates.cost = 0;
                 renderLogSum();
+            } else {
+                const autoCost = computeAutoCost(e.target.value);
+                if (autoCost !== null) {
+                    costInput.value = autoCost;
+                    updates.cost = autoCost;
+                    renderLogSum();
+                }
             }
             saveTaskField(projectId, taskId, updates);
         });
@@ -276,6 +282,7 @@ async function openProjectModal(id) {
     $("modal-status").classList.remove("status-active", "status-completed");
     $("modal-status").classList.add(trackerStatusPillClass(project.status));
     refreshCustomSelect($("modal-status"));
+    $("modal-client").value = project.client || "";
     $("modal-deadline").value = project.deadline || "";
     $("modal-day-rate").value = project.day_rate ?? "";
     activeDayRate = project.day_rate ?? null;
@@ -285,6 +292,7 @@ async function openProjectModal(id) {
     $("day-rate-prefix").textContent = currencySymbol();
     renderDocsList(project.docs, id);
     renderTaskTable(project.tasks, id);
+    resetSidePanel();
 
     $("project-modal-backdrop").style.display = "flex";
     $("modal-title").focus();
@@ -309,6 +317,29 @@ async function saveActiveProject(updates) {
     renderProjectGrid();
 }
 
+// ---------- Side panel (temporary mock - Assets/Notes/Briefing) ----------
+// Not wired up to any real data yet; just placeholder text per tab so
+// the layout is in place ahead of building these out for real.
+
+const SIDE_TAB_PLACEHOLDERS = {
+    assets: "Assets will live here - reference images, renders, deliverables.",
+    notes: "Freeform notes for this project.",
+    briefing: "The client briefing / brief doc.",
+};
+
+function resetSidePanel() {
+    document.querySelectorAll(".modal-side-tab").forEach((b) => b.classList.toggle("active", b.dataset.sideTab === "assets"));
+    $("modal-side-content").textContent = SIDE_TAB_PLACEHOLDERS.assets;
+}
+
+document.querySelectorAll(".modal-side-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".modal-side-tab").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        $("modal-side-content").textContent = SIDE_TAB_PLACEHOLDERS[btn.dataset.sideTab];
+    });
+});
+
 $("project-modal-close").addEventListener("click", closeProjectModal);
 $("project-modal-backdrop").addEventListener("click", (e) => {
     if (e.target.id === "project-modal-backdrop") closeProjectModal();
@@ -330,6 +361,10 @@ $("modal-status").addEventListener("change", (e) => {
     saveActiveProject({ status: e.target.value });
 });
 enhanceSelect($("modal-status"));
+$("modal-client").addEventListener("blur", (e) => saveActiveProject({ client: e.target.value.trim() || null }));
+$("modal-client").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.target.blur();
+});
 $("modal-deadline").addEventListener("change", (e) => saveActiveProject({ deadline: e.target.value || null }));
 $("modal-day-rate").addEventListener("blur", (e) => {
     const value = e.target.value === "" ? null : parseFloat(e.target.value);

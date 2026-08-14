@@ -449,8 +449,8 @@ table.task-table td:nth-child(6) {
 
 .cell-select option[value="Active"],
 .custom-select-option[data-value="Active"] {
-    background: #332813;
-    color: #d9a566;
+    background: #3d2a0d;
+    color: #f0a848;
 }
 
 .cell-select option[value="Completed"],
@@ -462,8 +462,8 @@ table.task-table td:nth-child(6) {
 }
 
 .color-pill.status-active {
-    background: rgba(217, 165, 102, 0.15);
-    color: #d9a566;
+    background: rgba(240, 168, 72, 0.18);
+    color: #f0a848;
 }
 
 .color-pill.status-completed {
@@ -650,9 +650,9 @@ table.task-table td:nth-child(6) {
 
 /* Selected tab wears the same tint as the status pill it filters for. */
 .view-toggle-btn[data-view="Active"].active {
-    background: rgba(217, 165, 102, 0.15);
+    background: rgba(240, 168, 72, 0.18);
     border-color: transparent;
-    color: #d9a566;
+    color: #f0a848;
 }
 
 .view-toggle-btn[data-view="Completed"].active {
@@ -851,6 +851,70 @@ table.task-table td:nth-child(6) {
 .modal-description-input:hover,
 .modal-description-input:focus {
     border-color: var(--border);
+}
+
+.modal-top-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.modal-left-col {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+}
+
+/* Temporary mock - not wired up to any real data yet, just reserving
+   the layout for Assets/Notes/Briefing until those get built. */
+.modal-side-panel {
+    flex: 1;
+    min-width: 260px;
+    min-height: 220px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-side-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+}
+
+.modal-side-tab {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.modal-side-tab:hover {
+    color: var(--text);
+}
+
+.modal-side-tab.active {
+    background: var(--panel);
+    border-color: var(--border-soft);
+    color: var(--text);
+}
+
+.modal-side-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 13px;
+    padding: 20px;
 }
 
 /* Vertical Notion-style property list: label column on the left,

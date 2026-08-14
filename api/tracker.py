@@ -26,6 +26,7 @@ class ProjectUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     status: str | None = None
+    client: str | None = None
     deadline: str | None = None
     day_rate: float | None = None
     currency: str | None = None
