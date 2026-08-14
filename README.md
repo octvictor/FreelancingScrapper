@@ -11,10 +11,14 @@ sidebar (click the section header to fold/unfold it):
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
   (Active/Completed), and Paid/Unpaid, each pill directly editable
-  inline like Gatherer's. An Active/Completed toggle above the table
-  filters which rows show, and a "+ New project" button creates one.
-  Rows can be dragged by the handle to reorder them - the order
-  persists. Clicking a row anywhere else opens a popup: a description,
+  inline like Gatherer's (Paid/Unpaid use a neutral grey/off-white
+  tint rather than a status color, since being paid isn't a workflow
+  state). An Active/Completed toggle above the table filters which
+  rows show; each view caps at 5 rows with its own "Show more/less"
+  button at the bottom so a long list doesn't dwarf the page. A
+  "+ New project" button below the table creates one. Rows can be
+  dragged by the handle to reorder them - the order persists.
+  Clicking a row anywhere else opens a popup: a description,
   project status, a client name, a deadline, a day rate (with a
   USD/EUR/GBP/BRL currency picker), "Docs" - a single place to attach
   both contract and invoice files (real file uploads, stored on disk

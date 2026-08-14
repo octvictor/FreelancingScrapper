@@ -10,6 +10,11 @@ let activeCurrency = "USD";
 let activeView = "Active";
 let activeDayRate = null;
 
+// Each view (Active/Completed) shows at most this many rows until its own
+// "Show more" is clicked - keeps a long list from dwarfing the page.
+const PROJECT_ROW_LIMIT = 5;
+let expandedViews = { Active: false, Completed: false };
+
 const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
 
 function currencySymbol() {
@@ -83,10 +88,21 @@ function projectRowHtml(project) {
 
 function renderProjectTable() {
     cleanupCustomSelectsIn($("project-table-body"));
-    const visible = trackerProjects.filter((p) => p.status === activeView);
+    const all = trackerProjects.filter((p) => p.status === activeView);
+    const expanded = expandedViews[activeView];
+    const visible = expanded ? all : all.slice(0, PROJECT_ROW_LIMIT);
     $("project-table-body").innerHTML = visible.length
         ? visible.map(projectRowHtml).join("")
         : `<tr><td colspan="5" class="muted" style="padding: 14px 10px;">No projects yet.</td></tr>`;
+
+    const expandBtn = $("project-expand-btn");
+    const hiddenCount = all.length - visible.length;
+    if (all.length > PROJECT_ROW_LIMIT) {
+        expandBtn.style.display = "";
+        expandBtn.textContent = expanded ? "Show less" : `Show ${hiddenCount} more`;
+    } else {
+        expandBtn.style.display = "none";
+    }
 
     document.querySelectorAll("#project-table-body tr[data-id]").forEach((tr) => {
         const projectId = parseInt(tr.dataset.id, 10);
@@ -192,6 +208,11 @@ document.querySelectorAll(".view-toggle-btn").forEach((btn) => {
         btn.classList.add("active");
         renderProjectTable();
     });
+});
+
+$("project-expand-btn").addEventListener("click", () => {
+    expandedViews[activeView] = !expandedViews[activeView];
+    renderProjectTable();
 });
 
 async function createProject() {

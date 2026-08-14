@@ -273,6 +273,21 @@ input[type="url"]:focus {
     cursor: default;
 }
 
+/* Lower-emphasis variant - "show more/less" style toggles that shouldn't
+   visually compete with a page's primary action button. */
+.btn-text {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+    width: 100%;
+    text-align: center;
+}
+
+.btn-text:hover {
+    color: var(--text);
+    border-color: transparent;
+}
+
 /* ---------- Gatherer table ---------- */
 
 .gatherer-table-wrap {
@@ -502,8 +517,8 @@ table.task-table td:nth-child(6) {
 
 .cell-select option[value="Paid"],
 .custom-select-option[data-value="Paid"] {
-    background: #123321;
-    color: #86efac;
+    background: #3a3936;
+    color: var(--text);
 }
 
 .cell-select option[value="Unpaid"],
@@ -537,8 +552,8 @@ table.task-table td:nth-child(6) {
 }
 
 .color-pill.paid-paid {
-    background: rgba(34, 197, 94, 0.12);
-    color: #86efac;
+    background: rgba(245, 244, 241, 0.14);
+    color: var(--text);
 }
 
 .color-pill.paid-unpaid {
@@ -698,7 +713,6 @@ table.task-table td:nth-child(6) {
 .tracker-toolbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     margin-bottom: 18px;
 }
 
@@ -776,6 +790,31 @@ table.project-table td.project-row-desc {
 
 table.project-table tr.dragging {
     opacity: 0.4;
+}
+
+/* Rows read as a flat list with only the base table CSS (a 1px hairline
+   between them) - alternating tint + a bit more vertical room makes each
+   row a distinct band, closer to Studio Database's table. */
+table.project-table td {
+    padding: 10px 6px;
+}
+
+table.project-table tbody tr:nth-child(even) td {
+    background: var(--panel-alt);
+}
+
+table.project-table tbody tr:nth-child(even) td:first-child {
+    border-top-left-radius: var(--radius-sm);
+    border-bottom-left-radius: var(--radius-sm);
+}
+
+table.project-table tbody tr:nth-child(even) td:last-child {
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
+}
+
+table.project-table tbody tr:hover td {
+    box-shadow: inset 0 0 0 9999px rgba(255, 255, 255, 0.04);
 }
 
 .row-drag-handle {
