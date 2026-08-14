@@ -469,13 +469,13 @@ table.task-table td:nth-child(6) {
 }
 
 .cell-select.color-pill.type-studio {
-    background: rgba(168, 85, 247, 0.14);
-    color: #c9a3fb;
+    background: rgba(168, 85, 247, 0.20);
+    color: #b98cf9;
 }
 
 .cell-select.color-pill.type-company {
-    background: rgba(249, 115, 22, 0.14);
-    color: #fdba74;
+    background: rgba(234, 179, 8, 0.16);
+    color: #fbbf24;
 }
 
 /* The dropdown POPUP is a separate rendering surface from the closed
@@ -493,14 +493,14 @@ table.task-table td:nth-child(6) {
 
 .cell-select option[value="Studio"],
 .custom-select-option[data-value="Studio"] {
-    background: #241a33;
-    color: #c9a3fb;
+    background: #26173a;
+    color: #b98cf9;
 }
 
 .cell-select option[value="Company"],
 .custom-select-option[data-value="Company"] {
-    background: #2e2013;
-    color: #fdba74;
+    background: #332a13;
+    color: #fbbf24;
 }
 
 .cell-select option[value="Sent"],
@@ -562,8 +562,8 @@ table.task-table td:nth-child(6) {
 }
 
 .color-pill.duration-full {
-    background: rgba(229, 115, 115, 0.14);
-    color: #f2a3a3;
+    background: rgba(229, 90, 90, 0.18);
+    color: #f28787;
 }
 
 .color-pill.duration-half {
@@ -578,8 +578,8 @@ table.task-table td:nth-child(6) {
 
 .cell-select option[value="Full"],
 .custom-select-option[data-value="Full"] {
-    background: #331a1a;
-    color: #f2a3a3;
+    background: #341717;
+    color: #f28787;
 }
 
 .cell-select option[value="Half"],
@@ -987,12 +987,9 @@ table.project-table tbody tr:hover td {
     flex: 0 0 auto;
 }
 
-/* Temporary mock - not wired up to any real data yet, just reserving
-   the layout for Assets/Notes/Briefing until those get built. */
 .modal-side-panel {
     flex: 1;
     min-width: 260px;
-    min-height: 280px;
     background: var(--panel-alt);
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-lg);
@@ -1029,10 +1026,15 @@ table.project-table tbody tr:hover td {
     color: var(--text);
 }
 
+/* Starts compact and grows on demand via the native drag handle, rather
+   than always reserving a large fixed block for text that's often short. */
 .modal-side-content {
-    flex: 1;
+    flex: 0 0 auto;
     width: 100%;
-    resize: none;
+    height: 110px;
+    min-height: 60px;
+    max-height: 520px;
+    resize: vertical;
     background: none;
     border: none;
     outline: none;
