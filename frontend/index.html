@@ -139,14 +139,26 @@
                 <div class="panel todo-panel">
                     <div class="todo-layout">
                         <div class="todo-lists-rail">
+                            <button class="todo-filter-toggle" id="todo-favorites-filter" type="button">
+                                <span>&#9733;</span> Favorites
+                            </button>
                             <div id="todo-lists"></div>
-                            <button class="btn btn-text" id="todo-list-add-btn" type="button">+ New list</button>
+                            <button class="btn" id="todo-list-add-btn" type="button">+ New list</button>
                         </div>
                         <div class="todo-tasks-pane" id="todo-tasks-pane">
-                            <div class="todo-tasks-header">
-                                <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
+                            <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
+                            <div class="todo-tasks-controls">
+                                <button class="todo-star-btn" id="todo-list-favorite-btn" type="button" title="Mark list favorite">&#9734;</button>
                                 <button class="btn-danger-text" id="todo-list-delete-btn" type="button">Delete list</button>
                             </div>
+
+                            <div class="todo-task-filter-row">
+                                <button class="todo-filter-toggle" id="todo-filter-important" type="button">
+                                    <span>&#9733;</span> Important
+                                </button>
+                            </div>
+                            <button class="btn" id="todo-clean-list-btn" type="button">Clean list</button>
+
                             <div id="todo-task-list"></div>
                             <button class="btn" id="todo-task-add-btn" type="button">+ Add task</button>
                             <div class="todo-completed-wrap" id="todo-completed-wrap">

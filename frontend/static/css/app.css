@@ -1378,6 +1378,43 @@ table.project-table tbody tr:hover td {
     padding-right: 20px;
 }
 
+.todo-lists-rail #todo-favorites-filter {
+    align-self: flex-start;
+    margin-bottom: 10px;
+}
+
+.todo-lists-rail #todo-list-add-btn {
+    align-self: flex-start;
+    margin-top: 8px;
+}
+
+/* Small pill toggle shared by the Favorites (lists rail) and Important
+   (task pane) filters - active state reuses the star's gold tone. */
+.todo-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-full);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.todo-filter-toggle:hover {
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.todo-filter-toggle.active {
+    background: rgba(240, 193, 75, 0.16);
+    border-color: transparent;
+    color: #f0c14b;
+}
+
 .todo-list-item {
     display: flex;
     align-items: center;
@@ -1416,22 +1453,25 @@ table.project-table tbody tr:hover td {
     padding: 8px 10px;
 }
 
+/* Grid (not flex) so the right-hand column's width - driven by
+   whichever control row needs the most room ("Delete list", "Clean
+   list") - is shared by every row via the same track. That's what
+   keeps the task rows' right edge lined up with the title field's
+   right edge instead of drifting row to row. */
 .todo-tasks-pane {
     flex: 1;
     min-width: 0;
-}
-
-.todo-tasks-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin: 0 0 14px -8px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 16px;
+    row-gap: 10px;
+    align-items: start;
 }
 
 .todo-list-title-input {
+    grid-column: 1;
+    grid-row: 1;
     display: block;
-    flex: 1;
     min-width: 0;
     background: none;
     border: 1px solid transparent;
@@ -1441,6 +1481,47 @@ table.project-table tbody tr:hover td {
     letter-spacing: -0.01em;
     color: var(--text);
     padding: 6px 8px;
+    margin: 0 0 0 -8px;
+}
+
+.todo-tasks-controls {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-self: end;
+}
+
+.todo-tasks-controls .todo-star-btn {
+    font-size: 18px;
+}
+
+.todo-task-filter-row {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+#todo-clean-list-btn {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+}
+
+#todo-task-list {
+    grid-column: 1;
+    grid-row: 3;
+}
+
+#todo-task-add-btn {
+    grid-column: 1;
+    grid-row: 4;
+    justify-self: start;
+}
+
+#todo-completed-wrap {
+    grid-column: 1;
+    grid-row: 5;
 }
 
 .todo-list-title-input:hover {

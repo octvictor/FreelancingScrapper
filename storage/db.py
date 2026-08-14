@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS personal_checklist_items (
 CREATE TABLE IF NOT EXISTS todo_lists (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL DEFAULT '',
+    favorite INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -158,6 +159,11 @@ def init_db() -> None:
         task_columns = {row["name"] for row in conn.execute("PRAGMA table_info(project_tasks)")}
         if "observation" not in task_columns:
             conn.execute("ALTER TABLE project_tasks ADD COLUMN observation TEXT")
+
+        # `todo_lists` shipped before `favorite` existed - same story.
+        todo_list_columns = {row["name"] for row in conn.execute("PRAGMA table_info(todo_lists)")}
+        if "favorite" not in todo_list_columns:
+            conn.execute("ALTER TABLE todo_lists ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
 
 
 # ---------- Gatherer: manually-curated studio/company list ----------
@@ -495,13 +501,15 @@ def create_todo_list() -> dict:
 
 
 def update_todo_list(list_id: int, **fields) -> dict | None:
-    allowed = {"title"}
+    allowed = {"title", "favorite"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         with get_connection() as conn:
             row = conn.execute("SELECT * FROM todo_lists WHERE id=?", (list_id,)).fetchone()
             return dict(row) if row else None
 
+    if "favorite" in updates:
+        updates["favorite"] = int(bool(updates["favorite"]))
     updates["updated_at"] = _now()
     set_clause = ", ".join(f"{k}=?" for k in updates)
     with get_connection() as conn:
@@ -529,6 +537,21 @@ def list_todo_tasks(list_id: int) -> list[dict]:
             (list_id,),
         ).fetchall()
         return [dict(row) for row in rows]
+
+
+def clear_completed_todo_tasks(list_id: int) -> int:
+    """Deletes every completed task (and its steps) in a list - the
+    "Clean list" button's bulk action. Returns how many were removed."""
+    with get_connection() as conn:
+        task_ids = [
+            r["id"] for r in conn.execute(
+                "SELECT id FROM todo_tasks WHERE list_id=? AND completed=1", (list_id,)
+            ).fetchall()
+        ]
+        for task_id in task_ids:
+            conn.execute("DELETE FROM todo_steps WHERE task_id=?", (task_id,))
+        conn.execute("DELETE FROM todo_tasks WHERE list_id=? AND completed=1", (list_id,))
+        return len(task_ids)
 
 
 def create_todo_task(list_id: int) -> dict:

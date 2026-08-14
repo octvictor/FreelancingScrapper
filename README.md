@@ -54,15 +54,20 @@ items - currently just To Do.
   table to just that value, blank to show everything again.
 - **To Do** (under Management) - inspired by Microsoft To Do. Multiple
   lists (a rail on the left, "+ New list" to add one, click a list's
-  name in the tasks pane to rename it, "Delete list" removes it and
-  its tasks). Each list is a set of checkbox tasks - check one off and
-  it drops into a collapsed "Completed (n)" section below the active
+  name in the tasks pane to rename it, a star next to it marks the
+  list a Favorite, "Delete list" removes it and its tasks). A
+  "Favorites" toggle above the rail narrows it to just favorited
+  lists. Each list is a set of checkbox tasks - check one off and it
+  drops into a collapsed "Completed (n)" section below the active
   ones; a star icon on each row toggles Importance right from the
-  list. Clicking a task (anywhere but its checkbox/star/delete) opens
-  a detail view: the same checkbox/title/star in a header row, a
-  Steps checklist (a mini to-do list within the task, same
-  checkbox-and-title pattern as Personal Projects' Checklist), and a
-  freeform Notes text area. Everything autosaves on blur/change.
+  list, and an "Important" toggle above the tasks narrows them to just
+  starred ones. "Clean list" clears out every completed task in one
+  go (with a confirm showing how many). Clicking a task (anywhere but
+  its checkbox/star/delete) opens a detail view: the same
+  checkbox/title/star in a header row, a Steps checklist (a mini
+  to-do list within the task, same checkbox-and-title pattern as
+  Personal Projects' Checklist), and a freeform Notes text area.
+  Everything autosaves on blur/change.
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -187,7 +192,7 @@ executable), shared across every tool:
   bill anyone.
 - `personal_checklist_items` - personal_project_id, text, checked,
   created_at, updated_at. Backs a personal project's Checklist.
-- `todo_lists` - title, created_at, updated_at. To Do's lists.
+- `todo_lists` - title, favorite, created_at, updated_at. To Do's lists.
 - `todo_tasks` - list_id, title, completed, important, notes,
   position (manual create-order, newest on top), created_at,
   updated_at. A list's tasks.

@@ -17,6 +17,7 @@ router = APIRouter()
 
 class TodoListUpdate(BaseModel):
     title: str | None = None
+    favorite: bool | None = None
 
 
 class TodoTaskUpdate(BaseModel):
@@ -64,6 +65,12 @@ def list_tasks(list_id: int):
 @router.post("/lists/{list_id}/tasks")
 def create_task(list_id: int):
     return db.create_todo_task(list_id)
+
+
+@router.delete("/lists/{list_id}/tasks/completed")
+def clear_completed_tasks(list_id: int):
+    deleted = db.clear_completed_todo_tasks(list_id)
+    return {"ok": True, "deleted": deleted}
 
 
 @router.get("/lists/{list_id}/tasks/{task_id}")

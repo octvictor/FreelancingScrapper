@@ -10,6 +10,8 @@ let activeListId = null;
 let activeTodoTasks = [];
 let activeTodoTaskId = null;
 let todoCompletedExpanded = false;
+let todoFavoritesOnly = false;
+let todoImportantOnly = false;
 
 // ---------- Lists rail ----------
 
@@ -17,7 +19,7 @@ function todoListItemHtml(list) {
     const isActive = list.id === activeListId;
     return `
         <button class="todo-list-item ${isActive ? "active" : ""}" data-id="${list.id}" type="button">
-            <span class="todo-list-item-title">${escapeAttr(list.title) || "Untitled list"}</span>
+            <span class="todo-list-item-title">${list.favorite ? "&#9733; " : ""}${escapeAttr(list.title) || "Untitled list"}</span>
             ${list.open_count > 0 ? `<span class="todo-list-count">${list.open_count}</span>` : ""}
         </button>
     `;
@@ -25,25 +27,54 @@ function todoListItemHtml(list) {
 
 function renderTodoLists() {
     const container = $("todo-lists");
-    if (todoLists.length === 0) {
-        container.innerHTML = `<p class="todo-empty-state">No lists yet.</p>`;
+    const visibleLists = todoFavoritesOnly ? todoLists.filter((l) => l.favorite) : todoLists;
+    if (visibleLists.length === 0) {
+        container.innerHTML = `<p class="todo-empty-state">${todoFavoritesOnly ? "No favorite lists." : "No lists yet."}</p>`;
         return;
     }
-    container.innerHTML = todoLists.map(todoListItemHtml).join("");
+    container.innerHTML = visibleLists.map(todoListItemHtml).join("");
     container.querySelectorAll(".todo-list-item").forEach((btn) => {
         btn.addEventListener("click", () => selectTodoList(parseInt(btn.dataset.id, 10)));
     });
 }
 
+$("todo-favorites-filter").addEventListener("click", () => {
+    todoFavoritesOnly = !todoFavoritesOnly;
+    $("todo-favorites-filter").classList.toggle("active", todoFavoritesOnly);
+    renderTodoLists();
+});
+
 async function selectTodoList(id) {
     activeListId = id;
     todoCompletedExpanded = false;
+    todoImportantOnly = false;
+    $("todo-filter-important").classList.remove("active");
     const list = todoLists.find((l) => l.id === id);
     $("todo-list-title").value = list ? list.title || "" : "";
+    $("todo-list-favorite-btn").classList.toggle("active", !!(list && list.favorite));
+    $("todo-list-favorite-btn").innerHTML = list && list.favorite ? "&#9733;" : "&#9734;";
     $("todo-tasks-pane").style.display = "";
     renderTodoLists();
     await loadTodoTasks();
 }
+
+$("todo-list-favorite-btn").addEventListener("click", async () => {
+    if (activeListId === null) return;
+    const list = todoLists.find((l) => l.id === activeListId);
+    const willBeFavorite = !list.favorite;
+    const resp = await fetch(`/api/todo/lists/${activeListId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ favorite: willBeFavorite }),
+    });
+    if (!resp.ok) return;
+    const updated = await resp.json();
+    const idx = todoLists.findIndex((l) => l.id === updated.id);
+    if (idx !== -1) todoLists[idx] = updated;
+    $("todo-list-favorite-btn").classList.toggle("active", willBeFavorite);
+    $("todo-list-favorite-btn").innerHTML = willBeFavorite ? "&#9733;" : "&#9734;";
+    renderTodoLists();
+});
 
 async function refreshTodoLists() {
     const resp = await fetch("/api/todo/lists");
@@ -144,12 +175,14 @@ function wireTodoTaskRows(container) {
 }
 
 function renderTodoTasks() {
-    const active = activeTodoTasks.filter((t) => !t.completed);
-    const completed = activeTodoTasks.filter((t) => t.completed);
+    const base = todoImportantOnly ? activeTodoTasks.filter((t) => t.important) : activeTodoTasks;
+    const active = base.filter((t) => !t.completed);
+    const completed = base.filter((t) => t.completed);
+    const allCompletedCount = activeTodoTasks.filter((t) => t.completed).length;
 
     $("todo-task-list").innerHTML = active.length
         ? active.map(todoTaskRowHtml).join("")
-        : `<p class="todo-empty-state">No tasks yet.</p>`;
+        : `<p class="todo-empty-state">${todoImportantOnly ? "No important tasks." : "No tasks yet."}</p>`;
 
     $("todo-completed-wrap").style.display = completed.length > 0 ? "" : "none";
     $("todo-completed-label").textContent = `Completed (${completed.length})`;
@@ -157,9 +190,32 @@ function renderTodoTasks() {
     $("todo-completed-list").style.display = todoCompletedExpanded ? "" : "none";
     $("todo-completed-toggle").classList.toggle("expanded", todoCompletedExpanded);
 
+    $("todo-clean-list-btn").disabled = allCompletedCount === 0;
+
     wireTodoTaskRows($("todo-task-list"));
     wireTodoTaskRows($("todo-completed-list"));
 }
+
+$("todo-filter-important").addEventListener("click", () => {
+    todoImportantOnly = !todoImportantOnly;
+    $("todo-filter-important").classList.toggle("active", todoImportantOnly);
+    renderTodoTasks();
+});
+
+$("todo-clean-list-btn").addEventListener("click", async () => {
+    if (activeListId === null) return;
+    const completedCount = activeTodoTasks.filter((t) => t.completed).length;
+    if (completedCount === 0) return;
+    const ok = await confirmDialog(
+        `This deletes ${completedCount} completed task${completedCount === 1 ? "" : "s"}. This can't be undone.`,
+        { title: "Clean this list?", confirmText: "Clean" }
+    );
+    if (!ok) return;
+    await fetch(`/api/todo/lists/${activeListId}/tasks/completed`, { method: "DELETE" });
+    activeTodoTasks = activeTodoTasks.filter((t) => !t.completed);
+    renderTodoTasks();
+    refreshTodoLists();
+});
 
 async function saveTodoTaskField(taskId, updates) {
     const resp = await fetch(`/api/todo/lists/${activeListId}/tasks/${taskId}`, {
