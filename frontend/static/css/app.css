@@ -913,7 +913,7 @@ table.project-table tbody tr:hover td {
 }
 
 .modal.modal-personal {
-    max-width: 620px;
+    max-width: 880px;
 }
 
 .modal-section {
@@ -1051,6 +1051,42 @@ table.project-table tbody tr:hover td {
     flex: none;
     min-width: 0;
     min-height: 160px;
+}
+
+/* ---------- Personal project checklist ---------- */
+
+.checklist-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.checklist-item:last-child {
+    border-bottom: none;
+}
+
+.checklist-checkbox {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    accent-color: var(--accent-blue);
+    cursor: pointer;
+}
+
+.checklist-text {
+    flex: 1;
+}
+
+.checklist-item.checked .checklist-text {
+    color: var(--text-faint);
+    text-decoration: line-through;
 }
 
 .modal-side-tabs {

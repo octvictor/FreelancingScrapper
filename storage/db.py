@@ -68,6 +68,15 @@ CREATE TABLE IF NOT EXISTS personal_projects (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS personal_checklist_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    personal_project_id INTEGER NOT NULL,
+    text TEXT NOT NULL DEFAULT '',
+    checked INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 
@@ -380,4 +389,52 @@ def update_personal_project(project_id: int, **fields) -> dict | None:
 
 def delete_personal_project(project_id: int) -> None:
     with get_connection() as conn:
+        conn.execute("DELETE FROM personal_checklist_items WHERE personal_project_id=?", (project_id,))
         conn.execute("DELETE FROM personal_projects WHERE id=?", (project_id,))
+
+
+def list_personal_checklist_items(project_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM personal_checklist_items WHERE personal_project_id=? ORDER BY id",
+            (project_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_personal_checklist_item(project_id: int) -> dict:
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO personal_checklist_items (personal_project_id, text, checked, created_at, updated_at) "
+            "VALUES (?, '', 0, ?, ?)",
+            (project_id, now, now),
+        )
+        row = conn.execute("SELECT * FROM personal_checklist_items WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_personal_checklist_item(item_id: int, **fields) -> dict | None:
+    allowed = {"text", "checked"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        with get_connection() as conn:
+            row = conn.execute("SELECT * FROM personal_checklist_items WHERE id=?", (item_id,)).fetchone()
+            return dict(row) if row else None
+
+    if "checked" in updates:
+        updates["checked"] = int(bool(updates["checked"]))
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE personal_checklist_items SET {set_clause} WHERE id=?",
+            (*updates.values(), item_id),
+        )
+        row = conn.execute("SELECT * FROM personal_checklist_items WHERE id=?", (item_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_personal_checklist_item(item_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM personal_checklist_items WHERE id=?", (item_id,))

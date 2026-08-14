@@ -682,6 +682,7 @@ async function openPersonalProjectModal(id) {
     $("personal-modal-status").classList.add(trackerStatusPillClass(project.status));
     refreshCustomSelect($("personal-modal-status"));
     resetPersonalSidePanel(project);
+    renderChecklist(project.checklist_items || []);
 
     $("personal-modal-backdrop").style.display = "flex";
     $("personal-modal-title").focus();
@@ -767,6 +768,67 @@ $("delete-personal-project-btn").addEventListener("click", async () => {
     personalProjects = personalProjects.filter((p) => p.id !== activePersonalProjectId);
     closePersonalProjectModal();
     renderPersonalProjectTable();
+});
+
+// ---------- Personal project checklist ----------
+// A simple checkbox + title list, own rows (not reusing project_tasks -
+// no status/duration/cost here, just done-or-not).
+
+function checklistItemHtml(item) {
+    return `
+        <div class="checklist-item ${item.checked ? "checked" : ""}" data-id="${item.id}">
+            <input type="checkbox" class="checklist-checkbox" ${item.checked ? "checked" : ""}>
+            <input type="text" class="cell-input checklist-text" data-field="text" placeholder="Checklist item" value="${escapeAttr(item.text)}">
+            <button class="row-delete-btn" data-role="delete" title="Delete item">&times;</button>
+        </div>
+    `;
+}
+
+function wireChecklistRow(row) {
+    const itemId = parseInt(row.dataset.id, 10);
+
+    const checkbox = row.querySelector(".checklist-checkbox");
+    checkbox.addEventListener("change", () => {
+        row.classList.toggle("checked", checkbox.checked);
+        saveChecklistItem(itemId, { checked: checkbox.checked });
+    });
+
+    const textInput = row.querySelector(".checklist-text");
+    textInput.addEventListener("blur", () => saveChecklistItem(itemId, { text: textInput.value.trim() }));
+    textInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") textInput.blur();
+    });
+
+    row.querySelector("[data-role='delete']").addEventListener("click", async () => {
+        if (activePersonalProjectId === null) return;
+        await fetch(`/api/tracker/personal-projects/${activePersonalProjectId}/checklist-items/${itemId}`, { method: "DELETE" });
+        row.remove();
+    });
+
+    return textInput;
+}
+
+function renderChecklist(items) {
+    $("personal-checklist-list").innerHTML = items.map(checklistItemHtml).join("");
+    document.querySelectorAll("#personal-checklist-list .checklist-item").forEach(wireChecklistRow);
+}
+
+async function saveChecklistItem(itemId, updates) {
+    if (activePersonalProjectId === null) return;
+    await fetch(`/api/tracker/personal-projects/${activePersonalProjectId}/checklist-items/${itemId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+    });
+}
+
+$("personal-checklist-add-btn").addEventListener("click", async () => {
+    if (activePersonalProjectId === null) return;
+    const resp = await fetch(`/api/tracker/personal-projects/${activePersonalProjectId}/checklist-items`, { method: "POST" });
+    const item = await resp.json();
+    $("personal-checklist-list").insertAdjacentHTML("beforeend", checklistItemHtml(item));
+    const row = document.querySelector(`#personal-checklist-list .checklist-item[data-id="${item.id}"]`);
+    wireChecklistRow(row).focus();
 });
 
 (async function initPersonalProjects() {

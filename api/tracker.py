@@ -58,6 +58,11 @@ class PersonalProjectUpdate(BaseModel):
     references_text: str | None = None
 
 
+class ChecklistItemUpdate(BaseModel):
+    text: str | None = None
+    checked: bool | None = None
+
+
 def _project_dir(project_id: int) -> Path:
     return PROJECT_DOCS_DIR / str(project_id)
 
@@ -188,6 +193,7 @@ def get_personal_project(project_id: int):
     project = db.get_personal_project(project_id)
     if project is None:
         raise HTTPException(404, "Personal project not found")
+    project["checklist_items"] = db.list_personal_checklist_items(project_id)
     return project
 
 
@@ -203,4 +209,31 @@ def update_personal_project(project_id: int, payload: PersonalProjectUpdate):
 @router.delete("/personal-projects/{project_id}")
 def delete_personal_project(project_id: int):
     db.delete_personal_project(project_id)
+    return {"ok": True}
+
+
+@router.get("/personal-projects/{project_id}/checklist-items")
+def list_checklist_items(project_id: int):
+    return {"checklist_items": db.list_personal_checklist_items(project_id)}
+
+
+@router.post("/personal-projects/{project_id}/checklist-items")
+def create_checklist_item(project_id: int):
+    if db.get_personal_project(project_id) is None:
+        raise HTTPException(404, "Personal project not found")
+    return db.create_personal_checklist_item(project_id)
+
+
+@router.put("/personal-projects/{project_id}/checklist-items/{item_id}")
+def update_checklist_item(project_id: int, item_id: int, payload: ChecklistItemUpdate):
+    updates = payload.model_dump(exclude_unset=True)
+    item = db.update_personal_checklist_item(item_id, **updates)
+    if item is None or item["personal_project_id"] != project_id:
+        raise HTTPException(404, "Checklist item not found")
+    return item
+
+
+@router.delete("/personal-projects/{project_id}/checklist-items/{item_id}")
+def delete_checklist_item(project_id: int, item_id: int):
+    db.delete_personal_checklist_item(item_id)
     return {"ok": True}

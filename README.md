@@ -5,8 +5,8 @@ backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install), with a vertical tool
 menu in the sidebar. Currently:
 
-Both tools live under a collapsible **Management** section in the
-sidebar (click the section header to fold/unfold it):
+Both tools live under a collapsible **Tools** section in the sidebar
+(click the section header to fold/unfold it):
 
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
@@ -32,11 +32,14 @@ sidebar (click the section header to fold/unfold it):
   save button. Below that table, a collapsible **Personal Projects**
   section holds a second, simpler project list for work that isn't for
   a client - same row/table look, Active/Completed toggle, 5-row cap,
-  and drag-to-reorder, but no Paid column. Its popup only has a
-  description, project status, and an Assets/Notes/References panel
-  (no Client/Deadline/Day rate/Docs/Log, since none of that applies to
-  a personal project) - backed by its own `personal_projects` table,
-  entirely separate from `projects`.
+  and drag-to-reorder, but no Paid column. Its (wider) popup only has a
+  description, project status, an Assets/Notes/References panel (no
+  Client/Deadline/Day rate/Docs/Log, since none of that applies to a
+  personal project), and a Checklist - a plain to-do list, checkbox on
+  the left of a freeform title (checked items turn blue and get a
+  strikethrough), with "+ Add item" for more rows. Backed by its own
+  `personal_projects`/`personal_checklist_items` tables, entirely
+  separate from `projects`.
 - **Gatherer** (shown in the sidebar as "Studio Database") - a
   manually-curated list of studios/companies you find yourself
   (Behance, Instagram, wherever) - Title, clickable URL, Type
@@ -164,6 +167,8 @@ executable), shared across every tool:
   updated_at. A separate, simpler table from `projects` - no
   client/deadline/day rate/docs/tasks, since personal projects don't
   bill anyone.
+- `personal_checklist_items` - personal_project_id, text, checked,
+  created_at, updated_at. Backs a personal project's Checklist.
 
 ## Roadmap / not built yet
 
