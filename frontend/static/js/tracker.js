@@ -7,6 +7,7 @@ let trackerProjects = [];
 let activeProjectId = null;
 let activeCurrency = "USD";
 let activeView = "Active";
+let activeDayRate = null;
 
 const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
 
@@ -40,6 +41,15 @@ function durationPillClass(duration) {
     if (duration === "Half") return "duration-half";
     if (duration === "Custom") return "duration-custom";
     return "duration-full";
+}
+
+// Full/Half auto-fill Cost from the project's day rate; Custom leaves it
+// alone (null means "don't touch the existing cost").
+function computeAutoCost(duration) {
+    if (activeDayRate === null || activeDayRate === undefined || isNaN(activeDayRate)) return null;
+    if (duration === "Full") return Math.round(activeDayRate * 100) / 100;
+    if (duration === "Half") return Math.round((activeDayRate / 2) * 100) / 100;
+    return null;
 }
 
 function formatDeadline(deadline) {
@@ -147,6 +157,7 @@ function taskRowHtml(task) {
                     <option value="Custom" ${task.duration === "Custom" ? "selected" : ""}>&#9679; Custom</option>
                 </select>
             </td>
+            <td><input type="text" class="cell-input" data-field="observation" placeholder="Note" value="${escapeAttr(task.observation || "")}" ${task.duration !== "Custom" ? "disabled" : ""}></td>
             <td>
                 <div class="cost-cell">
                     <span class="currency-prefix cost-prefix">${currencySymbol()}</span>
@@ -163,7 +174,7 @@ function renderTaskTable(tasks, projectId) {
     cleanupCustomSelectsIn($("task-table-body"));
     $("task-table-body").innerHTML = tasks.length
         ? tasks.map(taskRowHtml).join("")
-        : `<tr><td colspan="6" class="muted" style="padding: 14px 10px;">No tasks logged yet.</td></tr>`;
+        : `<tr><td colspan="7" class="muted" style="padding: 14px 10px;">No tasks logged yet.</td></tr>`;
 
     document.querySelectorAll("#task-table-body tr[data-id]").forEach((tr) => {
         const taskId = parseInt(tr.dataset.id, 10);
@@ -182,13 +193,11 @@ function renderTaskTable(tasks, projectId) {
         });
         enhanceSelect(statusSelect);
 
-        const durationSelect = tr.querySelector(".cell-select[data-field='duration']");
-        durationSelect.addEventListener("change", (e) => {
-            durationSelect.classList.remove("duration-full", "duration-half", "duration-custom");
-            durationSelect.classList.add(durationPillClass(e.target.value));
-            saveTaskField(projectId, taskId, { duration: e.target.value });
+        const observationInput = tr.querySelector(".cell-input[data-field='observation']");
+        observationInput.addEventListener("blur", () => saveTaskField(projectId, taskId, { observation: observationInput.value.trim() || null }));
+        observationInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") observationInput.blur();
         });
-        enhanceSelect(durationSelect);
 
         const costInput = tr.querySelector(".cell-input[data-field='cost']");
         costInput.addEventListener("input", renderLogSum);
@@ -196,6 +205,25 @@ function renderTaskTable(tasks, projectId) {
             const value = costInput.value === "" ? null : parseFloat(costInput.value);
             saveTaskField(projectId, taskId, { cost: value });
         });
+
+        const durationSelect = tr.querySelector(".cell-select[data-field='duration']");
+        durationSelect.addEventListener("change", (e) => {
+            durationSelect.classList.remove("duration-full", "duration-half", "duration-custom");
+            durationSelect.classList.add(durationPillClass(e.target.value));
+
+            const isCustom = e.target.value === "Custom";
+            observationInput.disabled = !isCustom;
+
+            const updates = { duration: e.target.value };
+            const autoCost = computeAutoCost(e.target.value);
+            if (autoCost !== null) {
+                costInput.value = autoCost;
+                updates.cost = autoCost;
+                renderLogSum();
+            }
+            saveTaskField(projectId, taskId, updates);
+        });
+        enhanceSelect(durationSelect);
 
         const dateInput = tr.querySelector(".date-input");
         dateInput.addEventListener("change", () => saveTaskField(projectId, taskId, { task_date: dateInput.value || null }));
@@ -223,6 +251,15 @@ $("task-add-btn").addEventListener("click", async () => {
     if (activeProjectId === null) return;
     const resp = await fetch(`/api/tracker/projects/${activeProjectId}/tasks`, { method: "POST" });
     const task = await resp.json();
+
+    // New rows default to Duration "Full" without an explicit change
+    // event ever firing - apply the same auto-cost rule up front so it
+    // doesn't take a manual duration toggle to see it.
+    const autoCost = computeAutoCost(task.duration);
+    if (autoCost !== null) {
+        await saveTaskField(activeProjectId, task.id, { cost: autoCost });
+    }
+
     const project = await (await fetch(`/api/tracker/projects/${activeProjectId}`)).json();
     renderTaskTable(project.tasks, activeProjectId);
     const newTaskInput = document.querySelector(`#task-table-body tr[data-id="${task.id}"] .cell-input[data-field="task"]`);
@@ -241,6 +278,7 @@ async function openProjectModal(id) {
     refreshCustomSelect($("modal-status"));
     $("modal-deadline").value = project.deadline || "";
     $("modal-day-rate").value = project.day_rate ?? "";
+    activeDayRate = project.day_rate ?? null;
     activeCurrency = project.currency || "USD";
     $("modal-currency").value = activeCurrency;
     refreshCustomSelect($("modal-currency"));
@@ -295,6 +333,7 @@ enhanceSelect($("modal-status"));
 $("modal-deadline").addEventListener("change", (e) => saveActiveProject({ deadline: e.target.value || null }));
 $("modal-day-rate").addEventListener("blur", (e) => {
     const value = e.target.value === "" ? null : parseFloat(e.target.value);
+    activeDayRate = value;
     saveActiveProject({ day_rate: value });
 });
 

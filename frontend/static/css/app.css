@@ -282,13 +282,18 @@ table.task-table td:nth-child(1) {
 
 table.task-table th:nth-child(3),
 table.task-table td:nth-child(3),
-table.task-table th:nth-child(4),
-table.task-table td:nth-child(4) {
+table.task-table th:nth-child(5),
+table.task-table td:nth-child(5) {
     min-width: 90px;
 }
 
-table.task-table th:nth-child(5),
-table.task-table td:nth-child(5) {
+table.task-table th:nth-child(4),
+table.task-table td:nth-child(4) {
+    min-width: 170px;
+}
+
+table.task-table th:nth-child(6),
+table.task-table td:nth-child(6) {
     min-width: 130px;
 }
 
@@ -340,6 +345,16 @@ table.task-table td:nth-child(5) {
     background: var(--panel-alt);
     border-color: var(--border);
     outline: none;
+}
+
+/* Observation is only usable while a task's Duration is Custom -
+   otherwise it's disabled and reads as greyed-out/unclickable. */
+.cell-input:disabled {
+    cursor: not-allowed;
+}
+
+.cell-input:disabled:hover {
+    background: transparent;
 }
 
 .cell-input.date-input {
@@ -434,8 +449,8 @@ table.task-table td:nth-child(5) {
 
 .cell-select option[value="Active"],
 .custom-select-option[data-value="Active"] {
-    background: #0f2836;
-    color: #7fb2d9;
+    background: #332813;
+    color: #d9a566;
 }
 
 .cell-select option[value="Completed"],
@@ -447,8 +462,8 @@ table.task-table td:nth-child(5) {
 }
 
 .color-pill.status-active {
-    background: rgba(127, 178, 217, 0.14);
-    color: #7fb2d9;
+    background: rgba(217, 165, 102, 0.15);
+    color: #d9a566;
 }
 
 .color-pill.status-completed {
@@ -633,10 +648,22 @@ table.task-table td:nth-child(5) {
     color: var(--text);
 }
 
+/* Selected tab wears the same tint as the status pill it filters for. */
+.view-toggle-btn[data-view="Active"].active {
+    background: rgba(217, 165, 102, 0.15);
+    border-color: transparent;
+    color: #d9a566;
+}
+
+.view-toggle-btn[data-view="Completed"].active {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: transparent;
+    color: #86efac;
+}
+
 .project-grid {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 16px;
 }
 
@@ -720,7 +747,7 @@ table.task-table td:nth-child(5) {
 }
 
 .modal.modal-wide {
-    max-width: min(94vw, 1220px);
+    max-width: min(96vw, 1480px);
 }
 
 .modal-section {

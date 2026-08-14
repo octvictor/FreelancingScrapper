@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS project_tasks (
     status TEXT NOT NULL DEFAULT 'Active',
     duration TEXT NOT NULL DEFAULT 'Full',
     cost REAL,
+    observation TEXT,
     task_date TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -79,6 +80,12 @@ def init_db() -> None:
             conn.execute("ALTER TABLE projects ADD COLUMN description TEXT")
         if "currency" not in columns:
             conn.execute("ALTER TABLE projects ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'")
+
+        # `project_tasks` shipped before `observation` existed - same
+        # patch-in-by-hand story as above.
+        task_columns = {row["name"] for row in conn.execute("PRAGMA table_info(project_tasks)")}
+        if "observation" not in task_columns:
+            conn.execute("ALTER TABLE project_tasks ADD COLUMN observation TEXT")
 
 
 # ---------- Gatherer: manually-curated studio/company list ----------
@@ -239,7 +246,7 @@ def create_project_task(project_id: int) -> dict:
 
 
 def update_project_task(task_id: int, **fields) -> dict | None:
-    allowed = {"task", "status", "duration", "cost", "task_date"}
+    allowed = {"task", "status", "duration", "cost", "observation", "task_date"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         with get_connection() as conn:

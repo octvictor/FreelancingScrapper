@@ -36,6 +36,7 @@ class TaskUpdate(BaseModel):
     status: str | None = None
     duration: str | None = None
     cost: float | None = None
+    observation: str | None = None
     task_date: str | None = None
 
 
