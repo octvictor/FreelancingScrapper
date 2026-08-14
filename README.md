@@ -203,3 +203,15 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+- A more intuitive To Do design - the current version accumulated a
+  fair amount of chrome (Favorites/Important filter pills, Clean list,
+  stars everywhere) across several rounds and could use a simplification
+  pass.
+- Per-list color coding for To Do - a small icon/swatch on each list to
+  assign it a color, shown next to its name in the rail.
+- Sharp square corners app-wide, replacing the current rounded corners
+  - an experiment to see how it looks, not a settled decision.
+- Wider content area generally (To Do first, possibly the other tools
+  after) - not full-width, just noticeably roomier than today.
+- A "Notes" page, Google Keep-style - placement undecided (its own
+  sidebar section vs. nested under To Do's Management group).
