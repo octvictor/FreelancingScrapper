@@ -49,6 +49,15 @@ class TaskUpdate(BaseModel):
     task_date: str | None = None
 
 
+class PersonalProjectUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    assets_text: str | None = None
+    notes_text: str | None = None
+    references_text: str | None = None
+
+
 def _project_dir(project_id: int) -> Path:
     return PROJECT_DOCS_DIR / str(project_id)
 
@@ -155,4 +164,43 @@ def update_task(project_id: int, task_id: int, payload: TaskUpdate):
 @router.delete("/projects/{project_id}/tasks/{task_id}")
 def delete_task(project_id: int, task_id: int):
     db.delete_project_task(task_id)
+    return {"ok": True}
+
+
+@router.get("/personal-projects")
+def list_personal_projects():
+    return {"personal_projects": db.list_personal_projects()}
+
+
+@router.post("/personal-projects")
+def create_personal_project():
+    return db.create_personal_project()
+
+
+@router.put("/personal-projects/reorder")
+def reorder_personal_projects(payload: ReorderPayload):
+    db.reorder_personal_projects(payload.ids)
+    return {"ok": True}
+
+
+@router.get("/personal-projects/{project_id}")
+def get_personal_project(project_id: int):
+    project = db.get_personal_project(project_id)
+    if project is None:
+        raise HTTPException(404, "Personal project not found")
+    return project
+
+
+@router.put("/personal-projects/{project_id}")
+def update_personal_project(project_id: int, payload: PersonalProjectUpdate):
+    updates = payload.model_dump(exclude_unset=True)
+    project = db.update_personal_project(project_id, **updates)
+    if project is None:
+        raise HTTPException(404, "Personal project not found")
+    return project
+
+
+@router.delete("/personal-projects/{project_id}")
+def delete_personal_project(project_id: int):
+    db.delete_personal_project(project_id)
     return {"ok": True}

@@ -839,6 +839,46 @@ table.project-table tbody tr:hover td {
     cursor: grabbing;
 }
 
+/* ---------- Tracker: Personal Projects (collapsible sub-section) ----------
+   Same row/table look as the main list above (shares .project-table,
+   .view-toggle-btn, etc. for CSS - JS wiring is namespaced separately
+   to avoid colliding with the main table's global listeners). */
+
+.personal-projects-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+}
+
+.personal-projects-header:hover {
+    color: var(--text-muted);
+}
+
+.personal-projects-chevron {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--text-faint);
+    transition: transform 0.15s ease;
+    transform: rotate(-90deg);
+}
+
+.personal-projects-header.expanded .personal-projects-chevron {
+    transform: rotate(0deg);
+}
+
+.personal-projects-body {
+    margin-top: 18px;
+}
+
 /* ---------- Project detail modal ---------- */
 
 .modal-backdrop {
@@ -870,6 +910,10 @@ table.project-table tbody tr:hover td {
 
 .modal.modal-wide {
     max-width: min(96vw, 1480px);
+}
+
+.modal.modal-personal {
+    max-width: 620px;
 }
 
 .modal-section {
@@ -997,6 +1041,16 @@ table.project-table tbody tr:hover td {
     padding: 14px;
     display: flex;
     flex-direction: column;
+}
+
+/* Personal project modal: no left column to sit beside, so the side
+   panel is a standalone block (not a flex-row child) matching the
+   description field's width, and shorter since it isn't sharing space
+   with a two-column layout. */
+.modal-side-panel-compact {
+    flex: none;
+    min-width: 0;
+    min-height: 160px;
 }
 
 .modal-side-tabs {

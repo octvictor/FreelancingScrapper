@@ -128,7 +128,7 @@ function renderProjectTable() {
         });
         enhanceSelect(paidSelect);
 
-        wireRowDrag(tr);
+        wireRowDrag(tr, persistRowOrder);
     });
 }
 
@@ -155,7 +155,7 @@ async function saveProjectField(projectId, updates) {
 
 let draggedRow = null;
 
-function wireRowDrag(tr) {
+function wireRowDrag(tr, persistFn) {
     const handle = tr.querySelector(".row-drag-handle");
     handle.addEventListener("mousedown", () => {
         tr.draggable = true;
@@ -184,7 +184,7 @@ function wireRowDrag(tr) {
         tr.classList.remove("dragging");
         if (draggedRow === tr) {
             draggedRow = null;
-            persistRowOrder();
+            persistFn();
         }
     });
 }
@@ -201,10 +201,10 @@ async function persistRowOrder() {
     trackerProjects = data.projects;
 }
 
-document.querySelectorAll(".view-toggle-btn").forEach((btn) => {
+document.querySelectorAll("#project-view-toggle .view-toggle-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
         activeView = btn.dataset.view;
-        document.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll("#project-view-toggle .view-toggle-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         renderProjectTable();
     });
@@ -450,7 +450,7 @@ let sideTabValues = { assets_text: "", notes_text: "", briefing_text: "" };
 
 function loadSideTab(tab) {
     activeSideTab = tab;
-    document.querySelectorAll(".modal-side-tab").forEach((b) => b.classList.toggle("active", b.dataset.sideTab === tab));
+    document.querySelectorAll("#project-modal-backdrop .modal-side-tab").forEach((b) => b.classList.toggle("active", b.dataset.sideTab === tab));
     $("modal-side-content").value = sideTabValues[SIDE_TAB_FIELD[tab]] || "";
 }
 
@@ -463,7 +463,7 @@ function resetSidePanel(project) {
     loadSideTab("assets");
 }
 
-document.querySelectorAll(".modal-side-tab").forEach((btn) => {
+document.querySelectorAll("#project-modal-backdrop .modal-side-tab").forEach((btn) => {
     btn.addEventListener("click", () => loadSideTab(btn.dataset.sideTab));
 });
 
@@ -537,4 +537,241 @@ $("delete-project-btn").addEventListener("click", async () => {
     const data = await resp.json();
     trackerProjects = data.projects;
     renderProjectTable();
+})();
+
+// ---------- Personal Projects ----------
+// A second, simpler project list on the same page - same row/table
+// look and drag-to-reorder as the main one above, but no Paid column,
+// and its own lightweight modal (no Client/Deadline/Day rate/Docs/Log -
+// just a description and an Assets/Notes/References panel). Collapsed
+// behind a "Personal Projects" toggle below the main table.
+
+let personalProjects = [];
+let activePersonalProjectId = null;
+let personalActiveView = "Active";
+const PERSONAL_ROW_LIMIT = 5;
+let personalExpandedViews = { Active: false, Completed: false };
+
+function personalProjectRowHtml(project) {
+    const isCompleted = project.status === "Completed";
+    return `
+        <tr data-id="${project.id}">
+            <td class="row-drag-handle-cell"><span class="row-drag-handle" title="Drag to reorder">&#8942;</span></td>
+            <td class="project-row-title">${escapeAttr(project.title) || "Untitled project"}</td>
+            <td class="project-row-desc">${escapeAttr(project.description || "")}</td>
+            <td>
+                <select class="cell-select color-pill ${trackerStatusPillClass(project.status)}" data-field="status">
+                    <option value="Active" ${!isCompleted ? "selected" : ""}>&#9679; Active</option>
+                    <option value="Completed" ${isCompleted ? "selected" : ""}>&#9679; Completed</option>
+                </select>
+            </td>
+        </tr>
+    `;
+}
+
+function renderPersonalProjectTable() {
+    cleanupCustomSelectsIn($("personal-project-table-body"));
+    const all = personalProjects.filter((p) => p.status === personalActiveView);
+    const expanded = personalExpandedViews[personalActiveView];
+    const visible = expanded ? all : all.slice(0, PERSONAL_ROW_LIMIT);
+    $("personal-project-table-body").innerHTML = visible.length
+        ? visible.map(personalProjectRowHtml).join("")
+        : `<tr><td colspan="4" class="muted" style="padding: 14px 10px;">No personal projects yet.</td></tr>`;
+
+    const expandBtn = $("personal-project-expand-btn");
+    const hiddenCount = all.length - visible.length;
+    if (all.length > PERSONAL_ROW_LIMIT) {
+        expandBtn.style.display = "";
+        expandBtn.textContent = expanded ? "Show less" : `Show ${hiddenCount} more`;
+    } else {
+        expandBtn.style.display = "none";
+    }
+
+    document.querySelectorAll("#personal-project-table-body tr[data-id]").forEach((tr) => {
+        const projectId = parseInt(tr.dataset.id, 10);
+
+        tr.addEventListener("click", (e) => {
+            if (e.target.closest(".custom-select-wrap, .row-drag-handle")) return;
+            openPersonalProjectModal(projectId);
+        });
+
+        const statusSelect = tr.querySelector(".cell-select[data-field='status']");
+        statusSelect.addEventListener("change", (e) => {
+            statusSelect.classList.remove("status-active", "status-completed");
+            statusSelect.classList.add(trackerStatusPillClass(e.target.value));
+            savePersonalProjectField(projectId, { status: e.target.value });
+        });
+        enhanceSelect(statusSelect);
+
+        wireRowDrag(tr, persistPersonalRowOrder);
+    });
+}
+
+async function savePersonalProjectField(projectId, updates) {
+    const resp = await fetch(`/api/tracker/personal-projects/${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+    });
+    if (!resp.ok) return;
+    const updated = await resp.json();
+    const idx = personalProjects.findIndex((p) => p.id === updated.id);
+    if (idx !== -1) personalProjects[idx] = updated;
+    if (updates.status !== undefined) renderPersonalProjectTable();
+}
+
+async function persistPersonalRowOrder() {
+    const ids = Array.from(document.querySelectorAll("#personal-project-table-body tr[data-id]")).map((tr) => parseInt(tr.dataset.id, 10));
+    await fetch("/api/tracker/personal-projects/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+    });
+    const resp = await fetch("/api/tracker/personal-projects");
+    const data = await resp.json();
+    personalProjects = data.personal_projects;
+}
+
+document.querySelectorAll("#personal-view-toggle .view-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        personalActiveView = btn.dataset.view;
+        document.querySelectorAll("#personal-view-toggle .view-toggle-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderPersonalProjectTable();
+    });
+});
+
+$("personal-project-expand-btn").addEventListener("click", () => {
+    personalExpandedViews[personalActiveView] = !personalExpandedViews[personalActiveView];
+    renderPersonalProjectTable();
+});
+
+async function createPersonalProject() {
+    const resp = await fetch("/api/tracker/personal-projects", { method: "POST" });
+    const project = await resp.json();
+    personalProjects.unshift(project);
+
+    if (personalActiveView !== "Active") {
+        personalActiveView = "Active";
+        document.querySelectorAll("#personal-view-toggle .view-toggle-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === "Active"));
+    }
+
+    renderPersonalProjectTable();
+    openPersonalProjectModal(project.id);
+}
+
+$("new-personal-project-btn").addEventListener("click", createPersonalProject);
+
+$("personal-projects-toggle").addEventListener("click", () => {
+    const body = $("personal-projects-body");
+    const collapsed = body.style.display === "none";
+    body.style.display = collapsed ? "" : "none";
+    $("personal-projects-toggle").classList.toggle("expanded", collapsed);
+});
+
+// ---------- Personal project modal ----------
+
+async function openPersonalProjectModal(id) {
+    const project = await (await fetch(`/api/tracker/personal-projects/${id}`)).json();
+    activePersonalProjectId = id;
+
+    $("personal-modal-title").value = project.title || "";
+    $("personal-modal-description").value = project.description || "";
+    $("personal-modal-status").value = project.status;
+    $("personal-modal-status").classList.remove("status-active", "status-completed");
+    $("personal-modal-status").classList.add(trackerStatusPillClass(project.status));
+    refreshCustomSelect($("personal-modal-status"));
+    resetPersonalSidePanel(project);
+
+    $("personal-modal-backdrop").style.display = "flex";
+    $("personal-modal-title").focus();
+}
+
+function closePersonalProjectModal() {
+    $("personal-modal-backdrop").style.display = "none";
+    activePersonalProjectId = null;
+}
+
+async function saveActivePersonalProject(updates) {
+    if (activePersonalProjectId === null) return;
+    const resp = await fetch(`/api/tracker/personal-projects/${activePersonalProjectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+    });
+    if (!resp.ok) return;
+    const updated = await resp.json();
+    const idx = personalProjects.findIndex((p) => p.id === updated.id);
+    if (idx !== -1) personalProjects[idx] = updated;
+    renderPersonalProjectTable();
+}
+
+// Same reused-single-textarea pattern as the main project modal's side
+// panel, namespaced separately (own field names/tab set - References
+// instead of Briefing) and scoped to #personal-modal-backdrop so its
+// .modal-side-tab buttons don't collide with the main modal's.
+const PERSONAL_SIDE_TAB_FIELD = { assets: "assets_text", notes: "notes_text", references: "references_text" };
+let activePersonalSideTab = "assets";
+let personalSideTabValues = { assets_text: "", notes_text: "", references_text: "" };
+
+function loadPersonalSideTab(tab) {
+    activePersonalSideTab = tab;
+    document.querySelectorAll("#personal-modal-backdrop .modal-side-tab").forEach((b) => b.classList.toggle("active", b.dataset.sideTab === tab));
+    $("personal-modal-side-content").value = personalSideTabValues[PERSONAL_SIDE_TAB_FIELD[tab]] || "";
+}
+
+function resetPersonalSidePanel(project) {
+    personalSideTabValues = {
+        assets_text: project.assets_text || "",
+        notes_text: project.notes_text || "",
+        references_text: project.references_text || "",
+    };
+    loadPersonalSideTab("assets");
+}
+
+document.querySelectorAll("#personal-modal-backdrop .modal-side-tab").forEach((btn) => {
+    btn.addEventListener("click", () => loadPersonalSideTab(btn.dataset.sideTab));
+});
+
+$("personal-modal-side-content").addEventListener("blur", (e) => {
+    const field = PERSONAL_SIDE_TAB_FIELD[activePersonalSideTab];
+    personalSideTabValues[field] = e.target.value;
+    saveActivePersonalProject({ [field]: e.target.value.trim() || null });
+});
+
+$("personal-modal-close").addEventListener("click", closePersonalProjectModal);
+$("personal-modal-backdrop").addEventListener("click", (e) => {
+    if (e.target.id === "personal-modal-backdrop") closePersonalProjectModal();
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && $("personal-modal-backdrop").style.display !== "none") closePersonalProjectModal();
+});
+
+$("personal-modal-title").addEventListener("blur", (e) => saveActivePersonalProject({ title: e.target.value.trim() }));
+$("personal-modal-title").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.target.blur();
+});
+
+$("personal-modal-description").addEventListener("blur", (e) => saveActivePersonalProject({ description: e.target.value.trim() || null }));
+
+$("personal-modal-status").addEventListener("change", (e) => {
+    e.target.classList.remove("status-active", "status-completed");
+    e.target.classList.add(trackerStatusPillClass(e.target.value));
+    saveActivePersonalProject({ status: e.target.value });
+});
+enhanceSelect($("personal-modal-status"));
+
+$("delete-personal-project-btn").addEventListener("click", async () => {
+    if (activePersonalProjectId === null || !confirm("Delete this personal project?")) return;
+    await fetch(`/api/tracker/personal-projects/${activePersonalProjectId}`, { method: "DELETE" });
+    personalProjects = personalProjects.filter((p) => p.id !== activePersonalProjectId);
+    closePersonalProjectModal();
+    renderPersonalProjectTable();
+});
+
+(async function initPersonalProjects() {
+    const resp = await fetch("/api/tracker/personal-projects");
+    const data = await resp.json();
+    personalProjects = data.personal_projects;
+    renderPersonalProjectTable();
 })();

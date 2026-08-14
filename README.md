@@ -29,7 +29,14 @@ sidebar (click the section header to fold/unfold it):
   from the day rate (Full = full rate, Half = half, Custom = manual,
   and unlocks the Observation cell) - with a running cost Sum in the
   selected currency. Every field autosaves on blur/change, no separate
-  save button.
+  save button. Below that table, a collapsible **Personal Projects**
+  section holds a second, simpler project list for work that isn't for
+  a client - same row/table look, Active/Completed toggle, 5-row cap,
+  and drag-to-reorder, but no Paid column. Its popup only has a
+  description, project status, and an Assets/Notes/References panel
+  (no Client/Deadline/Day rate/Docs/Log, since none of that applies to
+  a personal project) - backed by its own `personal_projects` table,
+  entirely separate from `projects`.
 - **Gatherer** (shown in the sidebar as "Studio Database") - a
   manually-curated list of studios/companies you find yourself
   (Behance, Instagram, wherever) - Title, clickable URL, Type
@@ -151,6 +158,12 @@ executable), shared across every tool:
   (Full/Half/Custom), cost, observation (only usable when duration is
   Custom), task_date, created_at, updated_at. Backs a project's Log
   table.
+- `personal_projects` - title, description, status (Active/Completed),
+  assets_text/notes_text/references_text (the side panel's three
+  tabs), position (manual drag order within a status view), created_at,
+  updated_at. A separate, simpler table from `projects` - no
+  client/deadline/day rate/docs/tasks, since personal projects don't
+  bill anyone.
 
 ## Roadmap / not built yet
 

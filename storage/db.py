@@ -55,6 +55,19 @@ CREATE TABLE IF NOT EXISTS project_tasks (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS personal_projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'Active',
+    assets_text TEXT,
+    notes_text TEXT,
+    references_text TEXT,
+    position INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 
@@ -308,3 +321,63 @@ def update_project_task(task_id: int, **fields) -> dict | None:
 def delete_project_task(task_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM project_tasks WHERE id=?", (task_id,))
+
+
+# ---------- Tracker: personal projects ----------
+# A separate, simpler table from `projects` - no client/deadline/day
+# rate/docs/tasks, since personal projects don't bill anyone. Kept
+# distinct rather than reusing `projects` with nullable fields so the
+# two can keep diverging (a different section than Log is planned here
+# later) without dragging billing-only columns along for the ride.
+
+def list_personal_projects() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM personal_projects ORDER BY position ASC, id DESC").fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_personal_project() -> dict:
+    now = _now()
+    with get_connection() as conn:
+        min_position = conn.execute("SELECT MIN(position) FROM personal_projects").fetchone()[0]
+        position = (min_position - 1) if min_position is not None else 0
+        cur = conn.execute(
+            "INSERT INTO personal_projects (title, status, position, created_at, updated_at) VALUES ('', 'Active', ?, ?, ?)",
+            (position, now, now),
+        )
+        row = conn.execute("SELECT * FROM personal_projects WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def reorder_personal_projects(ids: list[int]) -> None:
+    with get_connection() as conn:
+        for position, project_id in enumerate(ids):
+            conn.execute("UPDATE personal_projects SET position=? WHERE id=?", (position, project_id))
+
+
+def get_personal_project(project_id: int) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM personal_projects WHERE id=?", (project_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def update_personal_project(project_id: int, **fields) -> dict | None:
+    allowed = {"title", "description", "status", "assets_text", "notes_text", "references_text"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        return get_personal_project(project_id)
+
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE personal_projects SET {set_clause} WHERE id=?",
+            (*updates.values(), project_id),
+        )
+        row = conn.execute("SELECT * FROM personal_projects WHERE id=?", (project_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_personal_project(project_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM personal_projects WHERE id=?", (project_id,))

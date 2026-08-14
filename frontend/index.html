@@ -31,7 +31,7 @@
             <section id="page-tracker">
                 <h1 class="page-title">Project Manager</h1>
                 <div class="tracker-toolbar">
-                    <div class="view-toggle">
+                    <div class="view-toggle" id="project-view-toggle">
                         <button class="view-toggle-btn active" id="view-toggle-active" type="button" data-view="Active">Active</button>
                         <button class="view-toggle-btn" id="view-toggle-completed" type="button" data-view="Completed">Completed</button>
                     </div>
@@ -53,6 +53,36 @@
                     </div>
                     <button class="btn btn-text" id="project-expand-btn" type="button" style="display:none; margin-top: 10px;">Show more</button>
                     <button class="btn" id="new-project-btn" style="margin-top: 12px;" type="button">+ New project</button>
+                </div>
+
+                <div class="panel personal-projects-panel" id="personal-projects-panel">
+                    <button class="personal-projects-header" id="personal-projects-toggle" type="button">
+                        <span class="personal-projects-chevron">&#9662;</span>
+                        <span>Personal Projects</span>
+                    </button>
+                    <div class="personal-projects-body" id="personal-projects-body" style="display:none;">
+                        <div class="tracker-toolbar">
+                            <div class="view-toggle" id="personal-view-toggle">
+                                <button class="view-toggle-btn active" id="personal-view-toggle-active" type="button" data-view="Active">Active</button>
+                                <button class="view-toggle-btn" id="personal-view-toggle-completed" type="button" data-view="Completed">Completed</button>
+                            </div>
+                        </div>
+                        <div class="gatherer-table-wrap">
+                            <table class="project-table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Title</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="personal-project-table-body"></tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-text" id="personal-project-expand-btn" type="button" style="display:none; margin-top: 10px;">Show more</button>
+                        <button class="btn" id="new-personal-project-btn" style="margin-top: 12px;" type="button">+ New personal project</button>
+                    </div>
                 </div>
             </section>
 
@@ -186,6 +216,37 @@
 
             <div class="modal-footer">
                 <button class="btn btn-danger-text" id="delete-project-btn" type="button">Delete project</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="personal-modal-backdrop" style="display:none;">
+        <div class="modal modal-personal">
+            <button class="modal-close" id="personal-modal-close" title="Close">&times;</button>
+
+            <input type="text" class="modal-title-input" id="personal-modal-title" placeholder="Untitled project">
+
+            <textarea class="modal-description-input" id="personal-modal-description" placeholder="Add a description..."></textarea>
+
+            <div class="modal-field">
+                <label for="personal-modal-status">Project status</label>
+                <select class="cell-select color-pill" id="personal-modal-status">
+                    <option value="Active">&#9679; Active</option>
+                    <option value="Completed">&#9679; Completed</option>
+                </select>
+            </div>
+
+            <div class="modal-side-panel modal-side-panel-compact">
+                <div class="modal-side-tabs">
+                    <button class="modal-side-tab active" type="button" data-side-tab="assets">Assets</button>
+                    <button class="modal-side-tab" type="button" data-side-tab="notes">Notes</button>
+                    <button class="modal-side-tab" type="button" data-side-tab="references">References</button>
+                </div>
+                <textarea class="modal-side-content" id="personal-modal-side-content" placeholder="Add notes or paste links..."></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-danger-text" id="delete-personal-project-btn" type="button">Delete project</button>
             </div>
         </div>
     </div>
