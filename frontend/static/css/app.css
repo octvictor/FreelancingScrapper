@@ -1360,3 +1360,214 @@ table.project-table tbody tr:hover td {
     justify-content: flex-end;
     gap: 8px;
 }
+
+/* ---------- To Do ---------- */
+
+.todo-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.todo-lists-rail {
+    flex: 0 0 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-right: 1px solid var(--border-soft);
+    padding-right: 20px;
+}
+
+.todo-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 13.5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    text-align: left;
+    width: 100%;
+}
+
+.todo-list-item:hover {
+    color: var(--text);
+}
+
+.todo-list-item.active {
+    color: var(--text);
+    font-weight: 600;
+    background: var(--panel-alt);
+}
+
+.todo-list-count {
+    font-size: 11px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
+.todo-empty-state {
+    color: var(--text-faint);
+    font-size: 13px;
+    padding: 8px 10px;
+}
+
+.todo-tasks-pane {
+    flex: 1;
+    min-width: 0;
+}
+
+.todo-tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 14px -8px;
+}
+
+.todo-list-title-input {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    padding: 6px 8px;
+}
+
+.todo-list-title-input:hover {
+    background: var(--panel-alt);
+}
+
+.todo-list-title-input:focus {
+    background: var(--panel-alt);
+    border-color: var(--border);
+    outline: none;
+}
+
+.todo-task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.todo-task-row:last-child {
+    border-bottom: none;
+}
+
+.todo-task-row:hover {
+    background: var(--panel-alt);
+}
+
+.todo-task-checkbox {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+    accent-color: var(--accent-blue);
+    cursor: pointer;
+}
+
+.todo-task-title {
+    flex: 1;
+    font-size: 13.5px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-task-row.completed .todo-task-title {
+    color: var(--text-faint);
+    text-decoration: line-through;
+}
+
+.todo-star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--text-faint);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.todo-star-btn:hover {
+    color: var(--text-muted);
+    background: var(--panel-alt);
+}
+
+.todo-star-btn.active {
+    color: #f0c14b;
+}
+
+.todo-completed-wrap {
+    margin-top: 14px;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 10px;
+}
+
+.todo-completed-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.todo-completed-toggle:hover {
+    color: var(--text-muted);
+}
+
+.todo-completed-chevron {
+    display: inline-block;
+    font-size: 9px;
+    transition: transform 0.15s ease;
+    transform: rotate(-90deg);
+}
+
+.todo-completed-toggle.expanded .todo-completed-chevron {
+    transform: rotate(0deg);
+}
+
+.todo-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.todo-modal-checkbox {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    accent-color: var(--accent-blue);
+    cursor: pointer;
+}
+
+.todo-modal-title-input {
+    flex: 1;
+}
+
+.todo-modal-header .todo-star-btn {
+    font-size: 22px;
+}

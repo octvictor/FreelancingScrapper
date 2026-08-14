@@ -77,6 +77,34 @@ CREATE TABLE IF NOT EXISTS personal_checklist_items (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS todo_lists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS todo_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    list_id INTEGER NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    completed INTEGER NOT NULL DEFAULT 0,
+    important INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    position INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS todo_steps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL,
+    text TEXT NOT NULL DEFAULT '',
+    checked INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 
@@ -438,3 +466,154 @@ def update_personal_checklist_item(item_id: int, **fields) -> dict | None:
 def delete_personal_checklist_item(item_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM personal_checklist_items WHERE id=?", (item_id,))
+
+
+# ---------- To Do: lists, tasks, steps ----------
+# Inspired by Microsoft To Do - multiple lists, each holding checkbox
+# tasks. A task can carry an Importance star, freeform Notes, and a
+# mini checklist of Steps (same shape as Personal Projects' checklist).
+
+def list_todo_lists() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT tl.*, "
+            "(SELECT COUNT(*) FROM todo_tasks t WHERE t.list_id = tl.id AND t.completed = 0) AS open_count "
+            "FROM todo_lists tl ORDER BY tl.id"
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_todo_list() -> dict:
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO todo_lists (title, created_at, updated_at) VALUES ('', ?, ?)",
+            (now, now),
+        )
+        row = conn.execute("SELECT * FROM todo_lists WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_todo_list(list_id: int, **fields) -> dict | None:
+    allowed = {"title"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        with get_connection() as conn:
+            row = conn.execute("SELECT * FROM todo_lists WHERE id=?", (list_id,)).fetchone()
+            return dict(row) if row else None
+
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE todo_lists SET {set_clause} WHERE id=?",
+            (*updates.values(), list_id),
+        )
+        row = conn.execute("SELECT * FROM todo_lists WHERE id=?", (list_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_todo_list(list_id: int) -> None:
+    with get_connection() as conn:
+        task_ids = [r["id"] for r in conn.execute("SELECT id FROM todo_tasks WHERE list_id=?", (list_id,)).fetchall()]
+        for task_id in task_ids:
+            conn.execute("DELETE FROM todo_steps WHERE task_id=?", (task_id,))
+        conn.execute("DELETE FROM todo_tasks WHERE list_id=?", (list_id,))
+        conn.execute("DELETE FROM todo_lists WHERE id=?", (list_id,))
+
+
+def list_todo_tasks(list_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM todo_tasks WHERE list_id=? ORDER BY position ASC, id DESC",
+            (list_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_todo_task(list_id: int) -> dict:
+    now = _now()
+    with get_connection() as conn:
+        min_position = conn.execute("SELECT MIN(position) FROM todo_tasks WHERE list_id=?", (list_id,)).fetchone()[0]
+        position = (min_position - 1) if min_position is not None else 0
+        cur = conn.execute(
+            "INSERT INTO todo_tasks (list_id, title, position, created_at, updated_at) VALUES (?, '', ?, ?, ?)",
+            (list_id, position, now, now),
+        )
+        row = conn.execute("SELECT * FROM todo_tasks WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def get_todo_task(task_id: int) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM todo_tasks WHERE id=?", (task_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def update_todo_task(task_id: int, **fields) -> dict | None:
+    allowed = {"title", "completed", "important", "notes"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        return get_todo_task(task_id)
+
+    for flag_field in ("completed", "important"):
+        if flag_field in updates:
+            updates[flag_field] = int(bool(updates[flag_field]))
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE todo_tasks SET {set_clause} WHERE id=?",
+            (*updates.values(), task_id),
+        )
+        row = conn.execute("SELECT * FROM todo_tasks WHERE id=?", (task_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_todo_task(task_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM todo_steps WHERE task_id=?", (task_id,))
+        conn.execute("DELETE FROM todo_tasks WHERE id=?", (task_id,))
+
+
+def list_todo_steps(task_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM todo_steps WHERE task_id=? ORDER BY id", (task_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_todo_step(task_id: int) -> dict:
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO todo_steps (task_id, text, checked, created_at, updated_at) VALUES (?, '', 0, ?, ?)",
+            (task_id, now, now),
+        )
+        row = conn.execute("SELECT * FROM todo_steps WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_todo_step(step_id: int, **fields) -> dict | None:
+    allowed = {"text", "checked"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        with get_connection() as conn:
+            row = conn.execute("SELECT * FROM todo_steps WHERE id=?", (step_id,)).fetchone()
+            return dict(row) if row else None
+
+    if "checked" in updates:
+        updates["checked"] = int(bool(updates["checked"]))
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE todo_steps SET {set_clause} WHERE id=?",
+            (*updates.values(), step_id),
+        )
+        row = conn.execute("SELECT * FROM todo_steps WHERE id=?", (step_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_todo_step(step_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM todo_steps WHERE id=?", (step_id,))

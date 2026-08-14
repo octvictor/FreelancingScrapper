@@ -5,14 +5,15 @@ function $(id) {
     return document.getElementById(id);
 }
 
-const PAGE_IDS = ["tracker", "gatherer"];
+const PAGE_IDS = ["tracker", "gatherer", "todo"];
+const WIDE_PAGES = ["tracker", "gatherer", "todo"];
 
 function showPage(page) {
     PAGE_IDS.forEach((id) => {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    document.querySelector(".main").classList.toggle("main-wide", page === "gatherer" || page === "tracker");
+    document.querySelector(".main").classList.toggle("main-wide", WIDE_PAGES.includes(page));
 }
 
 document.querySelectorAll(".nav-item").forEach((btn) => {

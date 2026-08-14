@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.gatherer import router as gatherer_router
 from api.tracker import router as tracker_router
+from api.todo import router as todo_router
 
 FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 
@@ -34,6 +35,7 @@ class NoCacheStaticFiles(StaticFiles):
 app = FastAPI(title="Freelancing Tools")
 app.include_router(gatherer_router, prefix="/api/gatherer")
 app.include_router(tracker_router, prefix="/api/tracker")
+app.include_router(todo_router, prefix="/api/todo")
 app.mount("/static", NoCacheStaticFiles(directory=FRONTEND_DIR / "static"), name="static")
 
 

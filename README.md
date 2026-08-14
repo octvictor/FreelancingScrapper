@@ -5,10 +5,10 @@ backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install), with a vertical tool
 menu in the sidebar. Currently:
 
-Both tools live under a collapsible **Tools** section in the sidebar
-(click the section header to fold/unfold it). Below it sits a second,
-currently-empty collapsible section, **Management** - a placeholder
-shell for future non-tool items, not wired up to anything yet.
+Tracker and Gatherer live under a collapsible **Tools** section in the
+sidebar (click the section header to fold/unfold it). Below it sits a
+second collapsible section, **Management**, for non-client-work
+items - currently just To Do.
 
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
@@ -45,12 +45,24 @@ shell for future non-tool items, not wired up to anything yet.
 - **Gatherer** (shown in the sidebar as "Studio Database") - a
   manually-curated list of studios/companies you find yourself
   (Behance, Instagram, wherever) - Title, clickable URL, Type
-  (Studio/Company, shown as a purple/orange pill), and outreach Status
+  (Studio/Company, a neutral grey pill - the type doesn't carry a
+  status, so it doesn't get a status color), and outreach Status
   (Sent/Not sent, shown as a gray/green pill, with a date). Inline-
   editable like a spreadsheet: click a cell, type, it saves - no
   separate save button. Click "+ Add row" for a new one. The Type and
   Status column headers double as filters - pick a value to narrow the
   table to just that value, blank to show everything again.
+- **To Do** (under Management) - inspired by Microsoft To Do. Multiple
+  lists (a rail on the left, "+ New list" to add one, click a list's
+  name in the tasks pane to rename it, "Delete list" removes it and
+  its tasks). Each list is a set of checkbox tasks - check one off and
+  it drops into a collapsed "Completed (n)" section below the active
+  ones; a star icon on each row toggles Importance right from the
+  list. Clicking a task (anywhere but its checkbox/star/delete) opens
+  a detail view: the same checkbox/title/star in a header row, a
+  Steps checklist (a mini to-do list within the task, same
+  checkbox-and-title pattern as Personal Projects' Checklist), and a
+  freeform Notes text area. Everything autosaves on blur/change.
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -127,19 +139,21 @@ into a venv from before that change - the fix is on both scripts now.
   tool is one new file under `api/`, one under `frontend/static/js/`,
   and one `<button class="nav-item">` + `<section>` in
   `frontend/index.html`.
-- `api/gatherer.py`, `api/tracker.py` - HTTP routes per tool, wrapping
-  the storage logic below. `api/tracker.py` also owns reading/writing
-  uploaded Docs files on disk (under `data/project_docs/<project_id>/`),
-  since that's specific to Tracker rather than shared storage logic.
-- `frontend/index.html` - the whole page shell (both tools' markup live
-  here, shown/hidden by `nav.js`).
+- `api/gatherer.py`, `api/tracker.py`, `api/todo.py` - HTTP routes per
+  tool, wrapping the storage logic below. `api/tracker.py` also owns
+  reading/writing uploaded Docs files on disk (under
+  `data/project_docs/<project_id>/`), since that's specific to Tracker
+  rather than shared storage logic.
+- `frontend/index.html` - the whole page shell (every tool's markup
+  lives here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
 - `frontend/static/js/nav.js` - shared page navigation, the custom
   dropdown component, and a themed `confirmDialog()` (used in place of
   the browser's native `confirm()` for every delete action) - loaded
   first since every tool depends on it.
-- `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js` -
-  one file per tool, no shared state between them beyond `nav.js`'s `$()`.
+- `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
+  `frontend/static/js/todo.js` - one file per tool, no shared state
+  between them beyond `nav.js`'s `$()`.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data lives on disk.
 
@@ -173,6 +187,12 @@ executable), shared across every tool:
   bill anyone.
 - `personal_checklist_items` - personal_project_id, text, checked,
   created_at, updated_at. Backs a personal project's Checklist.
+- `todo_lists` - title, created_at, updated_at. To Do's lists.
+- `todo_tasks` - list_id, title, completed, important, notes,
+  position (manual create-order, newest on top), created_at,
+  updated_at. A list's tasks.
+- `todo_steps` - task_id, text, checked, created_at, updated_at. Backs
+  a task's Steps mini-checklist.
 
 ## Roadmap / not built yet
 

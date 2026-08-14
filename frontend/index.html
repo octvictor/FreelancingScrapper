@@ -32,7 +32,9 @@
                     <span>Management</span>
                 </button>
                 <ul class="nav-list" id="nav-group-mgmt">
-                    <li class="nav-empty-placeholder">Nothing here yet</li>
+                    <li><button class="nav-item nav-item-chip" data-page="todo">
+                        <span class="nav-item-icon">&#9744;</span> To Do
+                    </button></li>
                 </ul>
             </div>
         </aside>
@@ -129,6 +131,33 @@
                         </table>
                     </div>
                     <button class="btn" id="gatherer-add-btn" style="margin-top: 12px;">+ Add row</button>
+                </div>
+            </section>
+
+            <section id="page-todo" style="display:none;">
+                <h1 class="page-title">To Do</h1>
+                <div class="panel todo-panel">
+                    <div class="todo-layout">
+                        <div class="todo-lists-rail">
+                            <div id="todo-lists"></div>
+                            <button class="btn btn-text" id="todo-list-add-btn" type="button">+ New list</button>
+                        </div>
+                        <div class="todo-tasks-pane" id="todo-tasks-pane">
+                            <div class="todo-tasks-header">
+                                <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
+                                <button class="btn-danger-text" id="todo-list-delete-btn" type="button">Delete list</button>
+                            </div>
+                            <div id="todo-task-list"></div>
+                            <button class="btn" id="todo-task-add-btn" type="button">+ Add task</button>
+                            <div class="todo-completed-wrap" id="todo-completed-wrap">
+                                <button class="todo-completed-toggle" id="todo-completed-toggle" type="button">
+                                    <span class="todo-completed-chevron">&#9662;</span>
+                                    <span id="todo-completed-label">Completed (0)</span>
+                                </button>
+                                <div id="todo-completed-list" style="display:none;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
@@ -267,8 +296,36 @@
         </div>
     </div>
 
+    <div class="modal-backdrop" id="todo-modal-backdrop" style="display:none;">
+        <div class="modal modal-personal">
+            <button class="modal-close" id="todo-modal-close" title="Close">&times;</button>
+
+            <div class="todo-modal-header">
+                <input type="checkbox" class="todo-modal-checkbox" id="todo-modal-completed" title="Mark complete">
+                <input type="text" class="modal-title-input todo-modal-title-input" id="todo-modal-title" placeholder="Task title">
+                <button class="todo-star-btn" id="todo-modal-star" type="button" title="Mark important">&#9733;</button>
+            </div>
+
+            <div class="modal-section">
+                <p class="modal-section-title">Steps</p>
+                <div class="checklist-list" id="todo-modal-steps-list"></div>
+                <button class="btn" id="todo-modal-step-add-btn" style="margin-top: 10px;" type="button">+ Add step</button>
+            </div>
+
+            <div>
+                <p class="panel-label" style="margin-bottom: 8px;">Notes</p>
+                <textarea class="modal-description-input" id="todo-modal-notes" placeholder="Add notes..."></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-danger-text" id="todo-modal-delete-btn" type="button">Delete task</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/js/nav.js"></script>
     <script src="/static/js/gatherer.js"></script>
     <script src="/static/js/tracker.js"></script>
+    <script src="/static/js/todo.js"></script>
 </body>
 </html>
