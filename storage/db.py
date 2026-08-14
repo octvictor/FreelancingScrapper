@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS projects (
     deadline TEXT,
     day_rate REAL,
     currency TEXT NOT NULL DEFAULT 'USD',
+    assets_text TEXT,
+    notes_text TEXT,
+    briefing_text TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -83,6 +86,9 @@ def init_db() -> None:
             conn.execute("ALTER TABLE projects ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'")
         if "client" not in columns:
             conn.execute("ALTER TABLE projects ADD COLUMN client TEXT")
+        for side_field in ("assets_text", "notes_text", "briefing_text"):
+            if side_field not in columns:
+                conn.execute(f"ALTER TABLE projects ADD COLUMN {side_field} TEXT")
 
         # `project_tasks` shipped before `observation` existed - same
         # patch-in-by-hand story as above.
@@ -168,7 +174,10 @@ def get_project(project_id: int) -> dict | None:
 
 
 def update_project(project_id: int, **fields) -> dict | None:
-    allowed = {"title", "description", "status", "client", "deadline", "day_rate", "currency"}
+    allowed = {
+        "title", "description", "status", "client", "deadline", "day_rate", "currency",
+        "assets_text", "notes_text", "briefing_text",
+    }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return get_project(project_id)

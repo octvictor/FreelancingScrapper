@@ -870,7 +870,7 @@ table.task-table td:nth-child(6) {
 .modal-side-panel {
     flex: 1;
     min-width: 260px;
-    min-height: 220px;
+    min-height: 420px;
     background: var(--panel-alt);
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-lg);
@@ -881,6 +881,7 @@ table.task-table td:nth-child(6) {
 
 .modal-side-tabs {
     display: flex;
+    justify-content: flex-end;
     gap: 4px;
     margin-bottom: 14px;
 }
@@ -908,13 +909,20 @@ table.task-table td:nth-child(6) {
 
 .modal-side-content {
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--text-faint);
+    width: 100%;
+    resize: none;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
     font-size: 13px;
-    padding: 20px;
+    line-height: 1.6;
+    padding: 0;
+}
+
+.modal-side-content::placeholder {
+    color: var(--text-faint);
 }
 
 /* Vertical Notion-style property list: label column on the left,

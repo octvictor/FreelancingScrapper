@@ -292,7 +292,7 @@ async function openProjectModal(id) {
     $("day-rate-prefix").textContent = currencySymbol();
     renderDocsList(project.docs, id);
     renderTaskTable(project.tasks, id);
-    resetSidePanel();
+    resetSidePanel(project);
 
     $("project-modal-backdrop").style.display = "flex";
     $("modal-title").focus();
@@ -317,27 +317,39 @@ async function saveActiveProject(updates) {
     renderProjectGrid();
 }
 
-// ---------- Side panel (temporary mock - Assets/Notes/Briefing) ----------
-// Not wired up to any real data yet; just placeholder text per tab so
-// the layout is in place ahead of building these out for real.
+// ---------- Side panel: Assets/Notes/Briefing ----------
+// Three freeform text fields on the project, one per tab. A single
+// textarea is reused across tabs (only one is ever visible at once) -
+// its value is swapped out from a local cache on tab switch, and saved
+// back to that tab's field on blur.
 
-const SIDE_TAB_PLACEHOLDERS = {
-    assets: "Assets will live here - reference images, renders, deliverables.",
-    notes: "Freeform notes for this project.",
-    briefing: "The client briefing / brief doc.",
-};
+const SIDE_TAB_FIELD = { assets: "assets_text", notes: "notes_text", briefing: "briefing_text" };
+let activeSideTab = "assets";
+let sideTabValues = { assets_text: "", notes_text: "", briefing_text: "" };
 
-function resetSidePanel() {
-    document.querySelectorAll(".modal-side-tab").forEach((b) => b.classList.toggle("active", b.dataset.sideTab === "assets"));
-    $("modal-side-content").textContent = SIDE_TAB_PLACEHOLDERS.assets;
+function loadSideTab(tab) {
+    activeSideTab = tab;
+    document.querySelectorAll(".modal-side-tab").forEach((b) => b.classList.toggle("active", b.dataset.sideTab === tab));
+    $("modal-side-content").value = sideTabValues[SIDE_TAB_FIELD[tab]] || "";
+}
+
+function resetSidePanel(project) {
+    sideTabValues = {
+        assets_text: project.assets_text || "",
+        notes_text: project.notes_text || "",
+        briefing_text: project.briefing_text || "",
+    };
+    loadSideTab("assets");
 }
 
 document.querySelectorAll(".modal-side-tab").forEach((btn) => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".modal-side-tab").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        $("modal-side-content").textContent = SIDE_TAB_PLACEHOLDERS[btn.dataset.sideTab];
-    });
+    btn.addEventListener("click", () => loadSideTab(btn.dataset.sideTab));
+});
+
+$("modal-side-content").addEventListener("blur", (e) => {
+    const field = SIDE_TAB_FIELD[activeSideTab];
+    sideTabValues[field] = e.target.value;
+    saveActiveProject({ [field]: e.target.value.trim() || null });
 });
 
 $("project-modal-close").addEventListener("click", closeProjectModal);
