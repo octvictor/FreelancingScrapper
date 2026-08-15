@@ -88,7 +88,7 @@ async function selectTodoList(id) {
 // A small popover (built and torn down on demand, like nav.js's custom
 // dropdown panels) offering a preset palette plus a "no color" swatch.
 
-const TODO_LIST_COLORS = ["#7fb2d9", "#86efac", "#fbbf24", "#f0a848", "#e57373", "#c9a3fb"];
+const TODO_LIST_COLORS = SWATCH_COLORS_VIVID;
 let todoColorPopover = null;
 
 function updateTodoColorBtn(color) {

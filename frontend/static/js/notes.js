@@ -16,7 +16,7 @@ let notes = [];
 let draggedNote = null;
 let activeNoteId = null;
 
-const NOTE_COLORS = ["#1f2f3d", "#1c3324", "#3a2f14", "#3a1f1f", "#2a1f3a", "#3a1f2f"];
+const NOTE_COLORS = SWATCH_COLORS_MUTED;
 const NOTE_COLOR_GLYPH = "&#9681;";
 
 // ---------- Card previews ----------

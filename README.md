@@ -273,6 +273,8 @@ executable), shared across every tool:
 - Wider content area for the other tools too (To Do, Notes, and
   Calculator already got this) - not full-width, just noticeably
   roomier than today.
+- Calculator: a way to delete a tab (table), not just create/rename
+  one - currently a table, once created, is permanent.
 
 ## Design system notes
 
@@ -294,3 +296,16 @@ rest of the app instead of drifting:
   same `.swatch-btn` class in app.css, which is what keeps them the
   same size automatically - resize that one rule rather than
   overriding size per-tool.
+- **One color scheme, two variants.** `frontend/static/js/nav.js`
+  defines the app's only two color-preset arrays -
+  `SWATCH_COLORS_VIVID` and `SWATCH_COLORS_MUTED` - six hues each, in
+  the same order (blue, green, amber, orange, red, purple), so "the
+  fourth swatch" is the same color family everywhere. Every tool's
+  color picker points at one of the two rather than defining its own
+  palette: VIVID for a picker whose color only ever shows on a small
+  swatch icon (To Do's list color, Calculator's row color - the row
+  itself is never tinted), MUTED for a picker whose color becomes an
+  entire card's background with text on top of it (Notes' card
+  color), where it has to stay dark enough for that text to stay
+  legible. Add a new color-picker anywhere and it should reference one
+  of these two arrays rather than inventing a third palette.

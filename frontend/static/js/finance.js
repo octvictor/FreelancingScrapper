@@ -16,7 +16,10 @@ let financeRows = [];
 let financeExpanded = false;
 
 const FINANCE_CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
-const FINANCE_ROW_COLORS = ["#1f2f3d", "#1c3324", "#3a2f14", "#3a1f1f", "#2a1f3a", "#3a1f2f"];
+// Row color only ever shows on the small swatch icon (the row itself
+// is never tinted), same usage as To Do's list color, so it uses the
+// same vivid variant rather than Notes' full-card-tint muted one.
+const FINANCE_ROW_COLORS = SWATCH_COLORS_VIVID;
 const FINANCE_ROW_LIMIT = 7;
 
 function financeCurrencySymbol() {
