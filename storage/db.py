@@ -112,8 +112,18 @@ CREATE TABLE IF NOT EXISTS notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL DEFAULT '',
     body TEXT,
+    type TEXT NOT NULL DEFAULT 'text',
     color TEXT,
     position INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS note_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    note_id INTEGER NOT NULL,
+    text TEXT NOT NULL DEFAULT '',
+    checked INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -177,6 +187,11 @@ def init_db() -> None:
             conn.execute("ALTER TABLE todo_lists ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
         if "color" not in todo_list_columns:
             conn.execute("ALTER TABLE todo_lists ADD COLUMN color TEXT")
+
+        # `notes` shipped before `type` existed - same story.
+        note_columns = {row["name"] for row in conn.execute("PRAGMA table_info(notes)")}
+        if "type" not in note_columns:
+            conn.execute("ALTER TABLE notes ADD COLUMN type TEXT NOT NULL DEFAULT 'text'")
 
 
 # ---------- Gatherer: manually-curated studio/company list ----------
@@ -656,24 +671,45 @@ def delete_todo_step(step_id: int) -> None:
 
 
 # ---------- Notes: Google Keep-style cards ----------
+# A note is either "text" (title + freeform body) or "list" (title + a
+# note_items checklist, same checkbox-and-title shape as todo_steps).
+# Every note dict returned to the API carries an "items" list (empty for
+# text notes) so the frontend doesn't need to branch on type to read it.
+
+def _attach_items(conn, notes: list[dict]) -> list[dict]:
+    if not notes:
+        return notes
+    item_rows = conn.execute(
+        f"SELECT * FROM note_items WHERE note_id IN ({','.join('?' * len(notes))}) ORDER BY id",
+        [n["id"] for n in notes],
+    ).fetchall()
+    items_by_note: dict[int, list[dict]] = {}
+    for item in item_rows:
+        items_by_note.setdefault(item["note_id"], []).append(dict(item))
+    for note in notes:
+        note["items"] = items_by_note.get(note["id"], [])
+    return notes
+
 
 def list_notes() -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("SELECT * FROM notes ORDER BY position ASC, id DESC").fetchall()
-        return [dict(row) for row in rows]
+        return _attach_items(conn, [dict(row) for row in rows])
 
 
-def create_note() -> dict:
+def create_note(note_type: str = "text") -> dict:
     now = _now()
     with get_connection() as conn:
         min_position = conn.execute("SELECT MIN(position) FROM notes").fetchone()[0]
         position = (min_position - 1) if min_position is not None else 0
         cur = conn.execute(
-            "INSERT INTO notes (title, position, created_at, updated_at) VALUES ('', ?, ?, ?)",
-            (position, now, now),
+            "INSERT INTO notes (title, type, position, created_at, updated_at) VALUES ('', ?, ?, ?, ?)",
+            (note_type, position, now, now),
         )
         row = conn.execute("SELECT * FROM notes WHERE id=?", (cur.lastrowid,)).fetchone()
-        return dict(row)
+        note = dict(row)
+        note["items"] = []
+        return note
 
 
 def reorder_notes(ids: list[int]) -> None:
@@ -688,7 +724,9 @@ def update_note(note_id: int, **fields) -> dict | None:
     if not updates:
         with get_connection() as conn:
             row = conn.execute("SELECT * FROM notes WHERE id=?", (note_id,)).fetchone()
-            return dict(row) if row else None
+            if row is None:
+                return None
+            return _attach_items(conn, [dict(row)])[0]
 
     updates["updated_at"] = _now()
     set_clause = ", ".join(f"{k}=?" for k in updates)
@@ -698,9 +736,55 @@ def update_note(note_id: int, **fields) -> dict | None:
             (*updates.values(), note_id),
         )
         row = conn.execute("SELECT * FROM notes WHERE id=?", (note_id,)).fetchone()
-        return dict(row) if row else None
+        if row is None:
+            return None
+        return _attach_items(conn, [dict(row)])[0]
 
 
 def delete_note(note_id: int) -> None:
     with get_connection() as conn:
+        conn.execute("DELETE FROM note_items WHERE note_id=?", (note_id,))
         conn.execute("DELETE FROM notes WHERE id=?", (note_id,))
+
+
+def list_note_items(note_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM note_items WHERE note_id=? ORDER BY id", (note_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_note_item(note_id: int) -> dict:
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO note_items (note_id, text, checked, created_at, updated_at) VALUES (?, '', 0, ?, ?)",
+            (note_id, now, now),
+        )
+        row = conn.execute("SELECT * FROM note_items WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_note_item(item_id: int, **fields) -> dict | None:
+    allowed = {"text", "checked"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if not updates:
+        with get_connection() as conn:
+            row = conn.execute("SELECT * FROM note_items WHERE id=?", (item_id,)).fetchone()
+            return dict(row) if row else None
+
+    if "checked" in updates:
+        updates["checked"] = int(bool(updates["checked"]))
+    updates["updated_at"] = _now()
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_connection() as conn:
+        conn.execute(
+            f"UPDATE note_items SET {set_clause} WHERE id=?",
+            (*updates.values(), item_id),
+        )
+        row = conn.execute("SELECT * FROM note_items WHERE id=?", (item_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_note_item(item_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM note_items WHERE id=?", (item_id,))

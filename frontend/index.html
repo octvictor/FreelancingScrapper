@@ -147,9 +147,11 @@
                             <button class="btn" id="todo-list-add-btn" type="button">+ New list</button>
                         </div>
                         <div class="todo-tasks-pane" id="todo-tasks-pane">
-                            <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
-                            <div class="todo-tasks-controls">
+                            <div class="todo-title-row">
                                 <button class="swatch-btn" id="todo-list-color-btn" type="button" title="List color"></button>
+                                <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
+                            </div>
+                            <div class="todo-tasks-controls">
                                 <button class="todo-star-btn" id="todo-list-favorite-btn" type="button" title="Mark list favorite">&#9734;</button>
                                 <button class="todo-icon-toggle" id="todo-filter-important" type="button" title="Important only">&#9733;</button>
                                 <button class="btn-danger-text" id="todo-list-delete-btn" type="button">Delete list</button>
@@ -173,11 +175,6 @@
             </section>
 
             <section id="page-notes" style="display:none;">
-                <h1 class="page-title">Notes</h1>
-                <div class="note-card note-compose" id="note-compose">
-                    <input type="text" class="note-title-input" id="note-compose-title" placeholder="Title">
-                    <textarea class="note-body-input" id="note-compose-body" placeholder="Take a note..." rows="1"></textarea>
-                </div>
                 <div class="notes-grid" id="notes-grid"></div>
             </section>
         </main>

@@ -55,12 +55,12 @@ items - To Do and Notes.
 - **To Do** (under Management, noticeably wider than the other tools -
   not full-width, just roomier) - inspired by Microsoft To Do.
   Multiple lists (a rail on the left, "+ New list" to add one, click a
-  list's name in the tasks pane to rename it; its header holds a
-  compact icon-only Important filter, a color swatch - click it for a
-  small preset-palette popover, shown as a dot next to the list's name
-  in the rail - a star to mark it Favorite, and "Delete list"). A
-  matching icon-only Favorites toggle above the rail narrows it to
-  just favorited lists. Each list is a set of checkbox tasks - check
+  list's name in the tasks pane to rename it; a color swatch sits to
+  the title's left - click it for a small preset-palette popover,
+  shown as a dot next to the list's name in the rail - and a compact
+  icon-only Important filter, a star to mark it Favorite, and
+  "Delete list" sit to the title's right). A matching icon-only
+  Favorites toggle above the rail narrows it to just favorited lists. Each list is a set of checkbox tasks - check
   one off and it drops into a collapsed "Completed (n)" section below
   the active ones, with a "Clean" link right in that section's header
   to clear out every completed task in one go (confirms first, shows
@@ -70,16 +70,20 @@ items - To Do and Notes.
   checklist (a mini to-do list within the task, same
   checkbox-and-title pattern as Personal Projects' Checklist), and a
   freeform Notes text area. Everything autosaves on blur/change.
-- **Notes** (under Management) - a Google Keep-style board of cards.
-  A "Take a note..." card at the top creates a new one as soon as you
-  type a title/body and click away; existing cards are edited directly
-  in place (title, body) with no modal, autosaving on blur. Cards flow
-  into a responsive masonry grid (CSS columns, so it reflows its own
-  column count as the window resizes) and can be dragged by a small
-  handle to reorder - the order persists. Each card has a color swatch
-  button opening the same small preset-palette popover used by To Do's
-  list colors, applied as the card's full background, and a delete
-  button (with the themed confirm dialog).
+- **Notes** (under Management, no page title of its own - the sidebar
+  already labels it) - a Google Keep-style board of cards. A dashed
+  "+" tile is always the first card; clicking it opens a small popover
+  to choose Text note or List before creating anything (a note's type
+  is fixed at creation - a text note has a freeform body, a list note
+  has a checklist instead). Existing cards are edited directly in
+  place with no modal, autosaving on blur - a list note's items use
+  the same checkbox-and-title row as To Do's Steps, with "+ Add item"
+  for more. Cards flow into a responsive masonry grid (CSS columns, so
+  it reflows its own column count as the window resizes) and can be
+  dragged by a small handle to reorder - the order persists. Each card
+  has a color swatch button opening the same small preset-palette
+  popover used by To Do's list colors, applied as the card's full
+  background, and a delete button (with the themed confirm dialog).
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -211,8 +215,11 @@ executable), shared across every tool:
   updated_at. A list's tasks.
 - `todo_steps` - task_id, text, checked, created_at, updated_at. Backs
   a task's Steps mini-checklist.
-- `notes` - title, body, color, position (manual drag order), created_at,
-  updated_at. Notes' own table, a flat board (no lists/nesting).
+- `notes` - title, body, type ('text' or 'list'), color, position
+  (manual drag order), created_at, updated_at. Notes' own table, a flat
+  board (no lists/nesting).
+- `note_items` - note_id, text, checked, created_at, updated_at. Backs
+  a 'list'-type note's checklist.
 
 ## Roadmap / not built yet
 

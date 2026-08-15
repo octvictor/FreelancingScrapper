@@ -37,6 +37,10 @@
        reusing --radius-full so it isn't swept up if that one changes. */
     --radius-pill: 999px;
 
+    /* Every checkbox in the app (To Do tasks, Steps, Personal Projects
+       Checklist, Notes list items) shares this checked color. */
+    --checkbox-checked: #98FBCB;
+
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
@@ -1115,7 +1119,7 @@ table.project-table tbody tr:hover td {
     width: 17px;
     height: 17px;
     flex-shrink: 0;
-    accent-color: var(--accent-blue);
+    accent-color: var(--checkbox-checked);
     cursor: pointer;
 }
 
@@ -1480,9 +1484,17 @@ table.project-table tbody tr:hover td {
     align-items: start;
 }
 
-.todo-list-title-input {
+.todo-title-row {
     grid-column: 1;
     grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.todo-list-title-input {
+    flex: 1;
     display: block;
     min-width: 0;
     background: none;
@@ -1567,9 +1579,14 @@ table.project-table tbody tr:hover td {
     align-self: flex-start;
 }
 
-/* Small square swatch showing (and, via its popover, setting) a color -
-   shared between To Do's list color and Notes' card color. Empty/
-   transparent background = no color set. */
+/* Small swatch showing (and, via its popover, setting) a color - shared
+   between To Do's list color and Notes' card color. When a color is
+   set, the button fills solid with it - unambiguous on its own. When
+   none is set, a plain empty/transparent square just reads as a stray
+   box (especially in the dark theme), so it falls back to a half-fill
+   "color" glyph instead, set via .swatch-btn-empty + JS toggling the
+   glyph text - that combination stays legible whether a color is
+   present or not. */
 .swatch-btn {
     width: 20px;
     height: 20px;
@@ -1578,19 +1595,30 @@ table.project-table tbody tr:hover td {
     background: transparent;
     border: 1px solid var(--border);
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    line-height: 1;
+    color: var(--text-muted);
 }
 
 .swatch-btn:hover {
     border-color: var(--text-muted);
 }
 
-/* Shared between To Do (list color) and Notes (card color) - a small
-   preset-palette popover opened from a swatch button. */
-.color-popover {
+.swatch-btn.swatch-btn-empty {
+    background: var(--panel-alt);
+}
+
+/* Shared chrome for small popovers positioned relative to a trigger
+   button (color picker, note-type picker) - built and torn down on
+   demand, closed via an outside-click listener. Each variant adds its
+   own display/layout on top (grid for a swatch palette, flex column
+   for a list of options). */
+.popover-panel {
     display: none;
     position: fixed;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
     background: var(--panel-alt);
     border: 1px solid var(--border);
     padding: 8px;
@@ -1598,8 +1626,50 @@ table.project-table tbody tr:hover td {
     z-index: 200;
 }
 
+/* Shared between To Do (list color) and Notes (card color) - a small
+   preset-palette popover opened from a swatch button. */
+.color-popover {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
 .color-popover.open {
     display: grid;
+}
+
+/* Notes' "+" add-card popover: pick Text note or List before creating. */
+.note-type-popover {
+    flex-direction: column;
+    gap: 2px;
+    min-width: 160px;
+}
+
+.note-type-popover.open {
+    display: flex;
+}
+
+.note-type-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 13.5px;
+    text-align: left;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.note-type-option:hover {
+    background: var(--panel);
+}
+
+.note-type-option-icon {
+    font-size: 15px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
 }
 
 .color-swatch {
@@ -1651,7 +1721,7 @@ table.project-table tbody tr:hover td {
     width: 17px;
     height: 17px;
     flex-shrink: 0;
-    accent-color: var(--accent-blue);
+    accent-color: var(--checkbox-checked);
     cursor: pointer;
 }
 
@@ -1736,7 +1806,7 @@ table.project-table tbody tr:hover td {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    accent-color: var(--accent-blue);
+    accent-color: var(--checkbox-checked);
     cursor: pointer;
 }
 
@@ -1774,9 +1844,35 @@ table.project-table tbody tr:hover td {
     opacity: 0.4;
 }
 
-.note-compose {
-    max-width: 600px;
-    margin: 0 0 24px;
+/* The "+" tile that starts a new note - always the first card in the
+   grid (rendered by JS ahead of the real notes on every render), a
+   button rather than an always-open compose field so a fresh note only
+   appears once you've chosen its type (Text/List) from the popover it
+   opens. */
+.note-add-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 64px;
+    width: 100%;
+    border-style: dashed;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.note-add-card:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+}
+
+.note-add-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.note-items {
+    margin-bottom: 4px;
 }
 
 .note-title-input {

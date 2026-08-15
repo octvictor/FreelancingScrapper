@@ -91,7 +91,10 @@ const TODO_LIST_COLORS = ["#7fb2d9", "#86efac", "#fbbf24", "#f0a848", "#e57373",
 let todoColorPopover = null;
 
 function updateTodoColorBtn(color) {
-    $("todo-list-color-btn").style.background = color || "transparent";
+    const btn = $("todo-list-color-btn");
+    btn.style.background = color || "transparent";
+    btn.classList.toggle("swatch-btn-empty", !color);
+    btn.innerHTML = color ? "" : "&#9681;";
 }
 
 function closeTodoColorPopover() {
@@ -113,7 +116,7 @@ function openTodoColorPopover() {
     const rect = btn.getBoundingClientRect();
 
     const panel = document.createElement("div");
-    panel.className = "color-popover open";
+    panel.className = "popover-panel color-popover open";
     panel.style.left = rect.left + "px";
     panel.style.top = rect.bottom + 6 + "px";
 
