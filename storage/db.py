@@ -128,21 +128,28 @@ CREATE TABLE IF NOT EXISTS note_items (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS finance_settings (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    currency TEXT NOT NULL DEFAULT 'USD'
+CREATE TABLE IF NOT EXISTS finance_tables (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    currency TEXT NOT NULL DEFAULT 'USD',
+    position INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS finance_columns (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_id INTEGER NOT NULL,
     name TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS finance_rows (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_id INTEGER NOT NULL,
     title TEXT NOT NULL DEFAULT '',
     value REAL,
+    color TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -220,10 +227,42 @@ def init_db() -> None:
         if "type" not in note_columns:
             conn.execute("ALTER TABLE notes ADD COLUMN type TEXT NOT NULL DEFAULT 'text'")
 
-        # Singleton settings row - the whole Finances table shares one
-        # currency rather than one per row, so a single SUM is always a
-        # coherent total instead of mixing currencies.
-        conn.execute("INSERT OR IGNORE INTO finance_settings (id, currency) VALUES (1, 'USD')")
+        # Finances shipped as a single flat table before multi-table tabs
+        # existed - `finance_columns`/`finance_rows` predate `table_id`,
+        # and the currency used to live in a separate `finance_settings`
+        # singleton row instead of on `finance_tables` directly. Patch
+        # the columns in, then - if any pre-migration rows are found -
+        # create one default table to own them (carrying over the old
+        # singleton's currency if it's there) rather than losing them.
+        finance_column_cols = {row["name"] for row in conn.execute("PRAGMA table_info(finance_columns)")}
+        if "table_id" not in finance_column_cols:
+            conn.execute("ALTER TABLE finance_columns ADD COLUMN table_id INTEGER")
+
+        finance_row_cols = {row["name"] for row in conn.execute("PRAGMA table_info(finance_rows)")}
+        if "table_id" not in finance_row_cols:
+            conn.execute("ALTER TABLE finance_rows ADD COLUMN table_id INTEGER")
+        if "color" not in finance_row_cols:
+            conn.execute("ALTER TABLE finance_rows ADD COLUMN color TEXT")
+
+        orphan_columns = conn.execute("SELECT COUNT(*) FROM finance_columns WHERE table_id IS NULL").fetchone()[0]
+        orphan_rows = conn.execute("SELECT COUNT(*) FROM finance_rows WHERE table_id IS NULL").fetchone()[0]
+        if orphan_columns or orphan_rows:
+            legacy_currency = "USD"
+            has_settings_table = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='finance_settings'"
+            ).fetchone()
+            if has_settings_table:
+                settings_row = conn.execute("SELECT currency FROM finance_settings WHERE id=1").fetchone()
+                if settings_row:
+                    legacy_currency = settings_row["currency"]
+            now = _now()
+            cur = conn.execute(
+                "INSERT INTO finance_tables (title, currency, position, created_at, updated_at) VALUES (?, ?, 0, ?, ?)",
+                ("Finances", legacy_currency, now, now),
+            )
+            default_table_id = cur.lastrowid
+            conn.execute("UPDATE finance_columns SET table_id=? WHERE table_id IS NULL", (default_table_id,))
+            conn.execute("UPDATE finance_rows SET table_id=? WHERE table_id IS NULL", (default_table_id,))
 
 
 # ---------- Gatherer: manually-curated studio/company list ----------
@@ -822,37 +861,60 @@ def delete_note_item(item_id: int) -> None:
         conn.execute("DELETE FROM note_items WHERE id=?", (item_id,))
 
 
-# ---------- Finances: Studio-Database-style table with a Value SUM ----------
-# Title/Value are fixed columns on `finance_rows`; any further
+# ---------- Calculator (Finances): browser-tab-style tables, each a ----------
+# ---------- Studio-Database-style ledger with a Value SUM -------------------
+# Each `finance_tables` row is one tab, with its own title and currency.
+# Title/Value/color are fixed columns on `finance_rows`; any further
 # user-added columns live in `finance_columns` with per-row values in
 # `finance_cells` (row_id, column_id) - an EAV side table so columns
-# can be added/renamed freely without ALTER TABLE gymnastics or having
-# to backfill every existing row.
+# can be added/renamed/deleted freely without ALTER TABLE gymnastics or
+# having to backfill every existing row.
 
-def get_finance_settings() -> dict:
+def list_finance_tables() -> list[dict]:
     with get_connection() as conn:
-        row = conn.execute("SELECT * FROM finance_settings WHERE id=1").fetchone()
-        return dict(row)
-
-
-def update_finance_currency(currency: str) -> dict:
-    with get_connection() as conn:
-        conn.execute("UPDATE finance_settings SET currency=? WHERE id=1", (currency,))
-        row = conn.execute("SELECT * FROM finance_settings WHERE id=1").fetchone()
-        return dict(row)
-
-
-def list_finance_columns() -> list[dict]:
-    with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM finance_columns ORDER BY id").fetchall()
+        rows = conn.execute("SELECT * FROM finance_tables ORDER BY position ASC, id ASC").fetchall()
         return [dict(row) for row in rows]
 
 
-def create_finance_column(name: str = "") -> dict:
+def create_finance_table(title: str = "Untitled") -> dict:
+    now = _now()
+    with get_connection() as conn:
+        max_position = conn.execute("SELECT MAX(position) FROM finance_tables").fetchone()[0]
+        position = (max_position + 1) if max_position is not None else 0
+        cur = conn.execute(
+            "INSERT INTO finance_tables (title, currency, position, created_at, updated_at) VALUES (?, 'USD', ?, ?, ?)",
+            (title, position, now, now),
+        )
+        row = conn.execute("SELECT * FROM finance_tables WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_finance_table(table_id: int, **fields) -> dict | None:
+    allowed = {"title", "currency"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if updates:
+        updates["updated_at"] = _now()
+        set_clause = ", ".join(f"{k}=?" for k in updates)
+        with get_connection() as conn:
+            conn.execute(f"UPDATE finance_tables SET {set_clause} WHERE id=?", (*updates.values(), table_id))
+            row = conn.execute("SELECT * FROM finance_tables WHERE id=?", (table_id,)).fetchone()
+            return dict(row) if row else None
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM finance_tables WHERE id=?", (table_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def list_finance_columns(table_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM finance_columns WHERE table_id=? ORDER BY id", (table_id,)).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_finance_column(table_id: int, name: str = "") -> dict:
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO finance_columns (name, created_at) VALUES (?, ?)",
-            (name, _now()),
+            "INSERT INTO finance_columns (table_id, name, created_at) VALUES (?, ?, ?)",
+            (table_id, name, _now()),
         )
         row = conn.execute("SELECT * FROM finance_columns WHERE id=?", (cur.lastrowid,)).fetchone()
         return dict(row)
@@ -863,6 +925,12 @@ def update_finance_column(column_id: int, name: str) -> dict | None:
         conn.execute("UPDATE finance_columns SET name=? WHERE id=?", (name, column_id))
         row = conn.execute("SELECT * FROM finance_columns WHERE id=?", (column_id,)).fetchone()
         return dict(row) if row else None
+
+
+def delete_finance_column(column_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM finance_cells WHERE column_id=?", (column_id,))
+        conn.execute("DELETE FROM finance_columns WHERE id=?", (column_id,))
 
 
 def _attach_finance_cells(conn, rows: list[dict]) -> list[dict]:
@@ -880,18 +948,18 @@ def _attach_finance_cells(conn, rows: list[dict]) -> list[dict]:
     return rows
 
 
-def list_finance_rows() -> list[dict]:
+def list_finance_rows(table_id: int) -> list[dict]:
     with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM finance_rows ORDER BY id").fetchall()
+        rows = conn.execute("SELECT * FROM finance_rows WHERE table_id=? ORDER BY id", (table_id,)).fetchall()
         return _attach_finance_cells(conn, [dict(row) for row in rows])
 
 
-def create_finance_row() -> dict:
+def create_finance_row(table_id: int) -> dict:
     now = _now()
     with get_connection() as conn:
         cur = conn.execute(
-            "INSERT INTO finance_rows (title, created_at, updated_at) VALUES ('', ?, ?)",
-            (now, now),
+            "INSERT INTO finance_rows (table_id, title, created_at, updated_at) VALUES (?, '', ?, ?)",
+            (table_id, now, now),
         )
         row = conn.execute("SELECT * FROM finance_rows WHERE id=?", (cur.lastrowid,)).fetchone()
         result = dict(row)
@@ -900,7 +968,7 @@ def create_finance_row() -> dict:
 
 
 def update_finance_row(row_id: int, **fields) -> dict | None:
-    allowed = {"title", "value"}
+    allowed = {"title", "value", "color"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if updates:
         updates["updated_at"] = _now()

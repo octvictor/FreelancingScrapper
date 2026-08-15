@@ -8,7 +8,7 @@ menu in the sidebar. Currently:
 Tracker and Gatherer live under a collapsible **Tools** section in the
 sidebar (click the section header to fold/unfold it). Below it sits a
 second collapsible section, **Management**, for non-client-work
-items - To Do, Notes, and Finances.
+items - To Do, Notes, and Calculator.
 
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
@@ -91,15 +91,25 @@ items - To Do, Notes, and Finances.
   color) opening the same small preset-palette popover used by To Do's
   list colors, applied as the card's full background, and an
   always-visible red delete button (with the themed confirm dialog).
-- **Finances** (under Management) - a spreadsheet-style ledger, same
-  inline-editable table/"+ Add row" look as Studio Database. Every row
-  has a Title and a currency-formatted Value; a "+" button in the
+- **Calculator** (under Management) - browser-tab-style, holds any
+  number of independent spreadsheet-style ledgers ("tables"). A tab
+  bar above the panel lists every table by its own title (inline-
+  editable, only the active tab's field is actually editable so a
+  click on another tab switches to it instead of dropping straight
+  into rename mode) with a "+" to create another. Each table is the
+  same inline-editable "+ Add row" look as Studio Database: every row
+  has a Title, a small round color swatch to the left of it (opening
+  the same preset-palette popover as To Do/Notes' colors, tinting the
+  whole row) and a currency-formatted Value; a "+" button in the
   header adds further freeform text columns shared across every row
-  (also inline-renamable) for anything else worth tracking per entry.
-  One currency (USD/EUR/GBP/BRL) applies to the whole table via a
-  picker above it, matching Tracker's Day rate currency picker, so a
-  running Sum at the bottom is always one coherent total - a negative
-  Value just subtracts from it, being plain addition under the hood.
+  (also inline-renamable), each with its own delete button - Title and
+  Value are permanent and never get one. One currency (USD/EUR/GBP/BRL)
+  applies per table via a picker above it, matching Tracker's Day rate
+  currency picker, so a running Sum at the bottom is always one
+  coherent total - a negative Value just subtracts from it, being
+  plain addition under the hood, and the Sum still counts every row
+  even the ones collapsed behind "Show more" (rows past the 7th on a
+  table cap there, same pattern as Project Manager's list).
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -236,21 +246,25 @@ executable), shared across every tool:
   board (no lists/nesting).
 - `note_items` - note_id, text, checked, created_at, updated_at. Backs
   a 'list'-type note's checklist.
-- `finance_settings` - a singleton row (id=1) holding the one currency
-  the whole Finances table uses.
-- `finance_columns` - name, created_at. Any extra freeform columns
-  added on top of Title/Value, shared across every row.
-- `finance_rows` - title, value, created_at, updated_at. Finances' own
-  table - Title and Value are fixed columns on the row itself.
+- `finance_tables` - title, currency, position, created_at, updated_at.
+  One row per Calculator tab - each tab is fully independent, with its
+  own columns, rows, and currency.
+- `finance_columns` - table_id, name, created_at. Any extra freeform
+  columns added on top of Title/Value for that table, shared across
+  every row in it, deletable independently of Title/Value.
+- `finance_rows` - table_id, title, value, color, created_at,
+  updated_at. A table's own rows - Title, Value, and an optional row
+  color are fixed columns on the row itself.
 - `finance_cells` - row_id, column_id, value (unique per row+column
   pair). An EAV side table backing each row's value in a
-  `finance_columns` entry, so columns can be added/renamed freely
-  without an ALTER TABLE per column or backfilling every existing row.
+  `finance_columns` entry, so columns can be added/renamed/deleted
+  freely without an ALTER TABLE per column or backfilling every
+  existing row.
 
 ## Roadmap / not built yet
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
 - Wider content area for the other tools too (To Do, Notes, and
-  Finances already got this) - not full-width, just noticeably
+  Calculator already got this) - not full-width, just noticeably
   roomier than today.

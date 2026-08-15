@@ -39,7 +39,7 @@
                         <span class="nav-item-icon">&#9998;</span> Notes
                     </button></li>
                     <li><button class="nav-item nav-item-chip" data-page="finance">
-                        <span class="nav-item-icon">&#164;</span> Finances
+                        <span class="nav-item-icon">&#164;</span> Calculator
                     </button></li>
                 </ul>
             </div>
@@ -180,10 +180,12 @@
             </section>
 
             <section id="page-finance" style="display:none;">
-                <h1 class="page-title">Finances</h1>
+                <h1 class="page-title">Calculator</h1>
                 <p class="muted" style="margin: -10px 0 18px;">A running ledger - add a row, fill it in, it saves as you type.</p>
 
-                <div class="panel">
+                <div class="finance-tab-bar" id="finance-tab-bar"></div>
+
+                <div class="panel finance-panel">
                     <div class="finance-toolbar">
                         <span class="muted" style="font-size:12.5px;">Currency</span>
                         <select class="cell-select" id="finance-currency-select">
@@ -202,7 +204,10 @@
                         </table>
                     </div>
                     <div class="log-footer">
-                        <button class="btn" id="finance-add-row-btn" type="button">+ Add row</button>
+                        <div class="finance-footer-left">
+                            <button class="btn" id="finance-add-row-btn" type="button">+ Add row</button>
+                            <button class="btn btn-text" id="finance-expand-btn" type="button" style="display:none;">Show more</button>
+                        </div>
                         <div class="log-sum">
                             <span class="log-sum-label">Sum</span>
                             <span class="log-sum-value" id="finance-sum-value">$0.00</span>

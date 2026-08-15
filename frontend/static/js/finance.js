@@ -1,26 +1,119 @@
-// Finances tool - a Studio-Database-style inline-editable table (Title,
-// currency Value, plus any number of user-added freeform text columns)
-// with a running SUM of the Value column at the bottom. One currency
-// applies to the whole table (picked at the top, same USD/EUR/GBP/BRL
+// Calculator (Finances) tool - browser-tab-style tables, each a
+// Studio-Database-style inline-editable ledger (Title, currency Value,
+// an optional per-row color, plus any number of user-added freeform
+// text columns) with a running SUM of the Value column. One currency
+// applies to each whole table (picked at the top, same USD/EUR/GBP/BRL
 // set as Tracker's Day rate) rather than per-row, so the SUM is always
-// a single coherent total. $()/confirmDialog/enhanceSelect/
-// refreshCustomSelect come from nav.js, escapeAttr from gatherer.js.
+// a single coherent total. Rows beyond FINANCE_ROW_LIMIT collapse
+// behind a "Show more" button, same pattern as Project Manager's list.
+// $()/confirmDialog/enhanceSelect/refreshCustomSelect come from
+// nav.js, escapeAttr from gatherer.js.
 
-let financeSettings = { currency: "USD" };
+let financeTables = [];
+let activeTableId = null;
 let financeColumns = [];
 let financeRows = [];
+let financeExpanded = false;
 
 const FINANCE_CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
+const FINANCE_ROW_COLORS = ["#1f2f3d", "#1c3324", "#3a2f14", "#3a1f1f", "#2a1f3a", "#3a1f2f"];
+const FINANCE_ROW_LIMIT = 7;
 
 function financeCurrencySymbol() {
-    return FINANCE_CURRENCY_SYMBOLS[financeSettings.currency] || "$";
+    const table = financeTables.find((t) => t.id === activeTableId);
+    return FINANCE_CURRENCY_SYMBOLS[table ? table.currency : "USD"] || "$";
+}
+
+// ---------- Tab bar ----------
+// A non-active tab's title input is readonly - clicking it still
+// bubbles to the tab's own click listener and switches to it, rather
+// than immediately dropping into editing before you've even selected
+// that tab. Only the active tab's input is genuinely editable.
+
+function financeTabHtml(table) {
+    const isActive = table.id === activeTableId;
+    return `
+        <div class="finance-tab ${isActive ? "active" : ""}" data-id="${table.id}">
+            <input type="text" class="finance-tab-title-input" data-role="tab-title" value="${escapeAttr(table.title)}" placeholder="Untitled" ${isActive ? "" : "readonly"}>
+        </div>
+    `;
+}
+
+function renderFinanceTabs() {
+    $("finance-tab-bar").innerHTML = `
+        ${financeTables.map(financeTabHtml).join("")}
+        <button class="finance-add-tab-btn" id="finance-add-tab-btn" type="button" title="New tab">+</button>
+    `;
+    document.querySelectorAll(".finance-tab").forEach((tabEl) => {
+        const id = parseInt(tabEl.dataset.id, 10);
+        tabEl.addEventListener("click", () => {
+            if (id !== activeTableId) switchFinanceTable(id);
+        });
+
+        const input = tabEl.querySelector("[data-role='tab-title']");
+        input.addEventListener("blur", () => saveFinanceTableTitle(id, input.value.trim() || "Untitled"));
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") input.blur();
+        });
+    });
+    $("finance-add-tab-btn").addEventListener("click", addFinanceTable);
+}
+
+async function switchFinanceTable(id) {
+    activeTableId = id;
+    financeExpanded = false;
+    renderFinanceTabs();
+    await loadFinanceTableData();
+}
+
+async function loadFinanceTableData() {
+    const resp = await fetch(`/api/finance/tables/${activeTableId}`);
+    const data = await resp.json();
+    financeColumns = data.columns;
+    financeRows = data.rows;
+    const table = financeTables.find((t) => t.id === activeTableId);
+    $("finance-currency-select").value = table ? table.currency : "USD";
+    refreshCustomSelect($("finance-currency-select"));
+    renderFinanceTable();
+}
+
+async function saveFinanceTableTitle(id, title) {
+    const resp = await fetch(`/api/finance/tables/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+    });
+    if (!resp.ok) return;
+    const updated = await resp.json();
+    const idx = financeTables.findIndex((t) => t.id === id);
+    if (idx !== -1) financeTables[idx] = updated;
+    renderFinanceTabs();
+}
+
+async function addFinanceTable() {
+    const resp = await fetch("/api/finance/tables", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Untitled" }),
+    });
+    const table = await resp.json();
+    financeTables.push(table);
+    await switchFinanceTable(table.id);
+    const input = document.querySelector(`.finance-tab[data-id="${table.id}"] [data-role='tab-title']`);
+    input?.focus();
+    input?.select();
 }
 
 // ---------- Table ----------
 
 function renderFinanceHead() {
     const dynamicHeaders = financeColumns.map((col) => `
-        <th><input type="text" class="cell-input finance-col-header-input" data-column-id="${col.id}" value="${escapeAttr(col.name)}" placeholder="Column"></th>
+        <th>
+            <div class="finance-col-header">
+                <input type="text" class="cell-input finance-col-header-input" data-column-id="${col.id}" value="${escapeAttr(col.name)}" placeholder="Column">
+                <button class="finance-col-delete-btn" data-role="delete-column" data-column-id="${col.id}" type="button" title="Delete column">&times;</button>
+            </div>
+        </th>
     `).join("");
     $("finance-table-head").innerHTML = `
         <th>Title</th>
@@ -35,6 +128,9 @@ function renderFinanceHead() {
             if (e.key === "Enter") input.blur();
         });
     });
+    $("finance-table-head").querySelectorAll("[data-role='delete-column']").forEach((btn) => {
+        btn.addEventListener("click", () => deleteFinanceColumn(parseInt(btn.dataset.columnId, 10)));
+    });
     $("finance-add-column-btn").addEventListener("click", addFinanceColumn);
 }
 
@@ -42,9 +138,15 @@ function financeRowHtml(row) {
     const dynamicCells = financeColumns.map((col) => `
         <td><input type="text" class="cell-input" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-"></td>
     `).join("");
+    const colorGlyph = row.color ? "" : "&#9681;";
     return `
-        <tr data-id="${row.id}">
-            <td><input type="text" class="cell-input" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title"></td>
+        <tr data-id="${row.id}" style="${row.color ? `background:${row.color};` : ""}">
+            <td>
+                <div class="finance-title-cell">
+                    <button class="swatch-btn ${row.color ? "" : "swatch-btn-empty"}" data-role="row-color" type="button" title="Row color" style="background:${row.color || "transparent"};">${colorGlyph}</button>
+                    <input type="text" class="cell-input" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
+                </div>
+            </td>
             <td>
                 <div class="cost-cell">
                     <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
@@ -60,9 +162,20 @@ function financeRowHtml(row) {
 
 function renderFinanceTable() {
     renderFinanceHead();
-    $("finance-body").innerHTML = financeRows.length
-        ? financeRows.map(financeRowHtml).join("")
+    const visible = financeExpanded ? financeRows : financeRows.slice(0, FINANCE_ROW_LIMIT);
+    $("finance-body").innerHTML = visible.length
+        ? visible.map(financeRowHtml).join("")
         : `<tr><td colspan="${4 + financeColumns.length}" class="muted" style="padding: 14px 10px;">No rows yet.</td></tr>`;
+
+    const expandBtn = $("finance-expand-btn");
+    const hiddenCount = financeRows.length - visible.length;
+    if (financeRows.length > FINANCE_ROW_LIMIT) {
+        expandBtn.style.display = "";
+        expandBtn.textContent = financeExpanded ? "Show less" : `Show ${hiddenCount} more`;
+    } else {
+        expandBtn.style.display = "none";
+    }
+
     wireFinanceRowEvents();
     renderFinanceSum();
 }
@@ -93,6 +206,11 @@ function wireFinanceRowEvents() {
             cellInput.addEventListener("keydown", (e) => {
                 if (e.key === "Enter") cellInput.blur();
             });
+        });
+
+        tr.querySelector("[data-role='row-color']").addEventListener("click", (e) => {
+            e.stopPropagation();
+            openFinanceRowColorPopover(e.currentTarget, id);
         });
 
         tr.querySelector("[data-role='delete']").addEventListener("click", async () => {
@@ -129,10 +247,67 @@ async function saveFinanceCell(rowId, columnId, value) {
     if (row) row.cells[columnId] = value;
 }
 
+// ---------- Row color ----------
+// Reuses the same shared color-popover pattern as To Do's list color
+// and Notes' card color - just a different trigger button and a
+// row-tinted-background instead of a card fill.
+
+let financeColorPopover = null;
+
+function closeFinanceColorPopover() {
+    if (!financeColorPopover) return;
+    financeColorPopover.remove();
+    financeColorPopover = null;
+    document.removeEventListener("click", onFinanceColorPopoverOutsideClick);
+}
+
+function onFinanceColorPopoverOutsideClick(e) {
+    if (financeColorPopover && !financeColorPopover.contains(e.target) && !e.target.closest("[data-role='row-color']")) {
+        closeFinanceColorPopover();
+    }
+}
+
+function openFinanceRowColorPopover(triggerBtn, rowId) {
+    closeFinanceColorPopover();
+    const rect = triggerBtn.getBoundingClientRect();
+
+    const panel = document.createElement("div");
+    panel.className = "popover-panel color-popover open";
+    panel.style.left = rect.left + "px";
+    panel.style.top = rect.bottom + 6 + "px";
+
+    const noneSwatch = document.createElement("button");
+    noneSwatch.type = "button";
+    noneSwatch.className = "color-swatch none";
+    noneSwatch.title = "No color";
+    noneSwatch.addEventListener("click", () => setFinanceRowColor(rowId, null));
+    panel.appendChild(noneSwatch);
+
+    FINANCE_ROW_COLORS.forEach((color) => {
+        const swatch = document.createElement("button");
+        swatch.type = "button";
+        swatch.className = "color-swatch";
+        swatch.style.background = color;
+        swatch.title = color;
+        swatch.addEventListener("click", () => setFinanceRowColor(rowId, color));
+        panel.appendChild(swatch);
+    });
+
+    document.body.appendChild(panel);
+    financeColorPopover = panel;
+    setTimeout(() => document.addEventListener("click", onFinanceColorPopoverOutsideClick));
+}
+
+async function setFinanceRowColor(rowId, color) {
+    await saveFinanceRow(rowId, { color });
+    closeFinanceColorPopover();
+    renderFinanceTable();
+}
+
 // ---------- Columns ----------
 
 async function addFinanceColumn() {
-    const resp = await fetch("/api/finance/columns", {
+    const resp = await fetch(`/api/finance/tables/${activeTableId}/columns`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "" }),
@@ -155,15 +330,27 @@ async function saveFinanceColumnName(columnId, name) {
     if (idx !== -1) financeColumns[idx] = updated;
 }
 
+async function deleteFinanceColumn(columnId) {
+    if (!(await confirmDialog("This can't be undone.", { title: "Delete this column?" }))) return;
+    await fetch(`/api/finance/columns/${columnId}`, { method: "DELETE" });
+    financeColumns = financeColumns.filter((c) => c.id !== columnId);
+    financeRows.forEach((row) => {
+        delete row.cells[columnId];
+    });
+    renderFinanceTable();
+}
+
 // ---------- Sum ----------
-// Reads current input values straight from the DOM, same pattern as
-// Tracker's Log Sum - a plain running total naturally subtracts a
-// negative Value entry, no special-casing needed.
+// financeRows (not the DOM) is the source of truth so a row hidden
+// behind "Show more" still counts - but a row that's currently visible
+// and mid-edit reads its live (not-yet-saved) input value instead, so
+// typing updates the Sum instantly rather than waiting for blur.
 
 function renderFinanceSum() {
     let total = 0;
-    document.querySelectorAll("#finance-body .cell-input[data-field='value']").forEach((input) => {
-        const value = parseFloat(input.value);
+    financeRows.forEach((row) => {
+        const liveInput = document.querySelector(`#finance-body tr[data-id="${row.id}"] .cell-input[data-field='value']`);
+        const value = parseFloat(liveInput ? liveInput.value : row.value);
         if (!isNaN(value)) total += value;
     });
     $("finance-sum-value").textContent = financeCurrencySymbol() + total.toFixed(2);
@@ -172,13 +359,15 @@ function renderFinanceSum() {
 // ---------- Currency ----------
 
 $("finance-currency-select").addEventListener("change", async (e) => {
-    const resp = await fetch("/api/finance/currency", {
+    const resp = await fetch(`/api/finance/tables/${activeTableId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currency: e.target.value }),
     });
     if (!resp.ok) return;
-    financeSettings = await resp.json();
+    const updated = await resp.json();
+    const idx = financeTables.findIndex((t) => t.id === updated.id);
+    if (idx !== -1) financeTables[idx] = updated;
     document.querySelectorAll("#finance-body .cost-prefix").forEach((el) => {
         el.textContent = financeCurrencySymbol();
     });
@@ -186,29 +375,45 @@ $("finance-currency-select").addEventListener("change", async (e) => {
 });
 enhanceSelect($("finance-currency-select"));
 
-// ---------- Add row ----------
+// ---------- Add row / expand ----------
 
 $("finance-add-row-btn").addEventListener("click", async () => {
-    const resp = await fetch("/api/finance/rows", { method: "POST" });
+    const resp = await fetch(`/api/finance/tables/${activeTableId}/rows`, { method: "POST" });
     const row = await resp.json();
     financeRows.push(row);
+    // A new row that would land behind "Show more" should still be
+    // visible right away - it's the thing you just asked to add.
+    if (financeRows.length > FINANCE_ROW_LIMIT) financeExpanded = true;
     renderFinanceTable();
     document.querySelector(`#finance-body tr[data-id="${row.id}"] .cell-input[data-field="title"]`)?.focus();
 });
 
-(async function initFinance() {
-    const resp = await fetch("/api/finance");
-    const data = await resp.json();
-    financeSettings = data.settings;
-    financeColumns = data.columns;
-    financeRows = data.rows;
+$("finance-expand-btn").addEventListener("click", () => {
+    financeExpanded = !financeExpanded;
+    renderFinanceTable();
+});
 
-    if (financeRows.length === 0) {
-        const created = await (await fetch("/api/finance/rows", { method: "POST" })).json();
-        financeRows = [created];
+(async function initFinance() {
+    const resp = await fetch("/api/finance/tables");
+    const data = await resp.json();
+    financeTables = data.tables;
+
+    if (financeTables.length === 0) {
+        const created = await (await fetch("/api/finance/tables", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: "Untitled" }),
+        })).json();
+        financeTables = [created];
     }
 
-    $("finance-currency-select").value = financeSettings.currency;
-    refreshCustomSelect($("finance-currency-select"));
-    renderFinanceTable();
+    activeTableId = financeTables[0].id;
+    renderFinanceTabs();
+    await loadFinanceTableData();
+
+    if (financeRows.length === 0) {
+        const created = await (await fetch(`/api/finance/tables/${activeTableId}/rows`, { method: "POST" })).json();
+        financeRows = [created];
+        renderFinanceTable();
+    }
 })();
