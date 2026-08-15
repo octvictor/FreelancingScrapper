@@ -1560,9 +1560,10 @@ table.project-table tbody tr:hover td {
     align-self: flex-start;
 }
 
-/* Small square swatch showing (and, via its popover, setting) the
-   active list's color. Empty/transparent background = no color set. */
-.todo-swatch-btn {
+/* Small square swatch showing (and, via its popover, setting) a color -
+   shared between To Do's list color and Notes' card color. Empty/
+   transparent background = no color set. */
+.swatch-btn {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
@@ -1572,11 +1573,13 @@ table.project-table tbody tr:hover td {
     cursor: pointer;
 }
 
-.todo-swatch-btn:hover {
+.swatch-btn:hover {
     border-color: var(--text-muted);
 }
 
-.todo-color-popover {
+/* Shared between To Do (list color) and Notes (card color) - a small
+   preset-palette popover opened from a swatch button. */
+.color-popover {
     display: none;
     position: fixed;
     grid-template-columns: repeat(4, 1fr);
@@ -1588,11 +1591,11 @@ table.project-table tbody tr:hover td {
     z-index: 200;
 }
 
-.todo-color-popover.open {
+.color-popover.open {
     display: grid;
 }
 
-.todo-color-swatch {
+.color-swatch {
     width: 22px;
     height: 22px;
     padding: 0;
@@ -1600,11 +1603,11 @@ table.project-table tbody tr:hover td {
     border: 2px solid transparent;
 }
 
-.todo-color-swatch:hover {
+.color-swatch:hover {
     border-color: var(--text-muted);
 }
 
-.todo-color-swatch.none {
+.color-swatch.none {
     background: var(--panel);
     border: 1px dashed var(--border);
 }
@@ -1736,4 +1739,98 @@ table.project-table tbody tr:hover td {
 
 .todo-modal-header .todo-star-btn {
     font-size: 22px;
+}
+
+/* ---------- Notes (Google Keep-style cards) ---------- */
+
+/* CSS multi-column masonry - column-width (not column-count) is what
+   makes it responsive: the browser fits as many columns as the
+   available width allows and reflows on resize, rather than a fixed
+   column count. Each card sizes to its own content (real masonry,
+   not a uniform grid), and break-inside:avoid stops a card being
+   split across a column boundary. */
+.notes-grid {
+    column-width: 240px;
+    column-gap: 16px;
+}
+
+.note-card {
+    background: var(--panel-alt);
+    border: 1px solid var(--border-soft);
+    padding: 14px;
+    margin: 0 0 16px;
+    break-inside: avoid;
+    position: relative;
+}
+
+.note-card.dragging {
+    opacity: 0.4;
+}
+
+.note-compose {
+    max-width: 600px;
+    margin: 0 0 24px;
+}
+
+.note-title-input {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    padding: 0 0 8px;
+    margin: 0;
+}
+
+.note-title-input::placeholder,
+.note-body-input::placeholder {
+    color: var(--text-faint);
+}
+
+.note-body-input {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13.5px;
+    line-height: 1.5;
+    resize: none;
+    overflow: hidden;
+    padding: 0;
+}
+
+.note-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.note-card:hover .note-card-footer,
+.note-card:focus-within .note-card-footer {
+    opacity: 1;
+}
+
+.note-drag-handle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    color: var(--text-faint);
+    font-size: 13px;
+    line-height: 1;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.note-card:hover .note-drag-handle {
+    opacity: 1;
 }

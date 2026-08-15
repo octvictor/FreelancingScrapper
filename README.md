@@ -8,7 +8,7 @@ menu in the sidebar. Currently:
 Tracker and Gatherer live under a collapsible **Tools** section in the
 sidebar (click the section header to fold/unfold it). Below it sits a
 second collapsible section, **Management**, for non-client-work
-items - currently just To Do.
+items - To Do and Notes.
 
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
@@ -70,6 +70,16 @@ items - currently just To Do.
   checklist (a mini to-do list within the task, same
   checkbox-and-title pattern as Personal Projects' Checklist), and a
   freeform Notes text area. Everything autosaves on blur/change.
+- **Notes** (under Management) - a Google Keep-style board of cards.
+  A "Take a note..." card at the top creates a new one as soon as you
+  type a title/body and click away; existing cards are edited directly
+  in place (title, body) with no modal, autosaving on blur. Cards flow
+  into a responsive masonry grid (CSS columns, so it reflows its own
+  column count as the window resizes) and can be dragged by a small
+  handle to reorder - the order persists. Each card has a color swatch
+  button opening the same small preset-palette popover used by To Do's
+  list colors, applied as the card's full background, and a delete
+  button (with the themed confirm dialog).
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -201,6 +211,8 @@ executable), shared across every tool:
   updated_at. A list's tasks.
 - `todo_steps` - task_id, text, checked, created_at, updated_at. Backs
   a task's Steps mini-checklist.
+- `notes` - title, body, color, position (manual drag order), created_at,
+  updated_at. Notes' own table, a flat board (no lists/nesting).
 
 ## Roadmap / not built yet
 
@@ -209,7 +221,5 @@ executable), shared across every tool:
 - Sharp square corners app-wide, replacing the previous rounded corners,
   is live (--radius-* tokens zeroed out in app.css) but still an
   experiment - not a fully settled decision.
-- Wider content area for the other tools too (To Do already got this) -
-  not full-width, just noticeably roomier than today.
-- A "Notes" page, Google Keep-style: draggable, responsively-sized,
-  custom-colored cards. Landing under Management, alongside To Do.
+- Wider content area for the other tools too (To Do and Notes already
+  got this) - not full-width, just noticeably roomier than today.

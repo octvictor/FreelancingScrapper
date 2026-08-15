@@ -113,13 +113,13 @@ function openTodoColorPopover() {
     const rect = btn.getBoundingClientRect();
 
     const panel = document.createElement("div");
-    panel.className = "todo-color-popover open";
+    panel.className = "color-popover open";
     panel.style.left = rect.left + "px";
     panel.style.top = rect.bottom + 6 + "px";
 
     const noneSwatch = document.createElement("button");
     noneSwatch.type = "button";
-    noneSwatch.className = "todo-color-swatch none";
+    noneSwatch.className = "color-swatch none";
     noneSwatch.title = "No color";
     noneSwatch.addEventListener("click", () => setTodoListColor(null));
     panel.appendChild(noneSwatch);
@@ -127,7 +127,7 @@ function openTodoColorPopover() {
     TODO_LIST_COLORS.forEach((color) => {
         const swatch = document.createElement("button");
         swatch.type = "button";
-        swatch.className = "todo-color-swatch";
+        swatch.className = "color-swatch";
         swatch.style.background = color;
         swatch.title = color;
         swatch.addEventListener("click", () => setTodoListColor(color));
