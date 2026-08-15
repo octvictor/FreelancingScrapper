@@ -62,6 +62,12 @@ def update_table(table_id: int, payload: TableUpdate):
     return table
 
 
+@router.delete("/tables/{table_id}")
+def delete_table(table_id: int):
+    db.delete_finance_table(table_id)
+    return {"ok": True}
+
+
 @router.get("/tables/{table_id}")
 def get_table_data(table_id: int):
     return {

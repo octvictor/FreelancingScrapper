@@ -904,6 +904,17 @@ def update_finance_table(table_id: int, **fields) -> dict | None:
         return dict(row) if row else None
 
 
+def delete_finance_table(table_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "DELETE FROM finance_cells WHERE row_id IN (SELECT id FROM finance_rows WHERE table_id=?)",
+            (table_id,),
+        )
+        conn.execute("DELETE FROM finance_rows WHERE table_id=?", (table_id,))
+        conn.execute("DELETE FROM finance_columns WHERE table_id=?", (table_id,))
+        conn.execute("DELETE FROM finance_tables WHERE id=?", (table_id,))
+
+
 def list_finance_columns(table_id: int) -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("SELECT * FROM finance_columns WHERE table_id=? ORDER BY id", (table_id,)).fetchall()

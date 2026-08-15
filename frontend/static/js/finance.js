@@ -34,9 +34,17 @@ function financeCurrencySymbol() {
 // field inside the active table's panel; the tab just reflects
 // whatever that field currently holds.
 
+// A tab is a layout container, not itself a button - like To Do's
+// list-item row, it wraps two separate buttons (select, delete) so
+// clicking the delete "x" doesn't also switch to that tab.
 function financeTabHtml(table) {
     const isActive = table.id === activeTableId;
-    return `<button type="button" class="finance-tab ${isActive ? "active" : ""}" data-id="${table.id}">${escapeAttr(table.title || "Untitled")}</button>`;
+    return `
+        <div class="finance-tab ${isActive ? "active" : ""}" data-id="${table.id}">
+            <button type="button" class="finance-tab-select" data-role="select-tab">${escapeAttr(table.title || "Untitled")}</button>
+            <button type="button" class="finance-tab-delete-btn" data-role="delete-tab" title="Delete table">&times;</button>
+        </div>
+    `;
 }
 
 function renderFinanceTabs() {
@@ -46,11 +54,40 @@ function renderFinanceTabs() {
     `;
     document.querySelectorAll(".finance-tab").forEach((tabEl) => {
         const id = parseInt(tabEl.dataset.id, 10);
-        tabEl.addEventListener("click", () => {
+        tabEl.querySelector("[data-role='select-tab']").addEventListener("click", () => {
             if (id !== activeTableId) switchFinanceTable(id);
+        });
+        tabEl.querySelector("[data-role='delete-tab']").addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteFinanceTable(id);
         });
     });
     $("finance-add-tab-btn").addEventListener("click", addFinanceTable);
+}
+
+// Deleting the active tab needs a new active tab to fall back to;
+// deleting the very last tab leaves nothing to fall back to, so a
+// fresh blank one is created first - same bootstrap initFinance() uses
+// when there are no tables at all.
+async function deleteFinanceTable(id) {
+    if (!(await confirmDialog("This can't be undone - the table and all its rows will be deleted.", { title: "Delete this table?" }))) return;
+    await fetch(`/api/finance/tables/${id}`, { method: "DELETE" });
+    financeTables = financeTables.filter((t) => t.id !== id);
+
+    if (financeTables.length === 0) {
+        const created = await (await fetch("/api/finance/tables", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: "Untitled" }),
+        })).json();
+        financeTables = [created];
+    }
+
+    if (id === activeTableId) {
+        await switchFinanceTable(financeTables[0].id);
+    } else {
+        renderFinanceTabs();
+    }
 }
 
 async function switchFinanceTable(id) {

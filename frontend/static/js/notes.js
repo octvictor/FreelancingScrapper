@@ -399,12 +399,6 @@ $("note-modal-body").addEventListener("blur", () => {
     saveNoteField(activeNoteId, { body: $("note-modal-body").value.trim() || null });
 });
 
-$("note-modal-color-btn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (activeNoteId === null) return;
-    openNoteColorPopover(e.currentTarget, activeNoteId);
-});
-
 $("note-modal-delete-btn").addEventListener("click", async () => {
     if (activeNoteId === null) return;
     if (!(await confirmDialog("This can't be undone.", { title: "Delete this note?" }))) return;

@@ -95,12 +95,15 @@ items - To Do, Notes, and Finances.
   with **Calculator**, a section labeled by its own heading inside the
   page (more Finances features can join it later). Calculator is
   browser-tab-style, holding any number of independent spreadsheet-
-  style ledgers ("tables"). A tab bar lists every table as a plain
-  button showing its title - clicking one switches to it, and that's
-  all a tab does; there's nothing to type into on the tab itself.
-  Renaming happens once, in an editable title field inside the active
-  table's panel (above Currency) - the tab it belongs to just displays
-  whatever that field currently holds. Each table is the same inline-
+  style ledgers ("tables"). A tab bar lists every table as a small
+  chip with its title and its own delete ("x") button on the far
+  right - clicking the title switches to that tab, clicking the x
+  deletes it (confirms first, and if it was the last table left, a
+  fresh blank one takes its place so Calculator is never left empty).
+  There's nothing to type into on the tab itself - renaming happens
+  once, in an editable title field inside the active table's panel
+  (above Currency), and the tab it belongs to just displays whatever
+  that field currently holds. Each table is the same inline-
   editable "+ Add row" look as Studio Database: every row has a Title,
   a small round color swatch to its left (opening the same preset-
   palette popover as To Do/Notes' colors - like To Do, only the swatch
@@ -273,8 +276,6 @@ executable), shared across every tool:
 - Wider content area for the other tools too (To Do, Notes, and
   Calculator already got this) - not full-width, just noticeably
   roomier than today.
-- Calculator: a way to delete a tab (table), not just create/rename
-  one - currently a table, once created, is permanent.
 
 ## Design system notes
 
