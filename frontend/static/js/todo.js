@@ -1,22 +1,24 @@
 // To Do tool - inspired by Microsoft To Do. Multiple lists, each a set
-// of checkbox tasks. A task can be starred Important, carry freeform
-// Notes, and hold a Steps checklist (reusing the same .checklist-item
-// markup/pattern as Personal Projects' checklist, namespaced separately
-// so its buttons don't collide with that one). $()/confirmDialog come
-// from nav.js, escapeAttr from gatherer.js.
+// of checkbox tasks. A task can carry freeform Notes and hold a Steps
+// checklist (reusing the same .checklist-item markup/pattern as
+// Personal Projects' checklist, namespaced separately so its buttons
+// don't collide with that one). Favoriting only applies to lists, not
+// individual tasks - there's no importance concept inside a list at
+// all. $()/confirmDialog come from nav.js, escapeAttr from gatherer.js.
 
 let todoLists = [];
 let activeListId = null;
 let activeTodoTasks = [];
 let activeTodoTaskId = null;
 let todoCompletedExpanded = false;
-let todoImportantOnly = false;
+let todoFavoritesOnly = false;
 
 // ---------- Lists rail ----------
 // Each row is a container with two independent controls: the main
 // area (dot + title) selects the list, and a star - always visible,
 // grey by default, gold once favorited - toggles favorite status
-// directly from the rail without needing to select the list first.
+// directly from the rail without needing to select the list first. A
+// second star above the rail filters the list down to favorites only.
 
 function todoListItemHtml(list) {
     const isActive = list.id === activeListId;
@@ -37,17 +39,24 @@ function todoListItemHtml(list) {
 
 function renderTodoLists() {
     const container = $("todo-lists");
-    if (todoLists.length === 0) {
-        container.innerHTML = `<p class="todo-empty-state">No lists yet.</p>`;
+    const visibleLists = todoFavoritesOnly ? todoLists.filter((l) => l.favorite) : todoLists;
+    if (visibleLists.length === 0) {
+        container.innerHTML = `<p class="todo-empty-state">${todoFavoritesOnly ? "No favorite lists." : "No lists yet."}</p>`;
         return;
     }
-    container.innerHTML = todoLists.map(todoListItemHtml).join("");
+    container.innerHTML = visibleLists.map(todoListItemHtml).join("");
     container.querySelectorAll(".todo-list-item").forEach((row) => {
         const id = parseInt(row.dataset.id, 10);
         row.querySelector("[data-role='select']").addEventListener("click", () => selectTodoList(id));
         row.querySelector("[data-role='favorite']").addEventListener("click", () => toggleTodoListFavorite(id));
     });
 }
+
+$("todo-favorites-filter").addEventListener("click", () => {
+    todoFavoritesOnly = !todoFavoritesOnly;
+    $("todo-favorites-filter").classList.toggle("active", todoFavoritesOnly);
+    renderTodoLists();
+});
 
 async function toggleTodoListFavorite(id) {
     const list = todoLists.find((l) => l.id === id);
@@ -67,8 +76,6 @@ async function toggleTodoListFavorite(id) {
 async function selectTodoList(id) {
     activeListId = id;
     todoCompletedExpanded = false;
-    todoImportantOnly = false;
-    $("todo-filter-important").classList.remove("active");
     const list = todoLists.find((l) => l.id === id);
     $("todo-list-title").value = list ? list.title || "" : "";
     updateTodoColorBtn(list && list.color);
@@ -217,13 +224,11 @@ async function loadTodoTasks() {
 }
 
 function todoTaskRowHtml(task) {
-    const isImportant = !!task.important;
     const isCompleted = !!task.completed;
     return `
         <div class="todo-task-row ${isCompleted ? "completed" : ""}" data-id="${task.id}">
             <input type="checkbox" class="todo-task-checkbox" ${isCompleted ? "checked" : ""}>
             <span class="todo-task-title">${escapeAttr(task.title) || "Untitled task"}</span>
-            <button class="todo-star-btn ${isImportant ? "active" : ""}" type="button" title="Mark important">${isImportant ? "&#9733;" : "&#9734;"}</button>
             <button class="row-delete-btn" data-role="delete" title="Delete task">&times;</button>
         </div>
     `;
@@ -234,17 +239,12 @@ function wireTodoTaskRows(container) {
         const taskId = parseInt(row.dataset.id, 10);
 
         row.addEventListener("click", (e) => {
-            if (e.target.closest(".todo-task-checkbox, .todo-star-btn, .row-delete-btn")) return;
+            if (e.target.closest(".todo-task-checkbox, .row-delete-btn")) return;
             openTodoTaskModal(taskId);
         });
 
         const checkbox = row.querySelector(".todo-task-checkbox");
         checkbox.addEventListener("change", () => saveTodoTaskField(taskId, { completed: checkbox.checked }));
-
-        row.querySelector(".todo-star-btn").addEventListener("click", () => {
-            const task = activeTodoTasks.find((t) => t.id === taskId);
-            saveTodoTaskField(taskId, { important: !task.important });
-        });
 
         row.querySelector("[data-role='delete']").addEventListener("click", async () => {
             if (!(await confirmDialog("This can't be undone.", { title: "Delete this task?" }))) return;
@@ -257,13 +257,12 @@ function wireTodoTaskRows(container) {
 }
 
 function renderTodoTasks() {
-    const base = todoImportantOnly ? activeTodoTasks.filter((t) => t.important) : activeTodoTasks;
-    const active = base.filter((t) => !t.completed);
-    const completed = base.filter((t) => t.completed);
+    const active = activeTodoTasks.filter((t) => !t.completed);
+    const completed = activeTodoTasks.filter((t) => t.completed);
 
     $("todo-task-list").innerHTML = active.length
         ? active.map(todoTaskRowHtml).join("")
-        : `<p class="todo-empty-state">${todoImportantOnly ? "No important tasks." : "No tasks yet."}</p>`;
+        : `<p class="todo-empty-state">No tasks yet.</p>`;
 
     // The whole Completed section (Clean included, now that it lives in
     // its header) hides itself when there's nothing completed to show -
@@ -277,12 +276,6 @@ function renderTodoTasks() {
     wireTodoTaskRows($("todo-task-list"));
     wireTodoTaskRows($("todo-completed-list"));
 }
-
-$("todo-filter-important").addEventListener("click", () => {
-    todoImportantOnly = !todoImportantOnly;
-    $("todo-filter-important").classList.toggle("active", todoImportantOnly);
-    renderTodoTasks();
-});
 
 $("todo-clean-list-btn").addEventListener("click", async () => {
     if (activeListId === null) return;
@@ -337,8 +330,6 @@ async function openTodoTaskModal(id) {
 
     $("todo-modal-completed").checked = !!task.completed;
     $("todo-modal-title").value = task.title || "";
-    $("todo-modal-star").classList.toggle("active", !!task.important);
-    $("todo-modal-star").innerHTML = task.important ? "&#9733;" : "&#9734;";
     $("todo-modal-notes").value = task.notes || "";
     renderTodoSteps(task.steps || []);
 
@@ -380,13 +371,6 @@ $("todo-modal-title").addEventListener("keydown", (e) => {
 });
 
 $("todo-modal-completed").addEventListener("change", (e) => saveActiveTodoTask({ completed: e.target.checked }));
-
-$("todo-modal-star").addEventListener("click", () => {
-    const willBeImportant = !$("todo-modal-star").classList.contains("active");
-    $("todo-modal-star").classList.toggle("active", willBeImportant);
-    $("todo-modal-star").innerHTML = willBeImportant ? "&#9733;" : "&#9734;";
-    saveActiveTodoTask({ important: willBeImportant });
-});
 
 $("todo-modal-notes").addEventListener("blur", (e) => saveActiveTodoTask({ notes: e.target.value.trim() || null }));
 

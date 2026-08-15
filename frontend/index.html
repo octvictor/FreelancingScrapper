@@ -142,6 +142,7 @@
                 <div class="panel todo-panel">
                     <div class="todo-layout">
                         <div class="todo-lists-rail">
+                            <button class="todo-icon-toggle" id="todo-favorites-filter" type="button" title="Favorite lists only">&#9733;</button>
                             <div id="todo-lists"></div>
                             <button class="btn" id="todo-list-add-btn" type="button">+ New list</button>
                         </div>
@@ -151,7 +152,6 @@
                                 <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
                             </div>
                             <div class="todo-tasks-controls">
-                                <button class="todo-icon-toggle" id="todo-filter-important" type="button" title="Important only">&#9733;</button>
                                 <button class="btn-danger-text" id="todo-list-delete-btn" type="button">Delete list</button>
                             </div>
 
@@ -318,7 +318,6 @@
             <div class="todo-modal-header">
                 <input type="checkbox" class="todo-modal-checkbox" id="todo-modal-completed" title="Mark complete">
                 <input type="text" class="modal-title-input todo-modal-title-input" id="todo-modal-title" placeholder="Task title">
-                <button class="todo-star-btn" id="todo-modal-star" type="button" title="Mark important">&#9733;</button>
             </div>
 
             <div class="modal-section">

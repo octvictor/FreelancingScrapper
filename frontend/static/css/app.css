@@ -1404,6 +1404,11 @@ table.project-table tbody tr:hover td {
     padding-right: 20px;
 }
 
+.todo-lists-rail #todo-favorites-filter {
+    align-self: flex-start;
+    margin-bottom: 10px;
+}
+
 .todo-lists-rail #todo-list-add-btn {
     align-self: flex-start;
     margin-top: 8px;
@@ -1449,6 +1454,7 @@ table.project-table tbody tr:hover td {
     width: 8px;
     height: 8px;
     border: 1px solid var(--border);
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
@@ -1530,10 +1536,6 @@ table.project-table tbody tr:hover td {
     justify-self: end;
 }
 
-.todo-tasks-controls .todo-star-btn {
-    font-size: 18px;
-}
-
 #todo-task-list {
     grid-column: 1;
     grid-row: 2;
@@ -1588,17 +1590,22 @@ table.project-table tbody tr:hover td {
     color: #f0c14b;
 }
 
-/* Small swatch showing (and, via its popover, setting) a color -
-   shared base between To Do's list color and Notes' card color. No
-   border - a plain bordered square reads as a stray outline rather
-   than a color chip. To Do's swatch fills solid with the chosen color
-   (unambiguous on its own); when none is set it falls back to a
-   half-fill "color" glyph via .swatch-btn-empty + JS toggling the
-   glyph text. Notes' swatch (.note-color-btn, see below) instead
-   never changes appearance at all. */
+/* Small circular swatch showing (and, via its popover, setting) a
+   color - shared base between To Do's list color and Notes' card
+   color. Circular rather than square (like the rail's color dot and
+   the popover's preset palette below) so color pickers read as one
+   consistent shape language across the app, distinct from the sharp
+   squares used everywhere else. No border - a plain bordered shape
+   reads as a stray outline rather than a color chip. To Do's swatch
+   fills solid with the chosen color (unambiguous on its own); when
+   none is set it falls back to a half-fill "color" glyph via
+   .swatch-btn-empty + JS toggling the glyph text. Notes' swatch
+   (.note-color-btn, see below) instead never changes appearance at
+   all. */
 .swatch-btn {
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
     flex-shrink: 0;
     padding: 0;
     background: transparent;
@@ -1607,7 +1614,7 @@ table.project-table tbody tr:hover td {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 13px;
     line-height: 1;
     color: var(--text-muted);
 }
@@ -1688,6 +1695,7 @@ table.project-table tbody tr:hover td {
 .color-swatch {
     width: 22px;
     height: 22px;
+    border-radius: 50%;
     padding: 0;
     cursor: pointer;
     border: 2px solid transparent;
@@ -1905,15 +1913,18 @@ table.project-table tbody tr:hover td {
     font-weight: 500;
 }
 
+/* No line-clamp - a long body just grows the card taller (masonry
+   handles varying card heights fine) instead of getting cut off.
+   overflow-wrap/word-break handle a single long unbroken run of
+   characters (a URL, a run-on word) that would otherwise overflow the
+   card's fixed width instead of wrapping like normal text does. */
 .note-preview-body {
     color: var(--text);
     font-size: 13.5px;
     line-height: 1.5;
     white-space: pre-wrap;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 8;
-    -webkit-box-orient: vertical;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .note-preview-items {
@@ -1924,10 +1935,20 @@ table.project-table tbody tr:hover td {
 
 .note-preview-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     font-size: 13.5px;
     color: var(--text);
+}
+
+.note-preview-item span {
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.note-preview-item .checklist-checkbox {
+    margin-top: 2px;
 }
 
 .note-preview-item.checked span {
@@ -1955,7 +1976,7 @@ table.project-table tbody tr:hover td {
    against every preset color instead of blending into some of them. */
 .note-color-btn {
     color: #c9c7c0;
-    font-size: 20px;
+    font-size: 15px;
 }
 
 .note-color-btn:hover {
