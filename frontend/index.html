@@ -142,7 +142,6 @@
                 <div class="panel todo-panel">
                     <div class="todo-layout">
                         <div class="todo-lists-rail">
-                            <button class="todo-icon-toggle" id="todo-favorites-filter" type="button" title="Favorites only">&#9733;</button>
                             <div id="todo-lists"></div>
                             <button class="btn" id="todo-list-add-btn" type="button">+ New list</button>
                         </div>
@@ -152,7 +151,6 @@
                                 <input type="text" class="todo-list-title-input" id="todo-list-title" placeholder="List name">
                             </div>
                             <div class="todo-tasks-controls">
-                                <button class="todo-star-btn" id="todo-list-favorite-btn" type="button" title="Mark list favorite">&#9734;</button>
                                 <button class="todo-icon-toggle" id="todo-filter-important" type="button" title="Important only">&#9733;</button>
                                 <button class="btn-danger-text" id="todo-list-delete-btn" type="button">Delete list</button>
                             </div>
@@ -336,6 +334,29 @@
 
             <div class="modal-footer">
                 <button class="btn btn-danger-text" id="todo-modal-delete-btn" type="button">Delete task</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="note-modal-backdrop" style="display:none;">
+        <div class="modal modal-personal">
+            <button class="modal-close" id="note-modal-close" title="Close">&times;</button>
+
+            <div class="note-modal-header">
+                <input type="text" class="modal-title-input" id="note-modal-title" placeholder="Title">
+                <button class="note-color-btn swatch-btn" id="note-modal-color-btn" type="button" title="Note color">&#9681;</button>
+            </div>
+
+            <textarea class="modal-description-input" id="note-modal-body" placeholder="Take a note..."></textarea>
+
+            <div class="modal-section" id="note-modal-items-section">
+                <p class="modal-section-title">Items</p>
+                <div class="checklist-list" id="note-modal-items-list"></div>
+                <button class="btn" id="note-modal-add-item-btn" style="margin-top: 10px;" type="button">+ Add item</button>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-danger-text" id="note-modal-delete-btn" type="button">Delete note</button>
             </div>
         </div>
     </div>

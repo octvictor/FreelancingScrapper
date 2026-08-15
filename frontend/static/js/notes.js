@@ -3,23 +3,23 @@
 // column-width, not a fixed column-count, so it reflows on its own as
 // the window resizes). A note is either "text" (title + freeform body)
 // or "list" (title + a checkbox checklist, same .checklist-item markup
-// as To Do's Steps / Personal Projects' Checklist). Cards are directly
-// editable in place - no modal - and can be dragged to reorder, same
-// grip-handle pattern as Project Manager's rows, generalized from a
-// table row to a card div. $()/confirmDialog come from nav.js,
-// escapeAttr from gatherer.js.
+// as To Do's Steps). Cards in the grid are read-only previews - all
+// real editing happens in a detail modal, opened by clicking the card
+// (mirroring how Tracker/To Do already open a modal for full editing),
+// with two quick actions available straight from the card without
+// opening it: checking a list item, and changing the color. Cards can
+// be dragged by a grip handle to reorder, same pattern as Project
+// Manager's rows generalized from a table row to a card div.
+// $()/confirmDialog come from nav.js, escapeAttr from gatherer.js.
 
 let notes = [];
 let draggedNote = null;
+let activeNoteId = null;
 
 const NOTE_COLORS = ["#1f2f3d", "#1c3324", "#3a2f14", "#3a1f1f", "#2a1f3a", "#3a1f2f"];
+const NOTE_COLOR_GLYPH = "&#9681;";
 
-function autoGrowTextarea(el) {
-    el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
-}
-
-// ---------- Cards ----------
+// ---------- Card previews ----------
 
 function noteItemHtml(item) {
     return `
@@ -31,24 +31,36 @@ function noteItemHtml(item) {
     `;
 }
 
+const PREVIEW_ITEM_LIMIT = 6;
+
+function notePreviewContentHtml(note) {
+    if (note.type === "list") {
+        const items = note.items || [];
+        const shown = items.slice(0, PREVIEW_ITEM_LIMIT);
+        const rows = shown.map((item) => `
+            <div class="note-preview-item ${item.checked ? "checked" : ""}">
+                <input type="checkbox" class="checklist-checkbox" data-item-id="${item.id}" ${item.checked ? "checked" : ""}>
+                <span>${escapeAttr(item.text) || " "}</span>
+            </div>
+        `).join("");
+        const more = items.length > shown.length ? `<div class="note-preview-more">+${items.length - shown.length} more</div>` : "";
+        return `<div class="note-preview-items">${rows}${more}</div>`;
+    }
+    return note.body ? `<div class="note-preview-body">${escapeAttr(note.body)}</div>` : "";
+}
+
 function noteCardHtml(note) {
     const bg = note.color || "var(--panel-alt)";
-    const bodyHtml = note.type === "list"
-        ? `
-            <div class="note-items">${(note.items || []).map(noteItemHtml).join("")}</div>
-            <button class="btn note-add-item-btn" data-role="add-item" type="button">+ Add item</button>
-        `
-        : `<textarea class="note-body-input" placeholder="Take a note..." rows="1">${escapeAttr(note.body || "")}</textarea>`;
-    const colorGlyph = note.color ? "" : "&#9681;";
-
+    const titleText = escapeAttr(note.title) || "Untitled note";
+    const titleClass = note.title ? "" : "empty";
     return `
         <div class="note-card" data-id="${note.id}" data-type="${note.type}" style="background:${bg};">
             <span class="note-drag-handle" title="Drag to reorder">&#8942;</span>
-            <input type="text" class="note-title-input" placeholder="Title" value="${escapeAttr(note.title)}">
-            ${bodyHtml}
+            <div class="note-card-title ${titleClass}">${titleText}</div>
+            ${notePreviewContentHtml(note)}
             <div class="note-card-footer">
-                <button class="swatch-btn ${note.color ? "" : "swatch-btn-empty"}" data-role="color" type="button" title="Note color" style="background:${note.color || "transparent"};">${colorGlyph}</button>
-                <button class="row-delete-btn" data-role="delete" title="Delete note">&times;</button>
+                <button class="note-color-btn swatch-btn" data-role="color" type="button" title="Note color">${NOTE_COLOR_GLYPH}</button>
+                <button class="row-delete-btn note-delete-btn" data-role="delete" type="button" title="Delete note">&times;</button>
             </div>
         </div>
     `;
@@ -65,32 +77,33 @@ function renderNotes() {
     document.querySelectorAll("#notes-grid .note-card:not(.note-add-card)").forEach(wireNoteCard);
 }
 
+// Re-renders just one card from current state - used after edits made
+// in the modal (on close) or a quick action on the card itself, so the
+// grid never gets torn down as a side effect of an unrelated save.
+function refreshNoteCard(noteId) {
+    const note = notes.find((n) => n.id === noteId);
+    const card = document.querySelector(`#notes-grid .note-card[data-id="${noteId}"]`);
+    if (!note || !card) return;
+    card.outerHTML = noteCardHtml(note);
+    wireNoteCard(document.querySelector(`#notes-grid .note-card[data-id="${noteId}"]`));
+}
+
 function wireNoteCard(card) {
     const noteId = parseInt(card.dataset.id, 10);
-    const noteType = card.dataset.type;
 
-    const titleInput = card.querySelector(".note-title-input");
-    titleInput.addEventListener("blur", () => saveNoteField(noteId, { title: titleInput.value.trim() }));
+    card.addEventListener("click", (e) => {
+        if (e.target.closest("[data-role='color'], [data-role='delete'], .note-drag-handle, .checklist-checkbox")) return;
+        openNoteModal(noteId);
+    });
 
-    if (noteType === "list") {
-        card.querySelectorAll(".note-items .checklist-item").forEach((row) => wireNoteItemRow(row, noteId));
-
-        card.querySelector("[data-role='add-item']").addEventListener("click", async () => {
-            const resp = await fetch(`/api/notes/${noteId}/items`, { method: "POST" });
-            const item = await resp.json();
-            const note = notes.find((n) => n.id === noteId);
-            if (note) note.items.push(item);
-            const container = card.querySelector(".note-items");
-            container.insertAdjacentHTML("beforeend", noteItemHtml(item));
-            const row = container.querySelector(`.checklist-item[data-id="${item.id}"]`);
-            wireNoteItemRow(row, noteId).focus();
+    // Quick action: check off a list item straight from the card preview.
+    card.querySelectorAll(".note-preview-item .checklist-checkbox").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+            const itemId = parseInt(checkbox.dataset.itemId, 10);
+            checkbox.closest(".note-preview-item").classList.toggle("checked", checkbox.checked);
+            saveNoteItem(noteId, itemId, { checked: checkbox.checked });
         });
-    } else {
-        const bodyInput = card.querySelector(".note-body-input");
-        autoGrowTextarea(bodyInput);
-        bodyInput.addEventListener("input", () => autoGrowTextarea(bodyInput));
-        bodyInput.addEventListener("blur", () => saveNoteField(noteId, { body: bodyInput.value.trim() || null }));
-    }
+    });
 
     card.querySelector("[data-role='delete']").addEventListener("click", async () => {
         if (!(await confirmDialog("This can't be undone.", { title: "Delete this note?" }))) return;
@@ -101,21 +114,12 @@ function wireNoteCard(card) {
 
     card.querySelector("[data-role='color']").addEventListener("click", (e) => {
         e.stopPropagation();
-        openNoteColorPopover(card, noteId);
+        openNoteColorPopover(e.currentTarget, noteId);
     });
 
     wireNoteDrag(card);
 }
 
-// A blur-triggered full renderNotes() here would rebuild the entire grid
-// out from under any other card mid-interaction - e.g. clicking "+ Add
-// item" on a freshly-titled list note blurs the title field first,
-// which would tear down the very card/container the add-item click
-// handler is about to write into. So a save only patches this one
-// card's DOM in place (currently just the color swatch/background -
-// title/body need no visual update since the input already shows what
-// was typed), the same "no full re-render" discipline saveNoteItem
-// already follows for item rows.
 async function saveNoteField(noteId, updates) {
     const resp = await fetch(`/api/notes/${noteId}`, {
         method: "PUT",
@@ -126,48 +130,6 @@ async function saveNoteField(noteId, updates) {
     const updated = await resp.json();
     const idx = notes.findIndex((n) => n.id === updated.id);
     if (idx !== -1) notes[idx] = updated;
-
-    if ("color" in updates) {
-        const card = document.querySelector(`#notes-grid .note-card[data-id="${noteId}"]`);
-        if (card) {
-            card.style.background = updated.color || "var(--panel-alt)";
-            const colorBtn = card.querySelector("[data-role='color']");
-            colorBtn.style.background = updated.color || "transparent";
-            colorBtn.classList.toggle("swatch-btn-empty", !updated.color);
-            colorBtn.innerHTML = updated.color ? "" : "&#9681;";
-        }
-    }
-}
-
-// ---------- List-type note items ----------
-// Same checkbox-and-title-row pattern as todo.js's Steps (mirrors
-// wireTodoStepRow/saveTodoStep) - a per-row PUT on change/blur, no
-// full re-render, so editing one row doesn't disturb focus elsewhere
-// on the card or grid.
-
-function wireNoteItemRow(row, noteId) {
-    const itemId = parseInt(row.dataset.id, 10);
-
-    const checkbox = row.querySelector(".checklist-checkbox");
-    checkbox.addEventListener("change", () => {
-        row.classList.toggle("checked", checkbox.checked);
-        saveNoteItem(noteId, itemId, { checked: checkbox.checked });
-    });
-
-    const textInput = row.querySelector(".checklist-text");
-    textInput.addEventListener("blur", () => saveNoteItem(noteId, itemId, { text: textInput.value.trim() }));
-    textInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") textInput.blur();
-    });
-
-    row.querySelector("[data-role='delete-item']").addEventListener("click", async () => {
-        await fetch(`/api/notes/${noteId}/items/${itemId}`, { method: "DELETE" });
-        const note = notes.find((n) => n.id === noteId);
-        if (note) note.items = note.items.filter((it) => it.id !== itemId);
-        row.remove();
-    });
-
-    return textInput;
 }
 
 async function saveNoteItem(noteId, itemId, updates) {
@@ -185,6 +147,9 @@ async function saveNoteItem(noteId, itemId, updates) {
 }
 
 // ---------- Card color popover ----------
+// Shared between the card's own color button and the modal's - both
+// just pass their trigger button in, so the popover doesn't care which
+// context opened it.
 
 let noteColorPopover = null;
 
@@ -201,10 +166,9 @@ function onNoteColorPopoverOutsideClick(e) {
     }
 }
 
-function openNoteColorPopover(card, noteId) {
+function openNoteColorPopover(triggerBtn, noteId) {
     closeNoteColorPopover();
-    const btn = card.querySelector("[data-role='color']");
-    const rect = btn.getBoundingClientRect();
+    const rect = triggerBtn.getBoundingClientRect();
 
     const panel = document.createElement("div");
     panel.className = "popover-panel color-popover open";
@@ -236,15 +200,10 @@ function openNoteColorPopover(card, noteId) {
 async function setNoteColor(noteId, color) {
     await saveNoteField(noteId, { color });
     closeNoteColorPopover();
+    refreshNoteCard(noteId);
 }
 
 // ---------- Drag-to-reorder ----------
-// Same grip-handle-armed native drag pattern as Project Manager's rows
-// (tracker.js's wireRowDrag), generalized from <tr> to a card <div> -
-// CSS columns still render cards in DOM order, so reordering the DOM
-// via insertBefore/insertAfter here works the same way it does for a
-// plain vertical list. The add-note tile is excluded (never wired,
-// never included in the persisted order) so it always stays first.
 
 function wireNoteDrag(card) {
     const handle = card.querySelector(".note-drag-handle");
@@ -294,10 +253,11 @@ async function persistNoteOrder() {
 
 // ---------- Add-note popover ----------
 // The "+" tile opens a small popover to pick Text note or List before
-// anything is created - unlike the rest of the app's "create blank,
-// then edit" convention, a note's type can't change after creation
-// (a text note has no items, a list note has no body), so the type
-// has to be chosen up front.
+// anything is created - a note's type can't change after creation (a
+// text note has no items, a list note has no body). Once a type is
+// chosen, a blank note is created and its detail modal opens right
+// away so title/content get entered in the bigger modal space instead
+// of tiny inline fields.
 
 let noteTypePopover = null;
 
@@ -357,8 +317,150 @@ async function createNote(type) {
     const created = await resp.json();
     notes.unshift(created);
     renderNotes();
-    document.querySelector(`#notes-grid .note-card[data-id="${created.id}"] .note-title-input`)?.focus();
+    openNoteModal(created.id);
 }
+
+// ---------- Detail modal ----------
+// The real editing surface for a note - opened by clicking a card (or
+// right after creating one). Autosaves on blur like everywhere else in
+// the app; the grid card behind it is only resynced once on close
+// (refreshNoteCard), not on every keystroke, since it's hidden the
+// whole time the modal is open anyway.
+
+function openNoteModal(noteId) {
+    const note = notes.find((n) => n.id === noteId);
+    if (!note) return;
+    activeNoteId = noteId;
+
+    $("note-modal-title").value = note.title || "";
+
+    if (note.type === "list") {
+        $("note-modal-body").style.display = "none";
+        $("note-modal-items-section").style.display = "";
+        renderNoteModalItems(note.items || []);
+    } else {
+        $("note-modal-body").style.display = "";
+        $("note-modal-body").value = note.body || "";
+        $("note-modal-items-section").style.display = "none";
+    }
+
+    $("note-modal-backdrop").style.display = "flex";
+}
+
+async function closeNoteModal() {
+    const noteId = activeNoteId;
+    activeNoteId = null;
+    $("note-modal-backdrop").style.display = "none";
+    if (noteId === null) return;
+
+    const note = notes.find((n) => n.id === noteId);
+    if (!note) return;
+
+    // Save directly from the modal's current input values rather than
+    // trusting `notes` as-is: a blur's save may still be in flight
+    // (async, fire-and-forget) when the close click lands right after
+    // it, and checking stale state below could wrongly judge a note
+    // the user just titled as empty and delete it.
+    const updates = { title: $("note-modal-title").value.trim() };
+    if (note.type !== "list") {
+        updates.body = $("note-modal-body").value.trim() || null;
+    }
+    await saveNoteField(noteId, updates);
+
+    // A note created and closed without ever being given content is
+    // just clutter - discard it instead of leaving a blank card, same
+    // as the old compose-card flow did.
+    const saved = notes.find((n) => n.id === noteId);
+    const isEmpty = saved.type === "list"
+        ? !saved.title && (!saved.items || saved.items.length === 0)
+        : !saved.title && !saved.body;
+
+    if (isEmpty) {
+        await fetch(`/api/notes/${noteId}`, { method: "DELETE" });
+        notes = notes.filter((n) => n.id !== noteId);
+        renderNotes();
+    } else {
+        refreshNoteCard(noteId);
+    }
+}
+
+$("note-modal-close").addEventListener("click", closeNoteModal);
+$("note-modal-backdrop").addEventListener("click", (e) => {
+    if (e.target.id === "note-modal-backdrop") closeNoteModal();
+});
+
+$("note-modal-title").addEventListener("blur", () => {
+    if (activeNoteId === null) return;
+    saveNoteField(activeNoteId, { title: $("note-modal-title").value.trim() });
+});
+
+$("note-modal-body").addEventListener("blur", () => {
+    if (activeNoteId === null) return;
+    saveNoteField(activeNoteId, { body: $("note-modal-body").value.trim() || null });
+});
+
+$("note-modal-color-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (activeNoteId === null) return;
+    openNoteColorPopover(e.currentTarget, activeNoteId);
+});
+
+$("note-modal-delete-btn").addEventListener("click", async () => {
+    if (activeNoteId === null) return;
+    if (!(await confirmDialog("This can't be undone.", { title: "Delete this note?" }))) return;
+    const noteId = activeNoteId;
+    await fetch(`/api/notes/${noteId}`, { method: "DELETE" });
+    notes = notes.filter((n) => n.id !== noteId);
+    activeNoteId = null;
+    $("note-modal-backdrop").style.display = "none";
+    document.querySelector(`#notes-grid .note-card[data-id="${noteId}"]`)?.remove();
+});
+
+// ---------- Modal list items (mirrors todo.js's Steps pattern) ----------
+
+function renderNoteModalItems(items) {
+    $("note-modal-items-list").innerHTML = items.map(noteItemHtml).join("");
+    document.querySelectorAll("#note-modal-items-list .checklist-item").forEach(wireNoteModalItemRow);
+}
+
+function wireNoteModalItemRow(row) {
+    const itemId = parseInt(row.dataset.id, 10);
+
+    const checkbox = row.querySelector(".checklist-checkbox");
+    checkbox.addEventListener("change", () => {
+        row.classList.toggle("checked", checkbox.checked);
+        if (activeNoteId !== null) saveNoteItem(activeNoteId, itemId, { checked: checkbox.checked });
+    });
+
+    const textInput = row.querySelector(".checklist-text");
+    textInput.addEventListener("blur", () => {
+        if (activeNoteId !== null) saveNoteItem(activeNoteId, itemId, { text: textInput.value.trim() });
+    });
+    textInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") textInput.blur();
+    });
+
+    row.querySelector("[data-role='delete-item']").addEventListener("click", async () => {
+        if (activeNoteId === null) return;
+        await fetch(`/api/notes/${activeNoteId}/items/${itemId}`, { method: "DELETE" });
+        const note = notes.find((n) => n.id === activeNoteId);
+        if (note) note.items = note.items.filter((it) => it.id !== itemId);
+        row.remove();
+    });
+
+    return textInput;
+}
+
+$("note-modal-add-item-btn").addEventListener("click", async () => {
+    if (activeNoteId === null) return;
+    const resp = await fetch(`/api/notes/${activeNoteId}/items`, { method: "POST" });
+    const item = await resp.json();
+    const note = notes.find((n) => n.id === activeNoteId);
+    if (note) note.items.push(item);
+    $("note-modal-items-list").insertAdjacentHTML("beforeend", noteItemHtml(item));
+    const row = document.querySelector(`#note-modal-items-list .checklist-item[data-id="${item.id}"]`);
+    wireNoteModalItemRow(row).focus();
+});
 
 (async function initNotes() {
     const resp = await fetch("/api/notes");

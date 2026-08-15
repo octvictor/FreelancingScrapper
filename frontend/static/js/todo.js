@@ -10,10 +10,13 @@ let activeListId = null;
 let activeTodoTasks = [];
 let activeTodoTaskId = null;
 let todoCompletedExpanded = false;
-let todoFavoritesOnly = false;
 let todoImportantOnly = false;
 
 // ---------- Lists rail ----------
+// Each row is a container with two independent controls: the main
+// area (dot + title) selects the list, and a star - always visible,
+// grey by default, gold once favorited - toggles favorite status
+// directly from the rail without needing to select the list first.
 
 function todoListItemHtml(list) {
     const isActive = list.id === activeListId;
@@ -21,55 +24,35 @@ function todoListItemHtml(list) {
         ? `background:${list.color}; border-color:transparent;`
         : "background:transparent;";
     return `
-        <button class="todo-list-item ${isActive ? "active" : ""}" data-id="${list.id}" type="button">
-            <span class="todo-list-item-main">
+        <div class="todo-list-item ${isActive ? "active" : ""}" data-id="${list.id}">
+            <button class="todo-list-item-main" data-role="select" type="button">
                 <span class="todo-list-dot" style="${dotStyle}"></span>
-                <span class="todo-list-item-title">${list.favorite ? "&#9733; " : ""}${escapeAttr(list.title) || "Untitled list"}</span>
-            </span>
+                <span class="todo-list-item-title">${escapeAttr(list.title) || "Untitled list"}</span>
+            </button>
             ${list.open_count > 0 ? `<span class="todo-list-count">${list.open_count}</span>` : ""}
-        </button>
+            <button class="todo-list-fav-btn todo-star-btn ${list.favorite ? "active" : ""}" data-role="favorite" type="button" title="Mark list favorite">&#9733;</button>
+        </div>
     `;
 }
 
 function renderTodoLists() {
     const container = $("todo-lists");
-    const visibleLists = todoFavoritesOnly ? todoLists.filter((l) => l.favorite) : todoLists;
-    if (visibleLists.length === 0) {
-        container.innerHTML = `<p class="todo-empty-state">${todoFavoritesOnly ? "No favorite lists." : "No lists yet."}</p>`;
+    if (todoLists.length === 0) {
+        container.innerHTML = `<p class="todo-empty-state">No lists yet.</p>`;
         return;
     }
-    container.innerHTML = visibleLists.map(todoListItemHtml).join("");
-    container.querySelectorAll(".todo-list-item").forEach((btn) => {
-        btn.addEventListener("click", () => selectTodoList(parseInt(btn.dataset.id, 10)));
+    container.innerHTML = todoLists.map(todoListItemHtml).join("");
+    container.querySelectorAll(".todo-list-item").forEach((row) => {
+        const id = parseInt(row.dataset.id, 10);
+        row.querySelector("[data-role='select']").addEventListener("click", () => selectTodoList(id));
+        row.querySelector("[data-role='favorite']").addEventListener("click", () => toggleTodoListFavorite(id));
     });
 }
 
-$("todo-favorites-filter").addEventListener("click", () => {
-    todoFavoritesOnly = !todoFavoritesOnly;
-    $("todo-favorites-filter").classList.toggle("active", todoFavoritesOnly);
-    renderTodoLists();
-});
-
-async function selectTodoList(id) {
-    activeListId = id;
-    todoCompletedExpanded = false;
-    todoImportantOnly = false;
-    $("todo-filter-important").classList.remove("active");
+async function toggleTodoListFavorite(id) {
     const list = todoLists.find((l) => l.id === id);
-    $("todo-list-title").value = list ? list.title || "" : "";
-    $("todo-list-favorite-btn").classList.toggle("active", !!(list && list.favorite));
-    $("todo-list-favorite-btn").innerHTML = list && list.favorite ? "&#9733;" : "&#9734;";
-    updateTodoColorBtn(list && list.color);
-    $("todo-tasks-pane").style.display = "";
-    renderTodoLists();
-    await loadTodoTasks();
-}
-
-$("todo-list-favorite-btn").addEventListener("click", async () => {
-    if (activeListId === null) return;
-    const list = todoLists.find((l) => l.id === activeListId);
     const willBeFavorite = !list.favorite;
-    const resp = await fetch(`/api/todo/lists/${activeListId}`, {
+    const resp = await fetch(`/api/todo/lists/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ favorite: willBeFavorite }),
@@ -78,10 +61,21 @@ $("todo-list-favorite-btn").addEventListener("click", async () => {
     const updated = await resp.json();
     const idx = todoLists.findIndex((l) => l.id === updated.id);
     if (idx !== -1) todoLists[idx] = updated;
-    $("todo-list-favorite-btn").classList.toggle("active", willBeFavorite);
-    $("todo-list-favorite-btn").innerHTML = willBeFavorite ? "&#9733;" : "&#9734;";
     renderTodoLists();
-});
+}
+
+async function selectTodoList(id) {
+    activeListId = id;
+    todoCompletedExpanded = false;
+    todoImportantOnly = false;
+    $("todo-filter-important").classList.remove("active");
+    const list = todoLists.find((l) => l.id === id);
+    $("todo-list-title").value = list ? list.title || "" : "";
+    updateTodoColorBtn(list && list.color);
+    $("todo-tasks-pane").style.display = "";
+    renderTodoLists();
+    await loadTodoTasks();
+}
 
 // ---------- List color ----------
 // A small popover (built and torn down on demand, like nav.js's custom

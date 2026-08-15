@@ -230,3 +230,6 @@ executable), shared across every tool:
   experiment - not a fully settled decision.
 - Wider content area for the other tools too (To Do and Notes already
   got this) - not full-width, just noticeably roomier than today.
+- Bring rounded corners back app-wide, but with a smaller radius than
+  the original (before the sharp-corners experiment) - not as rounded
+  as before, just no longer perfectly square.

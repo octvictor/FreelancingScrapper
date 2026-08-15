@@ -243,10 +243,15 @@ button, input, select, textarea {
     max-width: 1400px;
 }
 
-/* To Do gets noticeably more room than the other tools - not literally
-   edge-to-edge, .main's own 40px side padding plus the sidebar already
-   provide margin, this just stops capping the page short of that. */
-.main.main-wide > #page-todo {
+/* To Do and Notes get noticeably more room than the other tools - not
+   literally edge-to-edge, .main's own 40px side padding plus the
+   sidebar already provide margin, this just stops capping the page
+   short of that. Without this, the section's own (narrower) max-width
+   would get centered by .main's centering experiment above, pushing
+   its content's left edge past the sidebar gap that To Do (and now
+   Notes) is meant to start flush against. */
+.main.main-wide > #page-todo,
+.main.main-wide > #page-notes {
     max-width: 100%;
 }
 
@@ -1399,30 +1404,22 @@ table.project-table tbody tr:hover td {
     padding-right: 20px;
 }
 
-.todo-lists-rail #todo-favorites-filter {
-    align-self: flex-start;
-    margin-bottom: 10px;
-}
-
 .todo-lists-rail #todo-list-add-btn {
     align-self: flex-start;
     margin-top: 8px;
 }
 
+/* The row itself is just a layout container - the two interactive
+   pieces (select vs favorite) are separate buttons inside it so
+   clicking the star doesn't also select the list. */
 .todo-list-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: 8px 10px;
+    gap: 4px;
+    padding: 2px 4px 2px 10px;
     border-radius: var(--radius-sm);
     color: var(--text-muted);
     font-size: 13.5px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    text-align: left;
-    width: 100%;
 }
 
 .todo-list-item-main {
@@ -1431,6 +1428,14 @@ table.project-table tbody tr:hover td {
     gap: 8px;
     min-width: 0;
     overflow: hidden;
+    flex: 1;
+    padding: 6px 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
 .todo-list-item-title {
@@ -1463,6 +1468,10 @@ table.project-table tbody tr:hover td {
     flex-shrink: 0;
 }
 
+.todo-list-fav-btn {
+    font-size: 13px;
+}
+
 .todo-empty-state {
     color: var(--text-faint);
     font-size: 13px;
@@ -1489,7 +1498,7 @@ table.project-table tbody tr:hover td {
     grid-row: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 16px;
     min-width: 0;
 }
 
@@ -1506,6 +1515,10 @@ table.project-table tbody tr:hover td {
     color: var(--text);
     padding: 6px 8px;
     margin: 0 0 0 -8px;
+}
+
+.todo-title-row .todo-list-title-input {
+    margin-left: 0;
 }
 
 .todo-tasks-controls {
@@ -1575,40 +1588,40 @@ table.project-table tbody tr:hover td {
     color: #f0c14b;
 }
 
-.todo-lists-rail #todo-favorites-filter {
-    align-self: flex-start;
-}
-
-/* Small swatch showing (and, via its popover, setting) a color - shared
-   between To Do's list color and Notes' card color. When a color is
-   set, the button fills solid with it - unambiguous on its own. When
-   none is set, a plain empty/transparent square just reads as a stray
-   box (especially in the dark theme), so it falls back to a half-fill
-   "color" glyph instead, set via .swatch-btn-empty + JS toggling the
-   glyph text - that combination stays legible whether a color is
-   present or not. */
+/* Small swatch showing (and, via its popover, setting) a color -
+   shared base between To Do's list color and Notes' card color. No
+   border - a plain bordered square reads as a stray outline rather
+   than a color chip. To Do's swatch fills solid with the chosen color
+   (unambiguous on its own); when none is set it falls back to a
+   half-fill "color" glyph via .swatch-btn-empty + JS toggling the
+   glyph text. Notes' swatch (.note-color-btn, see below) instead
+   never changes appearance at all. */
 .swatch-btn {
-    width: 20px;
-    height: 20px;
+    width: 26px;
+    height: 26px;
     flex-shrink: 0;
     padding: 0;
     background: transparent;
-    border: 1px solid var(--border);
+    border: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1;
     color: var(--text-muted);
 }
 
 .swatch-btn:hover {
-    border-color: var(--text-muted);
+    color: var(--text);
 }
 
 .swatch-btn.swatch-btn-empty {
     background: var(--panel-alt);
+}
+
+.swatch-btn.swatch-btn-empty:hover {
+    background: var(--border-soft);
 }
 
 /* Shared chrome for small popovers positioned relative to a trigger
@@ -1838,6 +1851,7 @@ table.project-table tbody tr:hover td {
     margin: 0 0 16px;
     break-inside: avoid;
     position: relative;
+    cursor: pointer;
 }
 
 .note-card.dragging {
@@ -1871,41 +1885,60 @@ table.project-table tbody tr:hover td {
     line-height: 1;
 }
 
-.note-items {
-    margin-bottom: 4px;
-}
-
-.note-title-input {
-    display: block;
-    width: 100%;
-    background: none;
-    border: none;
-    outline: none;
+/* Card content is a read-only preview - no inputs, no in-place editing.
+   Clicking the card (see notes.js's click-to-open handling) opens the
+   detail modal for the real editing surface; the card is purely a
+   launcher + at-a-glance summary, Keep-style. Title and preview text
+   both sit flush against the card's own 14px padding with no extra
+   left offset of their own, so they align with each other by
+   construction rather than needing padding to be kept in sync. */
+.note-card-title {
     font-size: 15px;
     font-weight: 700;
     color: var(--text);
-    padding: 0 0 8px;
-    margin: 0;
+    margin: 0 0 8px;
+    word-break: break-word;
 }
 
-.note-title-input::placeholder,
-.note-body-input::placeholder {
+.note-card-title.empty {
     color: var(--text-faint);
+    font-weight: 500;
 }
 
-.note-body-input {
-    display: block;
-    width: 100%;
-    background: none;
-    border: none;
-    outline: none;
+.note-preview-body {
     color: var(--text);
-    font-family: inherit;
     font-size: 13.5px;
     line-height: 1.5;
-    resize: none;
+    white-space: pre-wrap;
     overflow: hidden;
-    padding: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 8;
+    -webkit-box-orient: vertical;
+}
+
+.note-preview-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.note-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    color: var(--text);
+}
+
+.note-preview-item.checked span {
+    color: var(--text-faint);
+    text-decoration: line-through;
+}
+
+.note-preview-more {
+    font-size: 12px;
+    color: var(--text-faint);
+    padding-left: 25px;
 }
 
 .note-card-footer {
@@ -1913,12 +1946,30 @@ table.project-table tbody tr:hover td {
     align-items: center;
     justify-content: space-between;
     margin-top: 10px;
-    opacity: 0;
-    transition: opacity 0.15s ease;
 }
 
-.note-card:hover .note-card-footer,
-.note-card:focus-within .note-card-footer {
+/* Notes' color-picker trigger stays a fixed, always-legible bright
+   grey glyph no matter what color the note itself is - unlike To Do's
+   swatch, it never fills with the chosen color (the card's own
+   background already shows that), which is what keeps it visible
+   against every preset color instead of blending into some of them. */
+.note-color-btn {
+    color: #c9c7c0;
+    font-size: 20px;
+}
+
+.note-color-btn:hover {
+    color: var(--text);
+}
+
+.note-delete-btn {
+    color: var(--danger-text);
+    opacity: 0.85;
+}
+
+.note-delete-btn:hover {
+    color: var(--red);
+    background: rgba(229, 115, 115, 0.1);
     opacity: 1;
 }
 
@@ -1936,4 +1987,16 @@ table.project-table tbody tr:hover td {
 
 .note-card:hover .note-drag-handle {
     opacity: 1;
+}
+
+/* ---------- Note detail modal ---------- */
+
+.note-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.note-modal-header .modal-title-input {
+    flex: 1;
 }
