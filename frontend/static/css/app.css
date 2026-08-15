@@ -30,6 +30,13 @@
     --radius-sm: 0;
     --radius-full: 0;
 
+    /* State pills (Active/Completed, Full/Half/Custom, Paid/Unpaid,
+       Sent/Not sent, Studio/Company) stay pill-shaped even with the
+       sharp-corners experiment above - a status reads faster as a
+       rounded chip than a square tag. Kept as its own token rather than
+       reusing --radius-full so it isn't swept up if that one changes. */
+    --radius-pill: 999px;
+
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
@@ -490,7 +497,7 @@ table.task-table td:nth-child(6) {
    gets its own modifier class for background/text color; the base
    class just does shape/weight. */
 .cell-select.color-pill {
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-pill);
     font-weight: 500;
 }
 
@@ -1214,7 +1221,7 @@ table.project-table tbody tr:hover td {
 .modal-field select.color-pill,
 .modal-field .custom-select-trigger.color-pill {
     border: none;
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-pill);
     font-weight: 500;
     padding: 6px 12px;
     cursor: pointer;
