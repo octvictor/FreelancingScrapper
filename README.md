@@ -8,7 +8,7 @@ menu in the sidebar. Currently:
 Tracker and Gatherer live under a collapsible **Tools** section in the
 sidebar (click the section header to fold/unfold it). Below it sits a
 second collapsible section, **Management**, for non-client-work
-items - To Do, Notes, and Calculator.
+items - To Do, Notes, and Finances.
 
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
@@ -91,25 +91,30 @@ items - To Do, Notes, and Calculator.
   color) opening the same small preset-palette popover used by To Do's
   list colors, applied as the card's full background, and an
   always-visible red delete button (with the themed confirm dialog).
-- **Calculator** (under Management) - browser-tab-style, holds any
-  number of independent spreadsheet-style ledgers ("tables"). A tab
-  bar above the panel lists every table by its own title (inline-
-  editable, only the active tab's field is actually editable so a
-  click on another tab switches to it instead of dropping straight
-  into rename mode) with a "+" to create another. Each table is the
-  same inline-editable "+ Add row" look as Studio Database: every row
-  has a Title, a small round color swatch to the left of it (opening
-  the same preset-palette popover as To Do/Notes' colors, tinting the
-  whole row) and a currency-formatted Value; a "+" button in the
-  header adds further freeform text columns shared across every row
-  (also inline-renamable), each with its own delete button - Title and
-  Value are permanent and never get one. One currency (USD/EUR/GBP/BRL)
-  applies per table via a picker above it, matching Tracker's Day rate
-  currency picker, so a running Sum at the bottom is always one
-  coherent total - a negative Value just subtracts from it, being
-  plain addition under the hood, and the Sum still counts every row
-  even the ones collapsed behind "Show more" (rows past the 7th on a
-  table cap there, same pattern as Project Manager's list).
+- **Finances** (under Management) - a page for money tools, starting
+  with **Calculator**, a section labeled by its own heading inside the
+  page (more Finances features can join it later). Calculator is
+  browser-tab-style, holding any number of independent spreadsheet-
+  style ledgers ("tables"). A tab bar lists every table as a plain
+  button showing its title - clicking one switches to it, and that's
+  all a tab does; there's nothing to type into on the tab itself.
+  Renaming happens once, in an editable title field inside the active
+  table's panel (above Currency) - the tab it belongs to just displays
+  whatever that field currently holds. Each table is the same inline-
+  editable "+ Add row" look as Studio Database: every row has a Title,
+  a small round color swatch to its left (opening the same preset-
+  palette popover as To Do/Notes' colors - like To Do, only the swatch
+  itself shows the color, the row's own background never gets tinted)
+  and a currency-formatted Value; a "+" button in the header adds
+  further freeform text columns shared across every row (also inline-
+  renamable), each with its own delete button - Title and Value are
+  permanent and never get one. One currency (USD/EUR/GBP/BRL) applies
+  per table via a picker above it, matching Tracker's Day rate currency
+  picker, so a running Sum at the bottom is always one coherent total -
+  a negative Value just subtracts from it, being plain addition under
+  the hood, and the Sum still counts every row even the ones collapsed
+  behind "Show more" (rows past the 7th on a table cap there, same
+  pattern as Project Manager's list).
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -268,3 +273,24 @@ executable), shared across every tool:
 - Wider content area for the other tools too (To Do, Notes, and
   Calculator already got this) - not full-width, just noticeably
   roomier than today.
+
+## Design system notes
+
+A few shared rules to keep in mind so new UI stays consistent with the
+rest of the app instead of drifting:
+
+- **Rounded corners everywhere.** Every container, button, input, pill,
+  and popover uses one of the `--radius-*` tokens in
+  `frontend/static/css/app.css` (`--radius-lg` for panels/cards,
+  `--radius-md` for buttons/dropdowns, `--radius-sm` for small icon
+  buttons, `--radius-pill` for status pills, `50%` for circular
+  swatches) - never a bare `border-radius` value and never left
+  unset. A couple of elements (Notes cards, Calculator's tab buttons,
+  popovers, the modal close button) previously shipped without one and
+  read as sharp against everything else; that's the failure mode to
+  avoid when adding something new.
+- **One swatch size app-wide.** Every color-picker trigger (To Do's
+  list color, Notes' card color, Calculator's row color) shares the
+  same `.swatch-btn` class in app.css, which is what keeps them the
+  same size automatically - resize that one rule rather than
+  overriding size per-tool.

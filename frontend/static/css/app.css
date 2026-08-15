@@ -261,6 +261,16 @@ button, input, select, textarea {
     letter-spacing: -0.01em;
 }
 
+/* A heading for one feature living inside a page that holds several
+   (e.g. "Calculator" inside the Finances page) - smaller than
+   .page-title since it isn't the page itself. */
+.page-section-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    letter-spacing: -0.01em;
+}
+
 /* ---------- Panels / cards ---------- */
 
 .panel {
@@ -443,6 +453,7 @@ table.finance-table td:nth-child(2) {
     height: 20px;
     background: none;
     border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
     color: var(--text-faint);
     font-size: 13px;
     line-height: 1;
@@ -478,14 +489,14 @@ table.finance-table td:nth-child(2) {
 }
 
 /* A per-row color swatch to the left of the Title field - reuses the
-   same circular .swatch-btn look as To Do's list-color picker. Unlike
-   To Do's rail (always dark), a Calculator row's own background gets
-   tinted to match its color, so the swatch needs a ring or a
-   same-colored swatch would vanish into its own row. */
+   same circular .swatch-btn look as To Do's list-color picker. Same
+   behavior as To Do too: the row itself never gets tinted, only the
+   swatch icon shows the chosen color - kept legible with a thin ring
+   so a dark swatch color doesn't blend into the row's own background. */
 .finance-title-cell {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .finance-title-cell .swatch-btn {
@@ -493,6 +504,11 @@ table.finance-table td:nth-child(2) {
 }
 
 /* ---------- Tab bar (browser-tab-style, one per Calculator table) ---------- */
+/* Tabs are plain buttons showing a table's title as static text - no
+   inline editing on the tab itself, so hovering one never shows a
+   text-cursor, only a pointer. Renaming happens once, in the title
+   field inside the active table's panel (above Currency); the tab
+   just reflects whatever that field currently holds. */
 
 .finance-tab-bar {
     display: flex;
@@ -503,15 +519,18 @@ table.finance-table td:nth-child(2) {
 }
 
 .finance-tab {
-    display: flex;
-    align-items: center;
-    gap: 6px;
     padding: 8px 14px;
     background: var(--panel-alt);
     border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
     color: var(--text-muted);
     cursor: pointer;
+    font-family: inherit;
     font-size: 13px;
+    max-width: 22ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .finance-tab:hover {
@@ -526,21 +545,6 @@ table.finance-table td:nth-child(2) {
     border-color: var(--border);
 }
 
-.finance-tab-title-input {
-    background: none;
-    border: none;
-    color: inherit;
-    font: inherit;
-    font-weight: inherit;
-    padding: 0;
-    width: 11ch;
-    max-width: 22ch;
-}
-
-.finance-tab-title-input:focus {
-    outline: none;
-}
-
 .finance-add-tab-btn {
     display: inline-flex;
     align-items: center;
@@ -549,6 +553,7 @@ table.finance-table td:nth-child(2) {
     height: 30px;
     background: none;
     border: 1px solid transparent;
+    border-radius: var(--radius-md);
     color: var(--text-faint);
     font-size: 15px;
     cursor: pointer;
@@ -557,6 +562,35 @@ table.finance-table td:nth-child(2) {
 .finance-add-tab-btn:hover {
     color: var(--text);
     border-color: var(--border-soft);
+}
+
+/* Editable title for the active table, shown inside its panel above
+   the Currency row - renaming here is what the (now read-only) tab
+   button reflects, since typing directly into a tab is no longer
+   possible. Styled like .modal-title-input: invisible until you
+   interact with it, so it doesn't look like a form field at rest. */
+.finance-table-title-input {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    padding: 6px 8px;
+    margin: -6px 0 6px -8px;
+    width: 100%;
+    max-width: 320px;
+}
+
+.finance-table-title-input:hover {
+    background: var(--panel-alt);
+}
+
+.finance-table-title-input:focus {
+    background: var(--panel-alt);
+    border-color: var(--border);
+    outline: none;
 }
 
 .finance-footer-left {
@@ -1185,6 +1219,7 @@ table.project-table tbody tr:hover td {
     right: 10px;
     background: none;
     border: none;
+    border-radius: var(--radius-sm);
     color: var(--text-faint);
     font-size: 18px;
     line-height: 1;
@@ -1774,8 +1809,8 @@ table.project-table tbody tr:hover td {
    (.note-color-btn, see below) instead never changes appearance at
    all. */
 .swatch-btn {
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     flex-shrink: 0;
     padding: 0;
@@ -1785,7 +1820,7 @@ table.project-table tbody tr:hover td {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 10px;
     line-height: 1;
     color: var(--text-muted);
 }
@@ -1812,6 +1847,7 @@ table.project-table tbody tr:hover td {
     position: fixed;
     background: var(--panel-alt);
     border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     padding: 8px;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
     z-index: 200;
@@ -2026,6 +2062,7 @@ table.project-table tbody tr:hover td {
 .note-card {
     background: var(--panel-alt);
     border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
     padding: 14px;
     margin: 0 0 16px;
     break-inside: avoid;

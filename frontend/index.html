@@ -39,7 +39,7 @@
                         <span class="nav-item-icon">&#9998;</span> Notes
                     </button></li>
                     <li><button class="nav-item nav-item-chip" data-page="finance">
-                        <span class="nav-item-icon">&#164;</span> Calculator
+                        <span class="nav-item-icon">&#164;</span> Finances
                     </button></li>
                 </ul>
             </div>
@@ -180,12 +180,14 @@
             </section>
 
             <section id="page-finance" style="display:none;">
-                <h1 class="page-title">Calculator</h1>
-                <p class="muted" style="margin: -10px 0 18px;">A running ledger - add a row, fill it in, it saves as you type.</p>
+                <h1 class="page-title">Finances</h1>
+                <p class="muted" style="margin: -10px 0 18px;">Money tools for freelance work.</p>
 
+                <h2 class="page-section-title">Calculator</h2>
                 <div class="finance-tab-bar" id="finance-tab-bar"></div>
 
                 <div class="panel finance-panel">
+                    <input type="text" id="finance-table-title-input" class="finance-table-title-input" placeholder="Untitled">
                     <div class="finance-toolbar">
                         <span class="muted" style="font-size:12.5px;">Currency</span>
                         <select class="cell-select" id="finance-currency-select">

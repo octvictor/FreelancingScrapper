@@ -25,18 +25,15 @@ function financeCurrencySymbol() {
 }
 
 // ---------- Tab bar ----------
-// A non-active tab's title input is readonly - clicking it still
-// bubbles to the tab's own click listener and switches to it, rather
-// than immediately dropping into editing before you've even selected
-// that tab. Only the active tab's input is genuinely editable.
+// Tabs are plain buttons showing a table's title as static text - no
+// inline editing on the tab itself, so hovering one only ever shows a
+// pointer, never a text-cursor. Renaming happens once, in the title
+// field inside the active table's panel; the tab just reflects
+// whatever that field currently holds.
 
 function financeTabHtml(table) {
     const isActive = table.id === activeTableId;
-    return `
-        <div class="finance-tab ${isActive ? "active" : ""}" data-id="${table.id}">
-            <input type="text" class="finance-tab-title-input" data-role="tab-title" value="${escapeAttr(table.title)}" placeholder="Untitled" ${isActive ? "" : "readonly"}>
-        </div>
-    `;
+    return `<button type="button" class="finance-tab ${isActive ? "active" : ""}" data-id="${table.id}">${escapeAttr(table.title || "Untitled")}</button>`;
 }
 
 function renderFinanceTabs() {
@@ -48,12 +45,6 @@ function renderFinanceTabs() {
         const id = parseInt(tabEl.dataset.id, 10);
         tabEl.addEventListener("click", () => {
             if (id !== activeTableId) switchFinanceTable(id);
-        });
-
-        const input = tabEl.querySelector("[data-role='tab-title']");
-        input.addEventListener("blur", () => saveFinanceTableTitle(id, input.value.trim() || "Untitled"));
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") input.blur();
         });
     });
     $("finance-add-tab-btn").addEventListener("click", addFinanceTable);
@@ -74,6 +65,7 @@ async function loadFinanceTableData() {
     const table = financeTables.find((t) => t.id === activeTableId);
     $("finance-currency-select").value = table ? table.currency : "USD";
     refreshCustomSelect($("finance-currency-select"));
+    $("finance-table-title-input").value = table ? table.title : "";
     renderFinanceTable();
 }
 
@@ -90,6 +82,13 @@ async function saveFinanceTableTitle(id, title) {
     renderFinanceTabs();
 }
 
+$("finance-table-title-input").addEventListener("blur", (e) => {
+    saveFinanceTableTitle(activeTableId, e.target.value.trim() || "Untitled");
+});
+$("finance-table-title-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.target.blur();
+});
+
 async function addFinanceTable() {
     const resp = await fetch("/api/finance/tables", {
         method: "POST",
@@ -99,9 +98,9 @@ async function addFinanceTable() {
     const table = await resp.json();
     financeTables.push(table);
     await switchFinanceTable(table.id);
-    const input = document.querySelector(`.finance-tab[data-id="${table.id}"] [data-role='tab-title']`);
-    input?.focus();
-    input?.select();
+    const input = $("finance-table-title-input");
+    input.focus();
+    input.select();
 }
 
 // ---------- Table ----------
@@ -140,7 +139,7 @@ function financeRowHtml(row) {
     `).join("");
     const colorGlyph = row.color ? "" : "&#9681;";
     return `
-        <tr data-id="${row.id}" style="${row.color ? `background:${row.color};` : ""}">
+        <tr data-id="${row.id}">
             <td>
                 <div class="finance-title-cell">
                     <button class="swatch-btn ${row.color ? "" : "swatch-btn-empty"}" data-role="row-color" type="button" title="Row color" style="background:${row.color || "transparent"};">${colorGlyph}</button>
@@ -249,8 +248,8 @@ async function saveFinanceCell(rowId, columnId, value) {
 
 // ---------- Row color ----------
 // Reuses the same shared color-popover pattern as To Do's list color
-// and Notes' card color - just a different trigger button and a
-// row-tinted-background instead of a card fill.
+// and Notes' card color. Like To Do, the row itself is never tinted -
+// only the swatch icon shows the chosen color.
 
 let financeColorPopover = null;
 
