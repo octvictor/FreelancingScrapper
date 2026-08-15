@@ -429,7 +429,7 @@ table.finance-table td:nth-child(2) {
 .finance-col-header-input {
     background: none;
     border: none;
-    padding: 0 16px 0 0;
+    padding: 0 28px 0 0;
     width: 100%;
     text-transform: uppercase;
     font-size: 10.5px;
@@ -472,27 +472,36 @@ table.finance-table td:nth-child(2) {
    fixed and rendered as plain <th> text, so they never get this. It
    overlays inside the field (positioned against this wrapper) rather
    than sitting beside it, which is what keeps the input's own width
-   matching the data cells below. */
+   matching the data cells below - almost. th cells carry 4px more
+   horizontal padding than td cells everywhere in the app (headers get
+   extra room to breathe on their own), which is invisible for Title/
+   Value's plain text but shows up as a real gap once a header holds an
+   actual input box like this one. The negative margin here eats that
+   gap so the wrapper - and the delete button pinned to its edge -
+   lines up with the data cell's own edge exactly. */
 .finance-col-header {
     position: relative;
+    margin: 0 -4px;
 }
 
 .finance-col-delete-btn {
     position: absolute;
-    right: 0;
+    right: 4px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
+    border-radius: var(--radius-sm);
     color: var(--text-faint);
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 4px 6px;
 }
 
 .finance-col-delete-btn:hover {
     color: var(--danger-text);
+    background: rgba(229, 115, 115, 0.1);
 }
 
 /* A per-row color swatch to the left of the Title field - reuses the
@@ -511,13 +520,14 @@ table.finance-table td:nth-child(2) {
 }
 
 /* ---------- Tab bar (browser-tab-style, one per Calculator table) ---------- */
-/* A tab is a layout container, not itself a button - like To Do's
-   list-item row, it wraps two separate buttons (select, delete) so
-   clicking the delete "x" doesn't also switch to that tab, and a
-   <button> never ends up nested inside another <button>. Renaming
-   happens once, in the title field inside the active table's panel
-   (above Currency); the tab just reflects whatever that field
-   currently holds. */
+/* Tabs are plain buttons showing a table's title as static text - no
+   inline editing or delete control on the tab itself, so hovering one
+   only ever shows a pointer. Renaming happens once, in the title field
+   inside the active table's panel (above Currency); the tab just
+   reflects whatever that field currently holds. Deleting the active
+   table is the "Delete table" link below that same field (see
+   .finance-title-controls) - mirrors To Do's "Delete list" link below
+   its own title row, rather than living on the tab. */
 
 .finance-tab-bar {
     display: flex;
@@ -528,64 +538,34 @@ table.finance-table td:nth-child(2) {
 }
 
 .finance-tab {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    padding: 4px 4px 4px 14px;
+    padding: 8px 14px;
     background: var(--panel-alt);
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
-    max-width: 22ch;
-}
-
-.finance-tab:hover {
-    border-color: var(--border);
-}
-
-.finance-tab.active {
-    background: var(--panel);
-    border-color: var(--border);
-}
-
-.finance-tab-select {
-    background: none;
-    border: none;
     color: var(--text-muted);
     cursor: pointer;
     font-family: inherit;
     font-size: 13px;
-    padding: 4px 0;
-    min-width: 0;
-    flex: 1;
-    text-align: left;
+    max-width: 22ch;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.finance-tab:hover .finance-tab-select {
+.finance-tab:hover {
     color: var(--text);
+    border-color: var(--border);
 }
 
-.finance-tab.active .finance-tab-select {
+.finance-tab.active {
+    background: var(--panel);
     color: var(--text);
     font-weight: 600;
+    border-color: var(--border);
 }
 
-.finance-tab-delete-btn {
-    background: none;
-    border: none;
-    border-radius: var(--radius-sm);
-    color: var(--text-faint);
-    font-size: 13px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 4px 6px;
-    flex-shrink: 0;
-}
-
-.finance-tab-delete-btn:hover {
-    color: var(--danger-text);
+.finance-title-controls {
+    margin: -2px 0 12px;
 }
 
 .finance-add-tab-btn {
@@ -2259,6 +2239,40 @@ table.project-table tbody tr:hover td {
 
 .note-card:hover .note-drag-handle {
     opacity: 1;
+}
+
+/* Applied (see notes.js's colorNeedsDarkText) when a note's own color
+   is light enough that the card's usual white text would wash out
+   against it - switches every text element on the card to a dark
+   equivalent instead. */
+.note-card.note-card-light .note-card-title,
+.note-card.note-card-light .note-preview-body,
+.note-card.note-card-light .note-preview-item {
+    color: #242322;
+}
+
+.note-card.note-card-light .note-card-title.empty,
+.note-card.note-card-light .note-preview-item.checked span,
+.note-card.note-card-light .note-preview-more {
+    color: #6b6a63;
+}
+
+.note-card.note-card-light .note-drag-handle,
+.note-card.note-card-light .note-color-btn {
+    color: #57554e;
+}
+
+.note-card.note-card-light .note-color-btn:hover {
+    color: #242322;
+}
+
+.note-card.note-card-light .note-delete-btn {
+    color: #b3261e;
+}
+
+.note-card.note-card-light .note-delete-btn:hover {
+    color: #8f1d17;
+    background: rgba(179, 38, 30, 0.12);
 }
 
 /* ---------- Note detail modal ---------- */

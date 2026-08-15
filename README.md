@@ -95,15 +95,15 @@ items - To Do, Notes, and Finances.
   with **Calculator**, a section labeled by its own heading inside the
   page (more Finances features can join it later). Calculator is
   browser-tab-style, holding any number of independent spreadsheet-
-  style ledgers ("tables"). A tab bar lists every table as a small
-  chip with its title and its own delete ("x") button on the far
-  right - clicking the title switches to that tab, clicking the x
-  deletes it (confirms first, and if it was the last table left, a
-  fresh blank one takes its place so Calculator is never left empty).
-  There's nothing to type into on the tab itself - renaming happens
-  once, in an editable title field inside the active table's panel
-  (above Currency), and the tab it belongs to just displays whatever
-  that field currently holds. Each table is the same inline-
+  style ledgers ("tables"). A tab bar lists every table as a plain
+  button showing its title - clicking one switches to it, and that's
+  all a tab does; there's nothing to type into or delete on the tab
+  itself. Renaming happens once, in an editable title field inside the
+  active table's panel (above Currency) - the tab it belongs to just
+  displays whatever that field currently holds. A "Delete table" link
+  right below that field (confirms first) removes the active table -
+  if it was the last one left, a fresh blank table takes its place so
+  Calculator is never left empty. Each table is the same inline-
   editable "+ Add row" look as Studio Database: every row has a Title,
   a small round color swatch to its left (opening the same preset-
   palette popover as To Do/Notes' colors - like To Do, only the swatch
@@ -297,16 +297,18 @@ rest of the app instead of drifting:
   same `.swatch-btn` class in app.css, which is what keeps them the
   same size automatically - resize that one rule rather than
   overriding size per-tool.
-- **One color scheme, two variants.** `frontend/static/js/nav.js`
-  defines the app's only two color-preset arrays -
-  `SWATCH_COLORS_VIVID` and `SWATCH_COLORS_MUTED` - six hues each, in
-  the same order (blue, green, amber, orange, red, purple), so "the
-  fourth swatch" is the same color family everywhere. Every tool's
-  color picker points at one of the two rather than defining its own
-  palette: VIVID for a picker whose color only ever shows on a small
-  swatch icon (To Do's list color, Calculator's row color - the row
-  itself is never tinted), MUTED for a picker whose color becomes an
-  entire card's background with text on top of it (Notes' card
-  color), where it has to stay dark enough for that text to stay
-  legible. Add a new color-picker anywhere and it should reference one
-  of these two arrays rather than inventing a third palette.
+- **One color scheme, everywhere.** `frontend/static/js/nav.js`
+  defines the app's only color-preset array, `SWATCH_COLORS` - seven
+  fixed colors (`#EFEFEF #98FBCB #CCFF00 #2B59D2 #6E2DD0 #C04A3C
+  #C89C35`), always in that order, so "the third swatch" is the same
+  color everywhere. Every color picker in the app (To Do's list color,
+  Notes' card color, Calculator's row color, and whatever gets added
+  next) points at this one array rather than defining its own palette
+  or reordering it. Some of these colors are light enough that white
+  text on top of them would be unreadable - for a picker that tints an
+  entire surface with text on top (currently just Notes' card
+  background), `colorNeedsDarkText()` (also in nav.js, a standard luma
+  check) decides per-color whether that surface needs dark text
+  instead; a picker that only fills a small standalone swatch icon (To
+  Do, Calculator) never needs this since there's no text sitting on
+  the color itself.

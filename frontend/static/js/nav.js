@@ -5,22 +5,26 @@ function $(id) {
     return document.getElementById(id);
 }
 
-// Shared preset color scheme for every per-item color picker in the
-// app (To Do's list color, Notes' card color, Calculator's row color).
-// One set of six hues, in the same order, so "the third swatch" means
-// the same color everywhere - just in whichever variant that picker's
-// usage needs:
-//   VIVID - the color is shown on a small standalone swatch icon (a
-//   circle a few pixels wide against the page's own dark background),
-//   so it needs enough saturation/lightness to read on its own. Used
-//   by To Do (rail dot) and Calculator (row swatch - the row itself is
-//   never tinted, so the swatch is the only place the color appears).
-//   MUTED - the color becomes an entire card's background, with text
-//   sitting on top of it, so it has to stay dark and low-saturation
-//   enough for that text to stay legible. Used by Notes (full card
-//   fill) - the only picker of this kind so far.
-const SWATCH_COLORS_VIVID = ["#7fb2d9", "#86efac", "#fbbf24", "#f0a848", "#e57373", "#c9a3fb"];
-const SWATCH_COLORS_MUTED = ["#1f2f3d", "#1c3324", "#3a2f14", "#3d2916", "#3a1f1f", "#2a1f3a"];
+// The one preset color scheme for every color picker in the app (To
+// Do's list color, Notes' card color, Calculator's row color, and
+// whatever color picker gets added next) - same seven colors, same
+// order, everywhere, so "the third swatch" always means the same
+// color no matter which tool you're in.
+const SWATCH_COLORS = ["#EFEFEF", "#98FBCB", "#CCFF00", "#2B59D2", "#6E2DD0", "#C04A3C", "#C89C35"];
+
+// Some of the swatch colors above are light enough that white text on
+// top of them (e.g. Notes tinting a whole card with one) would be
+// unreadable - this decides whether a given color needs dark text
+// instead, via the standard luma formula. Only matters for pickers
+// that tint an entire surface, not ones that just fill a small icon.
+function colorNeedsDarkText(hex) {
+    if (!hex) return false;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.55;
+}
 
 const PAGE_IDS = ["tracker", "gatherer", "todo", "notes", "finance"];
 const WIDE_PAGES = ["tracker", "gatherer", "todo", "notes", "finance"];

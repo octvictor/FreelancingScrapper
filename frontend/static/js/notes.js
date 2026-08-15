@@ -16,7 +16,7 @@ let notes = [];
 let draggedNote = null;
 let activeNoteId = null;
 
-const NOTE_COLORS = SWATCH_COLORS_MUTED;
+const NOTE_COLORS = SWATCH_COLORS;
 const NOTE_COLOR_GLYPH = "&#9681;";
 
 // ---------- Card previews ----------
@@ -51,10 +51,15 @@ function notePreviewContentHtml(note) {
 
 function noteCardHtml(note) {
     const bg = note.color || "var(--panel-alt)";
+    // Several of the shared preset colors are light enough that the
+    // card's usual white text would be unreadable on them - switch to
+    // dark text for those instead of restricting Notes to a separate,
+    // pre-darkened palette.
+    const lightClass = note.color && colorNeedsDarkText(note.color) ? "note-card-light" : "";
     const titleText = escapeAttr(note.title) || "Untitled note";
     const titleClass = note.title ? "" : "empty";
     return `
-        <div class="note-card" data-id="${note.id}" data-type="${note.type}" style="background:${bg};">
+        <div class="note-card ${lightClass}" data-id="${note.id}" data-type="${note.type}" style="background:${bg};">
             <span class="note-drag-handle" title="Drag to reorder">&#8942;</span>
             <div class="note-card-title ${titleClass}">${titleText}</div>
             ${notePreviewContentHtml(note)}
