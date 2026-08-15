@@ -22,13 +22,12 @@
     --red: #e57373;
     --danger-text: #f2a3a3;
 
-    /* EXPERIMENT: sharp squares instead of rounded corners - zeroed out
-       rather than deleted, so reverting is a one-line change back to
-       12px/8px/6px/999px if it doesn't stick. */
-    --radius-lg: 0;
-    --radius-md: 0;
-    --radius-sm: 0;
-    --radius-full: 0;
+    /* Rounded corners, settled after a brief sharp-squares experiment -
+       smaller radii than the pre-experiment originals (12px/8px/6px). */
+    --radius-lg: 8px;
+    --radius-md: 6px;
+    --radius-sm: 4px;
+    --radius-full: 999px;
 
     /* State pills (Active/Completed, Full/Half/Custom, Paid/Unpaid,
        Sent/Not sent, Studio/Company) stay pill-shaped even with the
@@ -100,7 +99,7 @@ button, input, select, textarea {
 
 .nav-list {
     list-style: none;
-    margin: 0 0 20px 0;
+    margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -143,7 +142,7 @@ button, input, select, textarea {
 /* ---------- Collapsible sidebar group ---------- */
 
 .sidebar-group {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .sidebar-group-header {

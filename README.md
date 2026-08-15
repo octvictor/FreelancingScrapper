@@ -225,11 +225,5 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- Sharp square corners app-wide, replacing the previous rounded corners,
-  is live (--radius-* tokens zeroed out in app.css) but still an
-  experiment - not a fully settled decision.
 - Wider content area for the other tools too (To Do and Notes already
   got this) - not full-width, just noticeably roomier than today.
-- Bring rounded corners back app-wide, but with a smaller radius than
-  the original (before the sharp-corners experiment) - not as rounded
-  as before, just no longer perfectly square.
