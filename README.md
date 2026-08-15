@@ -278,6 +278,56 @@ executable), shared across every tool:
 - Wider content area for the other tools too (To Do, Notes, and
   Calculator already got this) - not full-width, just noticeably
   roomier than today.
+- **Overview hub** - a new "Overview" nav item, first in the Tools
+  group above Project Manager, addressing how empty the app can feel
+  with little data in it. Design settled through a round of mockup
+  artifacts:
+  - Unlike every other page, Overview has no persistent sidebar - a
+    launcher column takes over that job, so keeping both would just be
+    two navs side by side. The page runs edge to edge.
+  - A single full-width search bar ("Jump to a project, studio, task,
+    or note…") sits on top, spanning the whole page - no button row
+    under it.
+  - Below that, two columns: on the left, a vertical launcher list -
+    one row per tool (Project Manager, Studio Database, To Do, Notes,
+    Finances), each with its icon, name, and a live count (e.g.
+    Project Manager shows its active-project count) - clicking a row
+    is how you get to that tool, replacing the sidebar's job. On the
+    right, three stat cards (Active projects, Tasks - active count
+    across To Do, Studios logged - deliberately no money/"tracked"
+    figure here) above two panels, "Due soon" (upcoming task/project
+    deadlines) and "Recent notes."
+  - Every number appears exactly once - the launcher row's badge *is*
+    the stat for that tool, nothing is duplicated between the launcher
+    and the stat cards.
+- Roadmap of possible future tools/pages, not yet designed:
+  - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
+    Manager, for prospecting before a job is active.
+  - Invoice generator, turning a project's day-rate math and
+    Calculator's totals into an actual client-facing document.
+  - Asset & reference library - tagged textures, HDRIs, rigs, and
+    moodboard images per project, distinct from Notes.
+  - Render job tracker - job, cost, status, output per render-farm or
+    local render job.
+  - Time tracking per project, feeding the existing day-rate math.
+  - Software/subscription tracker (renewal dates, cost) alongside
+    Calculator.
+  - Client contact log - last contacted / next follow-up, attached to
+    a Studio Database entry or project.
+  - Portfolio/reel manager - what's currently in the demo reel and
+    site, versioned, with a "last updated" nudge.
+  - Quote/estimate builder - hours × day rate × complexity multiplier,
+    a "before the job" companion to Calculator's "after the job" ledger.
+  - Contract/NDA template library with client-specific fields to fill in.
+  - Job board watcher - a feed of new listings, in spirit the successor
+    to this app's original scraper, aimed at leads instead of studios.
+  - Rate card - a reference page of service packages and prices.
+  - Deliverables checklist per project (file format, texture
+    resolution, UDIM layout, poly budget, naming convention).
+  - Revision-round tracker - how many rounds a contract includes vs.
+    how many have been used.
+  - Deadline calendar view - a date-based alternate view of Project
+    Manager's rows instead of a flat table.
 
 ## Design system notes
 
