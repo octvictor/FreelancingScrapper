@@ -1010,3 +1010,82 @@ def set_finance_cell(row_id: int, column_id: int, value: str | None) -> None:
             "ON CONFLICT(row_id, column_id) DO UPDATE SET value=excluded.value",
             (row_id, column_id, value),
         )
+
+
+# ---------- Overview: cross-tool launcher counts, stats, search ----------
+
+def get_overview_stats() -> dict:
+    """Everything the Overview hub needs in one round trip: each tool's
+    launcher badge count, the three headline stat values (same numbers as
+    three of those badges - the hub deliberately repeats them, nothing is
+    computed twice), upcoming project deadlines, and the most recently
+    touched notes."""
+    with get_connection() as conn:
+        active_projects = conn.execute(
+            "SELECT COUNT(*) FROM projects WHERE status='Active'"
+        ).fetchone()[0]
+        studios_logged = conn.execute("SELECT COUNT(*) FROM gatherer_entries").fetchone()[0]
+        active_tasks = conn.execute(
+            "SELECT COUNT(*) FROM todo_tasks WHERE completed=0"
+        ).fetchone()[0]
+        notes_count = conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
+        finance_tables_count = conn.execute("SELECT COUNT(*) FROM finance_tables").fetchone()[0]
+
+        due_soon = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT id, title, deadline FROM projects "
+                "WHERE status='Active' AND deadline IS NOT NULL AND deadline != '' "
+                "ORDER BY deadline ASC LIMIT 5"
+            ).fetchall()
+        ]
+
+        recent_notes = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT id, title, updated_at FROM notes ORDER BY updated_at DESC LIMIT 5"
+            ).fetchall()
+        ]
+
+    return {
+        "counts": {
+            "tracker": active_projects,
+            "gatherer": studios_logged,
+            "todo": active_tasks,
+            "notes": notes_count,
+            "finance": finance_tables_count,
+        },
+        "due_soon": due_soon,
+        "recent_notes": recent_notes,
+    }
+
+
+def search_all(query: str, limit_per_type: int = 6) -> list[dict]:
+    """Backs the Overview search bar - one LIKE query per searchable
+    table, title matches only. SQLite's LIKE is already case-insensitive
+    for ASCII, which covers this app's use case."""
+    like = f"%{query}%"
+    results: list[dict] = []
+    with get_connection() as conn:
+        for row in conn.execute(
+            "SELECT id, title FROM projects WHERE title LIKE ? LIMIT ?", (like, limit_per_type)
+        ):
+            results.append({"type": "project", "id": row["id"], "title": row["title"] or "Untitled project"})
+        for row in conn.execute(
+            "SELECT id, title FROM gatherer_entries WHERE title LIKE ? LIMIT ?", (like, limit_per_type)
+        ):
+            results.append({"type": "studio", "id": row["id"], "title": row["title"] or "Untitled"})
+        for row in conn.execute(
+            "SELECT id, list_id, title FROM todo_tasks WHERE title LIKE ? LIMIT ?", (like, limit_per_type)
+        ):
+            results.append({
+                "type": "task",
+                "id": row["id"],
+                "list_id": row["list_id"],
+                "title": row["title"] or "Untitled task",
+            })
+        for row in conn.execute(
+            "SELECT id, title FROM notes WHERE title LIKE ? LIMIT ?", (like, limit_per_type)
+        ):
+            results.append({"type": "note", "id": row["id"], "title": row["title"] or "Untitled note"})
+    return results

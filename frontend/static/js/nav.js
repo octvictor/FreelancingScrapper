@@ -218,8 +218,8 @@ function openColorWheelPopover(triggerBtn, currentColor, { onChange, onClear }) 
     });
 }
 
-const PAGE_IDS = ["tracker", "gatherer", "todo", "notes", "finance"];
-const WIDE_PAGES = ["tracker", "gatherer", "todo", "notes", "finance"];
+const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
+const WIDE_PAGES = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
 function showPage(page) {
     PAGE_IDS.forEach((id) => {
@@ -227,14 +227,23 @@ function showPage(page) {
         if (section) section.style.display = id === page ? "" : "none";
     });
     document.querySelector(".main").classList.toggle("main-wide", WIDE_PAGES.includes(page));
+    // Overview is the one page without the persistent sidebar - its own
+    // launcher column replaces that job, so keeping both would just be two
+    // navs side by side.
+    document.querySelector(".app-shell").classList.toggle("sidebar-hidden", page === "overview");
+    if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
+}
+
+// Shared by sidebar nav-item clicks and any other control that jumps to a
+// tool page (the Overview launcher rows and search results) - keeps the
+// sidebar's active state in sync no matter which UI triggered the move.
+function navigateTo(page) {
+    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
+    showPage(page);
 }
 
 document.querySelectorAll(".nav-item").forEach((btn) => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        showPage(btn.dataset.page);
-    });
+    btn.addEventListener("click", () => navigateTo(btn.dataset.page));
 });
 
 // The nav-item marked "active" in the HTML never fires a click, so the

@@ -5,11 +5,31 @@ backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install), with a vertical tool
 menu in the sidebar. Currently:
 
-Tracker and Gatherer live under a collapsible **Tools** section in the
-sidebar (click the section header to fold/unfold it). Below it sits a
-second collapsible section, **Management**, for non-client-work
-items - To Do, Notes, and Finances.
+Overview, Tracker, and Gatherer live under a collapsible **Tools**
+section in the sidebar (click the section header to fold/unfold it).
+Below it sits a second collapsible section, **Management**, for
+non-client-work items - To Do, Notes, and Finances.
 
+- **Overview** - the app's home page, first item in the Tools group and
+  the default page on launch. Unlike every other page it has no
+  persistent sidebar - a launcher column takes over that job, so the
+  page runs full width instead of squeezed beside a 220px rail. On top,
+  a single full-width search bar ("Jump to a project, studio, task, or
+  note...") searches titles across Tracker projects, Gatherer studios,
+  To Do tasks, and Notes as you type, in a dropdown under the bar;
+  clicking a result jumps to that tool and, where a detail view exists,
+  opens it directly (a studio result just lands on Studio Database,
+  which has no per-row detail view). Below the search bar, two columns:
+  on the left, a launcher row per tool (Project Manager, Studio
+  Database, To Do, Notes, Finances) with its icon, name, and a live
+  count - clicking a row is how you get to that tool, replacing the
+  sidebar's job here. On the right, three stat cards (Active projects,
+  Tasks - active count, Studios logged - deliberately no money figure)
+  above two panels, "Due soon" (active projects with a deadline,
+  soonest first, color-coded overdue/today/soon/later) and "Recent
+  notes" (most recently edited, newest first). The three stat cards
+  repeat three of the launcher badges on purpose - it's the one
+  intentional duplication in the page, everything else appears once.
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
   (Active/Completed), and Paid/Unpaid, each pill directly editable
@@ -201,16 +221,25 @@ into a venv from before that change - the fix is on both scripts now.
   reading/writing uploaded Docs files on disk (under
   `data/project_docs/<project_id>/`), since that's specific to Tracker
   rather than shared storage logic.
+- `api/overview.py` - read-only routes for the Overview hub (launcher
+  counts/stats/due-soon/recent-notes, plus the search bar's cross-tool
+  title search) - aggregates the other tools' tables, doesn't own any
+  of its own.
 - `frontend/index.html` - the whole page shell (every tool's markup
   lives here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
-- `frontend/static/js/nav.js` - shared page navigation, the custom
-  dropdown component, and a themed `confirmDialog()` (used in place of
-  the browser's native `confirm()` for every delete action) - loaded
-  first since every tool depends on it.
+- `frontend/static/js/nav.js` - shared page navigation (including
+  hiding the sidebar on Overview), the custom dropdown component, and a
+  themed `confirmDialog()` (used in place of the browser's native
+  `confirm()` for every delete action) - loaded first since every tool
+  depends on it.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
+- `frontend/static/js/overview.js` - the Overview hub's rendering and
+  search; reuses `openProjectModal`/`openTodoTaskModal`/`openNoteModal`
+  from the other tools' own files to open a detail view after a search
+  jump, rather than duplicating that logic.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data lives on disk.
 
@@ -278,28 +307,6 @@ executable), shared across every tool:
 - Wider content area for the other tools too (To Do, Notes, and
   Calculator already got this) - not full-width, just noticeably
   roomier than today.
-- **Overview hub** - a new "Overview" nav item, first in the Tools
-  group above Project Manager, addressing how empty the app can feel
-  with little data in it. Design settled through a round of mockup
-  artifacts:
-  - Unlike every other page, Overview has no persistent sidebar - a
-    launcher column takes over that job, so keeping both would just be
-    two navs side by side. The page runs edge to edge.
-  - A single full-width search bar ("Jump to a project, studio, task,
-    or note…") sits on top, spanning the whole page - no button row
-    under it.
-  - Below that, two columns: on the left, a vertical launcher list -
-    one row per tool (Project Manager, Studio Database, To Do, Notes,
-    Finances), each with its icon, name, and a live count (e.g.
-    Project Manager shows its active-project count) - clicking a row
-    is how you get to that tool, replacing the sidebar's job. On the
-    right, three stat cards (Active projects, Tasks - active count
-    across To Do, Studios logged - deliberately no money/"tracked"
-    figure here) above two panels, "Due soon" (upcoming task/project
-    deadlines) and "Recent notes."
-  - Every number appears exactly once - the launcher row's badge *is*
-    the stat for that tool, nothing is duplicated between the launcher
-    and the stat cards.
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
