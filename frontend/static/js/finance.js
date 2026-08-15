@@ -16,7 +16,6 @@ let financeRows = [];
 let financeExpanded = false;
 
 const FINANCE_CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
-const FINANCE_ROW_COLORS = SWATCH_COLORS;
 const FINANCE_ROW_LIMIT = 7;
 
 function financeCurrencySymbol() {
@@ -30,8 +29,8 @@ function financeCurrencySymbol() {
 // only ever shows a pointer, never a text-cursor. Renaming happens
 // once, in the title field inside the active table's panel; the tab
 // just reflects whatever that field currently holds. Deleting the
-// active table is the "Delete table" link below that same field (see
-// #finance-delete-table-btn) rather than living on the tab.
+// active table is the "Delete" link on the same row as that field
+// (see #finance-delete-table-btn) rather than living on the tab.
 function financeTabHtml(table) {
     const isActive = table.id === activeTableId;
     return `<button type="button" class="finance-tab ${isActive ? "active" : ""}" data-id="${table.id}">${escapeAttr(table.title || "Untitled")}</button>`;
@@ -232,7 +231,11 @@ function wireFinanceRowEvents() {
 
         tr.querySelector("[data-role='row-color']").addEventListener("click", (e) => {
             e.stopPropagation();
-            openFinanceRowColorPopover(e.currentTarget, id);
+            const rowData = financeRows.find((r) => r.id === id);
+            openColorWheelPopover(e.currentTarget, rowData?.color || null, {
+                onChange: (hex) => setFinanceRowColor(id, hex),
+                onClear: () => setFinanceRowColor(id, null),
+            });
         });
 
         tr.querySelector("[data-role='delete']").addEventListener("click", async () => {
@@ -270,59 +273,12 @@ async function saveFinanceCell(rowId, columnId, value) {
 }
 
 // ---------- Row color ----------
-// Reuses the same shared color-popover pattern as To Do's list color
-// and Notes' card color. Like To Do, the row itself is never tinted -
-// only the swatch icon shows the chosen color.
-
-let financeColorPopover = null;
-
-function closeFinanceColorPopover() {
-    if (!financeColorPopover) return;
-    financeColorPopover.remove();
-    financeColorPopover = null;
-    document.removeEventListener("click", onFinanceColorPopoverOutsideClick);
-}
-
-function onFinanceColorPopoverOutsideClick(e) {
-    if (financeColorPopover && !financeColorPopover.contains(e.target) && !e.target.closest("[data-role='row-color']")) {
-        closeFinanceColorPopover();
-    }
-}
-
-function openFinanceRowColorPopover(triggerBtn, rowId) {
-    closeFinanceColorPopover();
-    const rect = triggerBtn.getBoundingClientRect();
-
-    const panel = document.createElement("div");
-    panel.className = "popover-panel color-popover open";
-    panel.style.left = rect.left + "px";
-    panel.style.top = rect.bottom + 6 + "px";
-
-    const noneSwatch = document.createElement("button");
-    noneSwatch.type = "button";
-    noneSwatch.className = "color-swatch none";
-    noneSwatch.title = "No color";
-    noneSwatch.addEventListener("click", () => setFinanceRowColor(rowId, null));
-    panel.appendChild(noneSwatch);
-
-    FINANCE_ROW_COLORS.forEach((color) => {
-        const swatch = document.createElement("button");
-        swatch.type = "button";
-        swatch.className = "color-swatch";
-        swatch.style.background = color;
-        swatch.title = color;
-        swatch.addEventListener("click", () => setFinanceRowColor(rowId, color));
-        panel.appendChild(swatch);
-    });
-
-    document.body.appendChild(panel);
-    financeColorPopover = panel;
-    setTimeout(() => document.addEventListener("click", onFinanceColorPopoverOutsideClick));
-}
+// Opens the shared color wheel (nav.js) - setFinanceRowColor is just
+// the save callback it's handed. Like To Do, the row itself is never
+// tinted - only the swatch icon shows the chosen color.
 
 async function setFinanceRowColor(rowId, color) {
     await saveFinanceRow(rowId, { color });
-    closeFinanceColorPopover();
     renderFinanceTable();
 }
 

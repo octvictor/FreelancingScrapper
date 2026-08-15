@@ -60,8 +60,8 @@ items - To Do, Notes, and Finances.
   list first - and a matching star above the rail filters it down to
   just favorited lists. "+ New list" adds one. Click a list's name in
   the tasks pane to rename it; a color swatch to the title's left opens
-  a small preset-palette popover, shown as a dot next to the list's
-  name in the rail. "Delete list" sits to the title's right. Favoriting
+  the shared color wheel, shown as a dot next to the list's name in
+  the rail. "Delete list" sits to the title's right. Favoriting
   only applies to lists - there's no importance concept for individual
   tasks. Each list is a set of checkbox tasks - check one off and it
   drops into a collapsed "Completed (n)" section below the active
@@ -88,8 +88,9 @@ items - To Do, Notes, and Finances.
   reflows its own column count as the window resizes) and can be
   dragged by a small handle to reorder - the order persists. Each card
   has a color button (a fixed grey glyph, not tinted by the note's own
-  color) opening the same small preset-palette popover used by To Do's
-  list colors, applied as the card's full background, and an
+  color) opening the same shared color wheel used by To Do's list
+  colors, applied as the card's full background - text on the card
+  switches to dark automatically for a light enough pick - and an
   always-visible red delete button (with the themed confirm dialog).
 - **Finances** (under Management) - a page for money tools, starting
   with **Calculator**, a section labeled by its own heading inside the
@@ -99,15 +100,16 @@ items - To Do, Notes, and Finances.
   button showing its title - clicking one switches to it, and that's
   all a tab does; there's nothing to type into or delete on the tab
   itself. Renaming happens once, in an editable title field inside the
-  active table's panel (above Currency) - the tab it belongs to just
-  displays whatever that field currently holds. A "Delete table" link
-  right below that field (confirms first) removes the active table -
-  if it was the last one left, a fresh blank table takes its place so
-  Calculator is never left empty. Each table is the same inline-
-  editable "+ Add row" look as Studio Database: every row has a Title,
-  a small round color swatch to its left (opening the same preset-
-  palette popover as To Do/Notes' colors - like To Do, only the swatch
-  itself shows the color, the row's own background never gets tinted)
+  active table's panel - the tab it belongs to just displays whatever
+  that field currently holds. A "Delete" link sits on the same row as
+  that field, right-aligned, and removes the active table (confirms
+  first) - if it was the last one left, a fresh blank table takes its
+  place so Calculator is never left empty. Each table is the same
+  inline-editable "+ Add row" look as Studio Database: every row has a
+  Title, a small round color swatch to its left (opening the same
+  shared color wheel as To Do/Notes' colors - like To Do, only the
+  swatch itself shows the color, the row's own background never gets
+  tinted)
   and a currency-formatted Value; a "+" button in the header adds
   further freeform text columns shared across every row (also inline-
   renamable), each with its own delete button - Title and Value are
@@ -297,18 +299,18 @@ rest of the app instead of drifting:
   same `.swatch-btn` class in app.css, which is what keeps them the
   same size automatically - resize that one rule rather than
   overriding size per-tool.
-- **One color scheme, everywhere.** `frontend/static/js/nav.js`
-  defines the app's only color-preset array, `SWATCH_COLORS` - seven
-  fixed colors (`#EFEFEF #98FBCB #CCFF00 #2B59D2 #6E2DD0 #C04A3C
-  #C89C35`), always in that order, so "the third swatch" is the same
-  color everywhere. Every color picker in the app (To Do's list color,
-  Notes' card color, Calculator's row color, and whatever gets added
-  next) points at this one array rather than defining its own palette
-  or reordering it. Some of these colors are light enough that white
-  text on top of them would be unreadable - for a picker that tints an
-  entire surface with text on top (currently just Notes' card
-  background), `colorNeedsDarkText()` (also in nav.js, a standard luma
-  check) decides per-color whether that surface needs dark text
-  instead; a picker that only fills a small standalone swatch icon (To
-  Do, Calculator) never needs this since there's no text sitting on
-  the color itself.
+- **One color picker, everywhere.** `openColorWheelPopover()` in
+  `frontend/static/js/nav.js` is the app's only color picker - a
+  free-form hue/saturation wheel, a lightness slider, and a hex field
+  for precision, plus a "No color" link. Every color-picking swatch in
+  the app (To Do's list color, Notes' card color, Calculator's row
+  color, and whatever gets added next) opens this one popover and
+  hands it a save callback and a clear callback, rather than keeping
+  its own popover or preset list - there is no fixed palette to pick
+  from anymore, any color is fair game. `colorNeedsDarkText()` (also
+  in nav.js, a standard luma check) decides whether a chosen color is
+  light enough to need dark text instead of white on top of it - it
+  only matters for a picker that tints an entire surface with text on
+  it (currently just Notes' card background); a picker that only fills
+  a small standalone swatch icon (To Do, Calculator) never needs this
+  since there's no text sitting on the color itself.

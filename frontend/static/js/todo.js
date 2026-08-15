@@ -85,62 +85,14 @@ async function selectTodoList(id) {
 }
 
 // ---------- List color ----------
-// A small popover (built and torn down on demand, like nav.js's custom
-// dropdown panels) offering a preset palette plus a "no color" swatch.
-
-const TODO_LIST_COLORS = SWATCH_COLORS;
-let todoColorPopover = null;
+// Opens the shared color wheel (nav.js) rather than keeping its own
+// popover - setTodoListColor is just the save callback it's handed.
 
 function updateTodoColorBtn(color) {
     const btn = $("todo-list-color-btn");
     btn.style.background = color || "transparent";
     btn.classList.toggle("swatch-btn-empty", !color);
     btn.innerHTML = color ? "" : "&#9681;";
-}
-
-function closeTodoColorPopover() {
-    if (!todoColorPopover) return;
-    todoColorPopover.remove();
-    todoColorPopover = null;
-    document.removeEventListener("click", onTodoColorPopoverOutsideClick);
-}
-
-function onTodoColorPopoverOutsideClick(e) {
-    if (todoColorPopover && !todoColorPopover.contains(e.target) && e.target.id !== "todo-list-color-btn") {
-        closeTodoColorPopover();
-    }
-}
-
-function openTodoColorPopover() {
-    closeTodoColorPopover();
-    const btn = $("todo-list-color-btn");
-    const rect = btn.getBoundingClientRect();
-
-    const panel = document.createElement("div");
-    panel.className = "popover-panel color-popover open";
-    panel.style.left = rect.left + "px";
-    panel.style.top = rect.bottom + 6 + "px";
-
-    const noneSwatch = document.createElement("button");
-    noneSwatch.type = "button";
-    noneSwatch.className = "color-swatch none";
-    noneSwatch.title = "No color";
-    noneSwatch.addEventListener("click", () => setTodoListColor(null));
-    panel.appendChild(noneSwatch);
-
-    TODO_LIST_COLORS.forEach((color) => {
-        const swatch = document.createElement("button");
-        swatch.type = "button";
-        swatch.className = "color-swatch";
-        swatch.style.background = color;
-        swatch.title = color;
-        swatch.addEventListener("click", () => setTodoListColor(color));
-        panel.appendChild(swatch);
-    });
-
-    document.body.appendChild(panel);
-    todoColorPopover = panel;
-    setTimeout(() => document.addEventListener("click", onTodoColorPopoverOutsideClick));
 }
 
 async function setTodoListColor(color) {
@@ -156,13 +108,16 @@ async function setTodoListColor(color) {
     if (idx !== -1) todoLists[idx] = updated;
     updateTodoColorBtn(updated.color);
     renderTodoLists();
-    closeTodoColorPopover();
 }
 
 $("todo-list-color-btn").addEventListener("click", (e) => {
     e.stopPropagation();
-    if (todoColorPopover) closeTodoColorPopover();
-    else openTodoColorPopover();
+    if (activeListId === null) return;
+    const current = todoLists.find((l) => l.id === activeListId)?.color || null;
+    openColorWheelPopover(e.currentTarget, current, {
+        onChange: setTodoListColor,
+        onClear: () => setTodoListColor(null),
+    });
 });
 
 async function refreshTodoLists() {

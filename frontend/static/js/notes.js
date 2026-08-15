@@ -16,7 +16,6 @@ let notes = [];
 let draggedNote = null;
 let activeNoteId = null;
 
-const NOTE_COLORS = SWATCH_COLORS;
 const NOTE_COLOR_GLYPH = "&#9681;";
 
 // ---------- Card previews ----------
@@ -119,7 +118,11 @@ function wireNoteCard(card) {
 
     card.querySelector("[data-role='color']").addEventListener("click", (e) => {
         e.stopPropagation();
-        openNoteColorPopover(e.currentTarget, noteId);
+        const note = notes.find((n) => n.id === noteId);
+        openColorWheelPopover(e.currentTarget, note?.color || null, {
+            onChange: (hex) => setNoteColor(noteId, hex),
+            onClear: () => setNoteColor(noteId, null),
+        });
     });
 
     wireNoteDrag(card);
@@ -151,60 +154,12 @@ async function saveNoteItem(noteId, itemId, updates) {
     if (idx !== -1) note.items[idx] = updated;
 }
 
-// ---------- Card color popover ----------
-// Shared between the card's own color button and the modal's - both
-// just pass their trigger button in, so the popover doesn't care which
-// context opened it.
-
-let noteColorPopover = null;
-
-function closeNoteColorPopover() {
-    if (!noteColorPopover) return;
-    noteColorPopover.remove();
-    noteColorPopover = null;
-    document.removeEventListener("click", onNoteColorPopoverOutsideClick);
-}
-
-function onNoteColorPopoverOutsideClick(e) {
-    if (noteColorPopover && !noteColorPopover.contains(e.target) && !e.target.closest("[data-role='color']")) {
-        closeNoteColorPopover();
-    }
-}
-
-function openNoteColorPopover(triggerBtn, noteId) {
-    closeNoteColorPopover();
-    const rect = triggerBtn.getBoundingClientRect();
-
-    const panel = document.createElement("div");
-    panel.className = "popover-panel color-popover open";
-    panel.style.left = rect.left + "px";
-    panel.style.top = rect.bottom + 6 + "px";
-
-    const noneSwatch = document.createElement("button");
-    noneSwatch.type = "button";
-    noneSwatch.className = "color-swatch none";
-    noneSwatch.title = "No color";
-    noneSwatch.addEventListener("click", () => setNoteColor(noteId, null));
-    panel.appendChild(noneSwatch);
-
-    NOTE_COLORS.forEach((color) => {
-        const swatch = document.createElement("button");
-        swatch.type = "button";
-        swatch.className = "color-swatch";
-        swatch.style.background = color;
-        swatch.title = color;
-        swatch.addEventListener("click", () => setNoteColor(noteId, color));
-        panel.appendChild(swatch);
-    });
-
-    document.body.appendChild(panel);
-    noteColorPopover = panel;
-    setTimeout(() => document.addEventListener("click", onNoteColorPopoverOutsideClick));
-}
+// ---------- Card color ----------
+// Opens the shared color wheel (nav.js) - setNoteColor is just the
+// save callback it's handed.
 
 async function setNoteColor(noteId, color) {
     await saveNoteField(noteId, { color });
-    closeNoteColorPopover();
     refreshNoteCard(noteId);
 }
 

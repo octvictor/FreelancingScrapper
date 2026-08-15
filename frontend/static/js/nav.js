@@ -5,18 +5,11 @@ function $(id) {
     return document.getElementById(id);
 }
 
-// The one preset color scheme for every color picker in the app (To
-// Do's list color, Notes' card color, Calculator's row color, and
-// whatever color picker gets added next) - same seven colors, same
-// order, everywhere, so "the third swatch" always means the same
-// color no matter which tool you're in.
-const SWATCH_COLORS = ["#EFEFEF", "#98FBCB", "#CCFF00", "#2B59D2", "#6E2DD0", "#C04A3C", "#C89C35"];
-
-// Some of the swatch colors above are light enough that white text on
-// top of them (e.g. Notes tinting a whole card with one) would be
-// unreadable - this decides whether a given color needs dark text
-// instead, via the standard luma formula. Only matters for pickers
-// that tint an entire surface, not ones that just fill a small icon.
+// Some colors are light enough that white text on top of them (e.g.
+// Notes tinting a whole card with one) would be unreadable - this
+// decides whether a given color needs dark text instead, via the
+// standard luma formula. Only matters for pickers that tint an entire
+// surface, not ones that just fill a small icon.
 function colorNeedsDarkText(hex) {
     if (!hex) return false;
     const r = parseInt(hex.slice(1, 3), 16);
@@ -24,6 +17,205 @@ function colorNeedsDarkText(hex) {
     const b = parseInt(hex.slice(5, 7), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.55;
+}
+
+// ---------- Color wheel picker ----------
+// The one color picker for the whole app (To Do's list color, Notes'
+// card color, Calculator's row color, and anything added later) - a
+// free-form hue/saturation wheel plus a lightness slider and a hex
+// field for precision, instead of a fixed preset palette. Every tool
+// calls openColorWheelPopover with its own save/clear callbacks
+// rather than keeping its own popover and color list.
+
+function _hexToHsl(hex) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h *= 60;
+    }
+    return { h, s: s * 100, l: l * 100 };
+}
+
+function _hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; }
+    else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
+    const toHex = (v) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+}
+
+let _colorWheelPopover = null;
+
+function closeColorWheelPopover() {
+    if (!_colorWheelPopover) return;
+    _colorWheelPopover.remove();
+    _colorWheelPopover = null;
+    document.removeEventListener("click", _onColorWheelOutsideClick);
+    document.removeEventListener("keydown", _onColorWheelKeydown);
+}
+
+function _onColorWheelOutsideClick(e) {
+    if (_colorWheelPopover && !_colorWheelPopover.contains(e.target) && !e.target.closest(".swatch-btn")) {
+        closeColorWheelPopover();
+    }
+}
+
+function _onColorWheelKeydown(e) {
+    if (e.key === "Escape") closeColorWheelPopover();
+}
+
+// triggerBtn: the swatch button that opened this. currentColor: hex or
+// null. callbacks.onChange(hex) fires once per committed pick (drag
+// release, lightness-slider release, or hex field blur/Enter) - never
+// on every drag frame. callbacks.onClear() fires from "No color".
+function openColorWheelPopover(triggerBtn, currentColor, { onChange, onClear }) {
+    closeColorWheelPopover();
+    const rect = triggerBtn.getBoundingClientRect();
+
+    const panel = document.createElement("div");
+    panel.className = "popover-panel color-wheel-popover open";
+    panel.style.left = rect.left + "px";
+    panel.style.top = rect.bottom + 6 + "px";
+
+    const size = 160;
+    panel.innerHTML = `
+        <div class="color-wheel-canvas-wrap">
+            <canvas class="color-wheel-canvas" width="${size}" height="${size}"></canvas>
+            <div class="color-wheel-cursor"></div>
+        </div>
+        <input type="range" class="color-wheel-lightness" min="0" max="100" step="1" title="Lightness">
+        <div class="color-wheel-row">
+            <span class="color-wheel-preview"></span>
+            <input type="text" class="cell-input color-wheel-hex" maxlength="7" spellcheck="false">
+        </div>
+        <button type="button" class="btn-danger-text color-wheel-clear">No color</button>
+    `;
+    document.body.appendChild(panel);
+    _colorWheelPopover = panel;
+
+    const canvas = panel.querySelector(".color-wheel-canvas");
+    const ctx = canvas.getContext("2d");
+    const cursor = panel.querySelector(".color-wheel-cursor");
+    const lightnessInput = panel.querySelector(".color-wheel-lightness");
+    const hexInput = panel.querySelector(".color-wheel-hex");
+    const preview = panel.querySelector(".color-wheel-preview");
+    const clearBtn = panel.querySelector(".color-wheel-clear");
+
+    const cx = size / 2, cy = size / 2, radius = size / 2 - 4;
+    let state = currentColor ? _hexToHsl(currentColor) : { h: 0, s: 0, l: 55 };
+
+    function drawWheel(lightness) {
+        const img = ctx.createImageData(size, size);
+        for (let py = 0; py < size; py++) {
+            for (let px = 0; px < size; px++) {
+                const dx = px - cx, dy = py - cy;
+                const r = Math.sqrt(dx * dx + dy * dy);
+                const idx = (py * size + px) * 4;
+                if (r > radius) { img.data[idx + 3] = 0; continue; }
+                const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+                const sat = Math.min(100, (r / radius) * 100);
+                const hex = _hslToHex(hue, sat, lightness);
+                img.data[idx] = parseInt(hex.slice(1, 3), 16);
+                img.data[idx + 1] = parseInt(hex.slice(3, 5), 16);
+                img.data[idx + 2] = parseInt(hex.slice(5, 7), 16);
+                img.data[idx + 3] = 255;
+            }
+        }
+        ctx.putImageData(img, 0, 0);
+    }
+
+    function positionCursor() {
+        const angle = state.h * Math.PI / 180;
+        const r = Math.min(1, state.s / 100) * radius;
+        cursor.style.left = (cx + Math.cos(angle) * r) + "px";
+        cursor.style.top = (cy + Math.sin(angle) * r) + "px";
+    }
+
+    function syncUi() {
+        const hex = _hslToHex(state.h, state.s, state.l);
+        preview.style.background = hex;
+        hexInput.value = hex;
+        lightnessInput.value = Math.round(state.l);
+        drawWheel(state.l);
+        positionCursor();
+    }
+
+    function setFromPointer(clientX, clientY) {
+        const r = canvas.getBoundingClientRect();
+        const dx = (clientX - r.left) - cx, dy = (clientY - r.top) - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        state.h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+        state.s = Math.min(100, (dist / radius) * 100);
+        syncUi();
+    }
+
+    let dragging = false;
+    canvas.addEventListener("pointerdown", (e) => {
+        dragging = true;
+        canvas.setPointerCapture(e.pointerId);
+        setFromPointer(e.clientX, e.clientY);
+    });
+    canvas.addEventListener("pointermove", (e) => {
+        if (dragging) setFromPointer(e.clientX, e.clientY);
+    });
+    canvas.addEventListener("pointerup", () => {
+        if (!dragging) return;
+        dragging = false;
+        onChange(_hslToHex(state.h, state.s, state.l));
+    });
+
+    lightnessInput.addEventListener("input", () => {
+        state.l = parseInt(lightnessInput.value, 10);
+        syncUi();
+    });
+    lightnessInput.addEventListener("change", () => {
+        onChange(_hslToHex(state.h, state.s, state.l));
+    });
+
+    hexInput.addEventListener("blur", () => {
+        const v = hexInput.value.trim().replace(/^#/, "");
+        if (/^[0-9a-fA-F]{6}$/.test(v)) {
+            const hex = "#" + v.toUpperCase();
+            state = _hexToHsl(hex);
+            syncUi();
+            onChange(hex);
+        } else {
+            syncUi();
+        }
+    });
+    hexInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") hexInput.blur();
+    });
+
+    clearBtn.addEventListener("click", () => {
+        onClear();
+        closeColorWheelPopover();
+    });
+
+    syncUi();
+    setTimeout(() => {
+        document.addEventListener("click", _onColorWheelOutsideClick);
+        document.addEventListener("keydown", _onColorWheelKeydown);
+    });
 }
 
 const PAGE_IDS = ["tracker", "gatherer", "todo", "notes", "finance"];
