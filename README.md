@@ -8,7 +8,7 @@ menu in the sidebar. Currently:
 Tracker and Gatherer live under a collapsible **Tools** section in the
 sidebar (click the section header to fold/unfold it). Below it sits a
 second collapsible section, **Management**, for non-client-work
-items - To Do and Notes.
+items - To Do, Notes, and Finances.
 
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
@@ -54,36 +54,52 @@ items - To Do and Notes.
   table to just that value, blank to show everything again.
 - **To Do** (under Management, noticeably wider than the other tools -
   not full-width, just roomier) - inspired by Microsoft To Do.
-  Multiple lists (a rail on the left, "+ New list" to add one, click a
-  list's name in the tasks pane to rename it; a color swatch sits to
-  the title's left - click it for a small preset-palette popover,
-  shown as a dot next to the list's name in the rail - and a compact
-  icon-only Important filter, a star to mark it Favorite, and
-  "Delete list" sit to the title's right). A matching icon-only
-  Favorites toggle above the rail narrows it to just favorited lists. Each list is a set of checkbox tasks - check
-  one off and it drops into a collapsed "Completed (n)" section below
-  the active ones, with a "Clean" link right in that section's header
-  to clear out every completed task in one go (confirms first, shows
-  how many); a star icon on each row toggles Importance right from the
-  list. Clicking a task (anywhere but its checkbox/star/delete) opens
-  a detail view: the same checkbox/title/star in a header row, a Steps
-  checklist (a mini to-do list within the task, same
-  checkbox-and-title pattern as Personal Projects' Checklist), and a
-  freeform Notes text area. Everything autosaves on blur/change.
+  Multiple lists in a rail on the left; a star sits to the right of
+  every list's name there - always visible, grey by default and gold
+  once favorited, toggled directly from the rail without selecting the
+  list first - and a matching star above the rail filters it down to
+  just favorited lists. "+ New list" adds one. Click a list's name in
+  the tasks pane to rename it; a color swatch to the title's left opens
+  a small preset-palette popover, shown as a dot next to the list's
+  name in the rail. "Delete list" sits to the title's right. Favoriting
+  only applies to lists - there's no importance concept for individual
+  tasks. Each list is a set of checkbox tasks - check one off and it
+  drops into a collapsed "Completed (n)" section below the active
+  ones, with a "Clean" link right in that section's header to clear
+  out every completed task in one go (confirms first, shows how many).
+  Clicking a task (anywhere but its checkbox/delete) opens a detail
+  view: title in a header row, a Steps checklist (a mini to-do list
+  within the task, same checkbox-and-title pattern as Personal
+  Projects' Checklist), and a freeform Notes text area. Everything
+  autosaves on blur/change.
 - **Notes** (under Management, no page title of its own - the sidebar
   already labels it) - a Google Keep-style board of cards. A dashed
   "+" tile is always the first card; clicking it opens a small popover
   to choose Text note or List before creating anything (a note's type
   is fixed at creation - a text note has a freeform body, a list note
-  has a checklist instead). Existing cards are edited directly in
-  place with no modal, autosaving on blur - a list note's items use
-  the same checkbox-and-title row as To Do's Steps, with "+ Add item"
-  for more. Cards flow into a responsive masonry grid (CSS columns, so
-  it reflows its own column count as the window resizes) and can be
+  has a checklist instead) and immediately opens the new note's detail
+  modal so title/content get entered in a bigger space. Cards
+  themselves are read-only previews - clicking one (anywhere but its
+  color/delete controls or a list item's checkbox) reopens that modal
+  for full editing; a list note's items use the same checkbox-and-title
+  row as To Do's Steps, with "+ Add item" for more, and can also be
+  checked off straight from the card preview without opening the
+  modal. Cards flow into a responsive masonry grid (CSS columns, so it
+  reflows its own column count as the window resizes) and can be
   dragged by a small handle to reorder - the order persists. Each card
-  has a color swatch button opening the same small preset-palette
-  popover used by To Do's list colors, applied as the card's full
-  background, and a delete button (with the themed confirm dialog).
+  has a color button (a fixed grey glyph, not tinted by the note's own
+  color) opening the same small preset-palette popover used by To Do's
+  list colors, applied as the card's full background, and an
+  always-visible red delete button (with the themed confirm dialog).
+- **Finances** (under Management) - a spreadsheet-style ledger, same
+  inline-editable table/"+ Add row" look as Studio Database. Every row
+  has a Title and a currency-formatted Value; a "+" button in the
+  header adds further freeform text columns shared across every row
+  (also inline-renamable) for anything else worth tracking per entry.
+  One currency (USD/EUR/GBP/BRL) applies to the whole table via a
+  picker above it, matching Tracker's Day rate currency picker, so a
+  running Sum at the bottom is always one coherent total - a negative
+  Value just subtracts from it, being plain addition under the hood.
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -220,10 +236,21 @@ executable), shared across every tool:
   board (no lists/nesting).
 - `note_items` - note_id, text, checked, created_at, updated_at. Backs
   a 'list'-type note's checklist.
+- `finance_settings` - a singleton row (id=1) holding the one currency
+  the whole Finances table uses.
+- `finance_columns` - name, created_at. Any extra freeform columns
+  added on top of Title/Value, shared across every row.
+- `finance_rows` - title, value, created_at, updated_at. Finances' own
+  table - Title and Value are fixed columns on the row itself.
+- `finance_cells` - row_id, column_id, value (unique per row+column
+  pair). An EAV side table backing each row's value in a
+  `finance_columns` entry, so columns can be added/renamed freely
+  without an ALTER TABLE per column or backfilling every existing row.
 
 ## Roadmap / not built yet
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- Wider content area for the other tools too (To Do and Notes already
-  got this) - not full-width, just noticeably roomier than today.
+- Wider content area for the other tools too (To Do, Notes, and
+  Finances already got this) - not full-width, just noticeably
+  roomier than today.

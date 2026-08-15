@@ -5,8 +5,8 @@ function $(id) {
     return document.getElementById(id);
 }
 
-const PAGE_IDS = ["tracker", "gatherer", "todo", "notes"];
-const WIDE_PAGES = ["tracker", "gatherer", "todo", "notes"];
+const PAGE_IDS = ["tracker", "gatherer", "todo", "notes", "finance"];
+const WIDE_PAGES = ["tracker", "gatherer", "todo", "notes", "finance"];
 
 function showPage(page) {
     PAGE_IDS.forEach((id) => {

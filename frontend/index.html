@@ -38,6 +38,9 @@
                     <li><button class="nav-item nav-item-chip" data-page="notes">
                         <span class="nav-item-icon">&#9998;</span> Notes
                     </button></li>
+                    <li><button class="nav-item nav-item-chip" data-page="finance">
+                        <span class="nav-item-icon">&#164;</span> Finances
+                    </button></li>
                 </ul>
             </div>
         </aside>
@@ -174,6 +177,38 @@
 
             <section id="page-notes" style="display:none;">
                 <div class="notes-grid" id="notes-grid"></div>
+            </section>
+
+            <section id="page-finance" style="display:none;">
+                <h1 class="page-title">Finances</h1>
+                <p class="muted" style="margin: -10px 0 18px;">A running ledger - add a row, fill it in, it saves as you type.</p>
+
+                <div class="panel">
+                    <div class="finance-toolbar">
+                        <span class="muted" style="font-size:12.5px;">Currency</span>
+                        <select class="cell-select" id="finance-currency-select">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                            <option value="BRL">BRL</option>
+                        </select>
+                    </div>
+                    <div class="gatherer-table-wrap">
+                        <table class="gatherer-table finance-table">
+                            <thead>
+                                <tr id="finance-table-head"></tr>
+                            </thead>
+                            <tbody id="finance-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="log-footer">
+                        <button class="btn" id="finance-add-row-btn" type="button">+ Add row</button>
+                        <div class="log-sum">
+                            <span class="log-sum-label">Sum</span>
+                            <span class="log-sum-value" id="finance-sum-value">$0.00</span>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -365,5 +400,6 @@
     <script src="/static/js/tracker.js"></script>
     <script src="/static/js/todo.js"></script>
     <script src="/static/js/notes.js"></script>
+    <script src="/static/js/finance.js"></script>
 </body>
 </html>

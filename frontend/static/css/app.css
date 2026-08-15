@@ -393,6 +393,67 @@ table.gatherer-table td:nth-child(2) {
     min-width: 320px;
 }
 
+/* Finances shares .gatherer-table's base look but its 2nd column
+   (Value, a short currency amount) shouldn't inherit the 320px
+   min-width meant for Gatherer's URL column - a small fixed width
+   reads better for a number. */
+table.finance-table th:nth-child(2),
+table.finance-table td:nth-child(2) {
+    min-width: 130px;
+    width: 150px;
+}
+
+.finance-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+/* An editable column header - looks like the plain uppercase header
+   text everywhere else in the table until you click into it, unlike
+   the Title/Value headers which stay static text. */
+.finance-col-header-input {
+    background: none;
+    border: none;
+    padding: 0;
+    width: 100%;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+}
+
+.finance-col-header-input:hover,
+.finance-col-header-input:focus {
+    color: var(--text-muted);
+    outline: none;
+}
+
+.finance-add-col-th {
+    width: 1%;
+}
+
+.finance-add-col-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: none;
+    border: 1px solid var(--border-soft);
+    color: var(--text-faint);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.finance-add-col-btn:hover {
+    color: var(--text);
+    border-color: var(--border);
+}
+
 /* Task gets the same treatment inside the (narrower) project modal. */
 table.task-table th:nth-child(1),
 table.task-table td:nth-child(1) {

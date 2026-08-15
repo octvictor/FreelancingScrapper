@@ -127,6 +127,33 @@ CREATE TABLE IF NOT EXISTS note_items (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS finance_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    currency TEXT NOT NULL DEFAULT 'USD'
+);
+
+CREATE TABLE IF NOT EXISTS finance_columns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS finance_rows (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    value REAL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS finance_cells (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    row_id INTEGER NOT NULL,
+    column_id INTEGER NOT NULL,
+    value TEXT,
+    UNIQUE(row_id, column_id)
+);
 """
 
 
@@ -192,6 +219,11 @@ def init_db() -> None:
         note_columns = {row["name"] for row in conn.execute("PRAGMA table_info(notes)")}
         if "type" not in note_columns:
             conn.execute("ALTER TABLE notes ADD COLUMN type TEXT NOT NULL DEFAULT 'text'")
+
+        # Singleton settings row - the whole Finances table shares one
+        # currency rather than one per row, so a single SUM is always a
+        # coherent total instead of mixing currencies.
+        conn.execute("INSERT OR IGNORE INTO finance_settings (id, currency) VALUES (1, 'USD')")
 
 
 # ---------- Gatherer: manually-curated studio/company list ----------
@@ -788,3 +820,114 @@ def update_note_item(item_id: int, **fields) -> dict | None:
 def delete_note_item(item_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM note_items WHERE id=?", (item_id,))
+
+
+# ---------- Finances: Studio-Database-style table with a Value SUM ----------
+# Title/Value are fixed columns on `finance_rows`; any further
+# user-added columns live in `finance_columns` with per-row values in
+# `finance_cells` (row_id, column_id) - an EAV side table so columns
+# can be added/renamed freely without ALTER TABLE gymnastics or having
+# to backfill every existing row.
+
+def get_finance_settings() -> dict:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM finance_settings WHERE id=1").fetchone()
+        return dict(row)
+
+
+def update_finance_currency(currency: str) -> dict:
+    with get_connection() as conn:
+        conn.execute("UPDATE finance_settings SET currency=? WHERE id=1", (currency,))
+        row = conn.execute("SELECT * FROM finance_settings WHERE id=1").fetchone()
+        return dict(row)
+
+
+def list_finance_columns() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM finance_columns ORDER BY id").fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_finance_column(name: str = "") -> dict:
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO finance_columns (name, created_at) VALUES (?, ?)",
+            (name, _now()),
+        )
+        row = conn.execute("SELECT * FROM finance_columns WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+
+
+def update_finance_column(column_id: int, name: str) -> dict | None:
+    with get_connection() as conn:
+        conn.execute("UPDATE finance_columns SET name=? WHERE id=?", (name, column_id))
+        row = conn.execute("SELECT * FROM finance_columns WHERE id=?", (column_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def _attach_finance_cells(conn, rows: list[dict]) -> list[dict]:
+    if not rows:
+        return rows
+    cell_rows = conn.execute(
+        f"SELECT * FROM finance_cells WHERE row_id IN ({','.join('?' * len(rows))})",
+        [r["id"] for r in rows],
+    ).fetchall()
+    cells_by_row: dict[int, dict] = {}
+    for cell in cell_rows:
+        cells_by_row.setdefault(cell["row_id"], {})[cell["column_id"]] = cell["value"]
+    for row in rows:
+        row["cells"] = cells_by_row.get(row["id"], {})
+    return rows
+
+
+def list_finance_rows() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM finance_rows ORDER BY id").fetchall()
+        return _attach_finance_cells(conn, [dict(row) for row in rows])
+
+
+def create_finance_row() -> dict:
+    now = _now()
+    with get_connection() as conn:
+        cur = conn.execute(
+            "INSERT INTO finance_rows (title, created_at, updated_at) VALUES ('', ?, ?)",
+            (now, now),
+        )
+        row = conn.execute("SELECT * FROM finance_rows WHERE id=?", (cur.lastrowid,)).fetchone()
+        result = dict(row)
+        result["cells"] = {}
+        return result
+
+
+def update_finance_row(row_id: int, **fields) -> dict | None:
+    allowed = {"title", "value"}
+    updates = {k: v for k, v in fields.items() if k in allowed}
+    if updates:
+        updates["updated_at"] = _now()
+        set_clause = ", ".join(f"{k}=?" for k in updates)
+        with get_connection() as conn:
+            conn.execute(f"UPDATE finance_rows SET {set_clause} WHERE id=?", (*updates.values(), row_id))
+            row = conn.execute("SELECT * FROM finance_rows WHERE id=?", (row_id,)).fetchone()
+            if row is None:
+                return None
+            return _attach_finance_cells(conn, [dict(row)])[0]
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM finance_rows WHERE id=?", (row_id,)).fetchone()
+        if row is None:
+            return None
+        return _attach_finance_cells(conn, [dict(row)])[0]
+
+
+def delete_finance_row(row_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM finance_cells WHERE row_id=?", (row_id,))
+        conn.execute("DELETE FROM finance_rows WHERE id=?", (row_id,))
+
+
+def set_finance_cell(row_id: int, column_id: int, value: str | None) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO finance_cells (row_id, column_id, value) VALUES (?, ?, ?) "
+            "ON CONFLICT(row_id, column_id) DO UPDATE SET value=excluded.value",
+            (row_id, column_id, value),
+        )
