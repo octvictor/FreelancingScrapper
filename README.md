@@ -7,18 +7,18 @@ persistent rail on the left plus a search bar on top, both present on
 every page - there's no separate sidebar to jump between. Currently:
 
 The rail lists Overview first, then every tool (Project Manager, Studio
-Database, To Do, Notes, Finances), each with a live count. It shows full
-labeled rows on Overview - nothing else there needs the width - and
-narrows to an icon-only strip on every other page, since that's where a
-table or list wants the room back; hovering it re-expands to full labels,
-smoothly, with the page content beside it shrinking in the same motion
-(one flex layout reflowing, not two animations kept in sync), and moving
-off collapses it again. Above both the rail and the page content, a
-search bar ("Jump to a project, studio, task, or note...") searches
-titles across Tracker projects, Gatherer studios, To Do tasks, and Notes
-as you type, in a dropdown under the bar; clicking a result jumps to that
-tool and, where a detail view exists, opens it directly (a studio result
-just lands on Studio Database, which has no per-row detail view).
+Database, To Do, Notes, Finances), each with a live count, at a fixed
+width on every page - the same rail whether you're on Overview or three
+tools deep. (An earlier version tried collapsing it to icons on non-
+Overview pages and expanding on hover; it had a real sizing bug in the
+collapsed state and made Overview itself feel off-balance, so this went
+back to one plain, static rail instead of chasing that further.) Above
+both the rail and the page content, a search bar ("Jump to a project,
+studio, task, or note...") searches titles across Tracker projects,
+Gatherer studios, To Do tasks, and Notes as you type, in a dropdown under
+the bar; clicking a result jumps to that tool and, where a detail view
+exists, opens it directly (a studio result just lands on Studio Database,
+which has no per-row detail view).
 
 - **Overview** - the app's home page, first row in the rail and the
   default page on launch. Three stat cards (Active projects, Tasks -

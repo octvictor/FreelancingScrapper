@@ -80,31 +80,19 @@ button, input, select, textarea {
 
 /* ---------- App rail ---------- */
 /* The one navigation for the whole app - replaces the old collapsible
-   sidebar entirely. Shows full labeled rows on Overview (nothing else
-   competes for the width there) and narrows to an icon-only rail on every
-   other page, since that's where a table/list wants the room back -
-   hovering it re-expands it, smoothly, and the content beside it (a flex
-   sibling, flex:1) reflows in the same motion for free since it's one
-   layout recomputing every frame, not two animations kept in sync. See
-   nav.js's showPage()/navigateTo() for the collapsed/active toggling. */
+   sidebar entirely. Same full labeled rows on every page, Overview
+   included, at a fixed width - no collapsing to icons, no hover-expand.
+   (An earlier version did that; it had a real sizing bug in the
+   collapsed state and made Overview itself feel off-balance, so this
+   went back to a plain static rail instead of chasing that further.) */
 
 .app-rail {
     width: 260px;
     flex-shrink: 0;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding: 20px 14px;
-}
-
-.app-rail.collapsed {
-    width: 56px;
-    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.app-rail.collapsed:hover {
-    width: 260px;
 }
 
 .rail-row {
@@ -159,35 +147,6 @@ button, input, select, textarea {
     font-size: 12px;
     color: var(--text-faint);
     white-space: nowrap;
-}
-
-/* Collapsed state: icon stays, name/count fade out via opacity + a
-   max-width transition rather than display:none, since a display change
-   can't be animated - hover reverses both alongside the rail's own width
-   transition above. */
-.app-rail.collapsed .rail-row-name,
-.app-rail.collapsed .rail-row-count {
-    max-width: 0;
-    opacity: 0;
-    transition: max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease 0.02s;
-}
-
-.app-rail.collapsed:hover .rail-row-name {
-    max-width: 160px;
-    opacity: 1;
-}
-
-.app-rail.collapsed:hover .rail-row-count {
-    max-width: 40px;
-    opacity: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .app-rail.collapsed,
-    .app-rail.collapsed .rail-row-name,
-    .app-rail.collapsed .rail-row-count {
-        transition: none;
-    }
 }
 
 .muted {

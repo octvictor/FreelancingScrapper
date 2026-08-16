@@ -106,11 +106,8 @@ function showPage(page) {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    // The rail shows full labeled rows on Overview (nothing else competes
-    // for that width there) and narrows to icons everywhere else, since
-    // that's where a table/list actually wants the room back - hovering it
-    // still expands it, see the CSS (.app-rail.collapsed:hover).
-    $("app-rail").classList.toggle("collapsed", page !== "overview");
+    // The rail's own counts are visible on every page now, not just
+    // Overview, so they need to stay current no matter where you are.
     if (typeof refreshOverview === "function") refreshOverview();
 }
 
@@ -129,16 +126,6 @@ document.querySelectorAll(".rail-row").forEach((btn) => {
 // The rail row marked "active" in the HTML never fires a click, so the
 // layout classes above would otherwise never apply to it on first load.
 showPage(document.querySelector(".rail-row.active").dataset.page);
-
-// A popover (color preset picker, custom dropdown) positions itself once,
-// in pixels, relative to the button that opened it - if the rail then
-// expands under the pointer and shifts that button, the popover would be
-// left pointing at empty space. Closing on hover-start avoids that rather
-// than trying to keep a fixed-position element glued to a moving target.
-$("app-rail").addEventListener("mouseenter", () => {
-    closeColorPresetPopover();
-    _closeAllCustomSelects();
-});
 
 // ---------- Custom dropdown ----------
 // Replaces a native <select>'s popup, which browsers won't let CSS fully
