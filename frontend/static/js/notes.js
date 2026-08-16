@@ -119,7 +119,7 @@ function wireNoteCard(card) {
     card.querySelector("[data-role='color']").addEventListener("click", (e) => {
         e.stopPropagation();
         const note = notes.find((n) => n.id === noteId);
-        openColorWheelPopover(e.currentTarget, note?.color || null, {
+        openColorPresetPopover(e.currentTarget, note?.color || null, {
             onChange: (hex) => setNoteColor(noteId, hex),
             onClear: () => setNoteColor(noteId, null),
         });
@@ -155,8 +155,8 @@ async function saveNoteItem(noteId, itemId, updates) {
 }
 
 // ---------- Card color ----------
-// Opens the shared color wheel (nav.js) - setNoteColor is just the
-// save callback it's handed.
+// Opens the shared color preset popover (nav.js) - setNoteColor is just
+// the save callback it's handed.
 
 async function setNoteColor(noteId, color) {
     await saveNoteField(noteId, { color });

@@ -78,143 +78,116 @@ button, input, select, textarea {
     min-height: 100vh;
 }
 
-/* Overview is the one page without the persistent sidebar - its own
-   launcher column (see below) replaces that job, so keeping both would
-   just be two navs side by side. Toggled by nav.js's showPage(). */
-.app-shell.sidebar-hidden .sidebar {
-    display: none;
-}
+/* ---------- App rail ---------- */
+/* The one navigation for the whole app - replaces the old collapsible
+   sidebar entirely. Shows full labeled rows on Overview (nothing else
+   competes for the width there) and narrows to an icon-only rail on every
+   other page, since that's where a table/list wants the room back -
+   hovering it re-expands it, smoothly, and the content beside it (a flex
+   sibling, flex:1) reflows in the same motion for free since it's one
+   layout recomputing every frame, not two animations kept in sync. See
+   nav.js's showPage()/navigateTo() for the collapsed/active toggling. */
 
-/* ---------- Sidebar ---------- */
-
-.sidebar {
-    width: 220px;
+.app-rail {
+    width: 260px;
     flex-shrink: 0;
-    background: var(--panel);
-    border-right: 1px solid var(--border-soft);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    gap: 8px;
     padding: 20px 14px;
 }
 
-.brand {
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: -0.01em;
-    padding: 4px 8px 18px 8px;
+.app-rail.collapsed {
+    width: 56px;
+    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+.app-rail.collapsed:hover {
+    width: 260px;
+}
+
+.rail-row {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.nav-item {
-    display: block;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    text-decoration: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    color: var(--text);
     font-size: 13.5px;
-    cursor: pointer;
-    border: none;
-    background: none;
     text-align: left;
-    width: 100%;
-}
-
-/* Shown in a sidebar group that has no real nav items wired up yet. */
-.nav-empty-placeholder {
-    padding: 8px 10px;
-    color: var(--text-faint);
-    font-size: 13px;
-    font-style: italic;
-}
-
-.nav-item:hover {
-    background: var(--panel-alt);
-    color: var(--text);
-}
-
-.nav-item.active {
-    background: var(--border-soft);
-    color: var(--text);
-    font-weight: 600;
-}
-
-/* ---------- Collapsible sidebar group ---------- */
-
-.sidebar-group {
-    margin-bottom: 10px;
-}
-
-.sidebar-group-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 8px 8px;
     cursor: pointer;
+    overflow: hidden;
 }
 
-.sidebar-group-header:hover {
-    color: var(--text-muted);
+.rail-row:hover {
+    background: var(--panel-alt);
+    border-color: var(--border);
 }
 
-.sidebar-group-chevron {
-    display: inline-block;
-    font-size: 9px;
-    transition: transform 0.15s ease;
+.rail-row.active {
+    border-color: var(--border);
+    background: var(--panel-alt);
 }
 
-.sidebar-group-header.collapsed .sidebar-group-chevron {
-    transform: rotate(-90deg);
-}
-
-.nav-list.collapsed {
-    display: none;
-}
-
-/* Plain text nav items with a small icon - no button/chip box. Hover
-   and active states are carried entirely by text color/weight, so the
-   base .nav-item background-fill states are explicitly turned off. */
-.nav-item-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-}
-
-.nav-item-chip:last-child {
-    margin-bottom: 0;
-}
-
-.nav-item-chip:hover {
-    background: none;
-    color: var(--text);
-}
-
-.nav-item-chip.active {
-    background: none;
-    color: var(--text);
-    font-weight: 600;
-}
-
-.nav-item-icon {
-    font-size: 13px;
+.rail-row-icon {
+    font-size: 14px;
     color: var(--text-faint);
     flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+}
+
+.rail-row.active .rail-row-icon {
+    color: var(--text);
+}
+
+.rail-row-name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rail-row-count {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--text-faint);
+    white-space: nowrap;
+}
+
+/* Collapsed state: icon stays, name/count fade out via opacity + a
+   max-width transition rather than display:none, since a display change
+   can't be animated - hover reverses both alongside the rail's own width
+   transition above. */
+.app-rail.collapsed .rail-row-name,
+.app-rail.collapsed .rail-row-count {
+    max-width: 0;
+    opacity: 0;
+    transition: max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease 0.02s;
+}
+
+.app-rail.collapsed:hover .rail-row-name {
+    max-width: 160px;
+    opacity: 1;
+}
+
+.app-rail.collapsed:hover .rail-row-count {
+    max-width: 40px;
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-rail.collapsed,
+    .app-rail.collapsed .rail-row-name,
+    .app-rail.collapsed .rail-row-count {
+        transition: none;
+    }
 }
 
 .muted {
@@ -224,11 +197,6 @@ button, input, select, textarea {
 
 /* ---------- Main content ---------- */
 
-/* EXPERIMENT: centered layout (vs. the original left-aligned one) -
-   .main fills the space next to the sidebar as before, but now centers
-   its page section within that space instead of letting it sit flush
-   against the sidebar. Revert by restoring max-width directly on
-   .main and dropping the flex/align-items/> section rules below. */
 .main {
     flex: 1;
     min-width: 0;
@@ -240,24 +208,14 @@ button, input, select, textarea {
 
 .main > section {
     width: 100%;
-    max-width: 900px;
-}
-
-/* Gatherer's table needs more room for long titles/URLs than the forms
-   on other pages do - toggled by nav.js when Gatherer is the active page. */
-.main.main-wide > section {
     max-width: 1400px;
 }
 
 /* To Do and Notes get noticeably more room than the other tools - not
-   literally edge-to-edge, .main's own 40px side padding plus the
-   sidebar already provide margin, this just stops capping the page
-   short of that. Without this, the section's own (narrower) max-width
-   would get centered by .main's centering experiment above, pushing
-   its content's left edge past the sidebar gap that To Do (and now
-   Notes) is meant to start flush against. */
-.main.main-wide > #page-todo,
-.main.main-wide > #page-notes {
+   literally edge-to-edge, .main's own 40px side padding already provides
+   margin, this just stops capping the page short of that. */
+.main > #page-todo,
+.main > #page-notes {
     max-width: 100%;
 }
 
@@ -398,8 +356,8 @@ table.project-table tr:last-child td {
 }
 
 /* Title and URL get real room to breathe - the two fields most likely
-   to hold long text. Widths only bite once .main-wide gives the table
-   space to use (see .main.main-wide in the layout section above). */
+   to hold long text (see .main > section in the layout section above
+   for the width the table has to use). */
 table.gatherer-table th:nth-child(1),
 table.gatherer-table td:nth-child(1) {
     min-width: 220px;
@@ -1889,77 +1847,45 @@ table.project-table tbody tr:hover td {
     z-index: 200;
 }
 
-/* The one color picker in the app - a free-form hue/saturation wheel,
-   a lightness slider, and a hex field, opened from any swatch button
-   (To Do's list color, Notes' card color, Calculator's row color).
-   See openColorWheelPopover in nav.js. */
-.color-wheel-popover {
+/* The one color picker in the app - two single-hue tonal ramps (green,
+   blue) as one-click swatches, opened from any swatch button (To Do's
+   list color, Notes' card color, Calculator's row color). See
+   openColorPresetPopover in nav.js. */
+.color-preset-popover {
     flex-direction: column;
-    gap: 10px;
-    width: 168px;
+    gap: 6px;
 }
 
-.color-wheel-popover.open {
+.color-preset-popover.open {
     display: flex;
 }
 
-.color-wheel-canvas-wrap {
-    position: relative;
-    width: 160px;
-    height: 160px;
+.color-preset-row {
+    display: flex;
+    gap: 6px;
 }
 
-.color-wheel-canvas {
-    display: block;
+.color-preset-swatch {
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    cursor: crosshair;
-    touch-action: none;
-}
-
-.color-wheel-cursor {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 12px;
-    height: 12px;
-    margin: -6px 0 0 -6px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
-    pointer-events: none;
-}
-
-.color-wheel-lightness {
-    width: 100%;
-    accent-color: var(--text);
+    border: 1.5px solid transparent;
+    padding: 0;
     cursor: pointer;
 }
 
-.color-wheel-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.color-wheel-preview {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    flex-shrink: 0;
+.color-preset-swatch:hover {
     box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.3);
 }
 
-.color-wheel-hex {
-    flex: 1;
-    min-width: 0;
-    text-transform: uppercase;
-    font-family: var(--font-mono);
-    font-size: 12px;
+.color-preset-swatch.selected {
+    border-color: var(--text);
 }
 
-.color-wheel-clear {
+.color-preset-clear {
     align-self: flex-start;
     padding: 2px 0;
+    margin-top: 2px;
 }
 
 /* Notes' "+" add-card popover: pick Text note or List before creating. */
@@ -2332,12 +2258,12 @@ table.project-table tbody tr:hover td {
     background: rgba(179, 38, 30, 0.12);
 }
 
-/* ---------- Overview hub ---------- */
-/* No persistent sidebar on this page (see .app-shell.sidebar-hidden above) -
-   a full-width search bar on top, then a launcher column (left) that takes
-   over the sidebar's navigating job plus a stats/activity column (right). */
+/* ---------- App search bar ---------- */
+/* Persistent shell chrome (see .app-rail above) - spans the full content
+   width, above whichever page section is currently visible, on every page
+   not just Overview. */
 
-.overview-search-wrap {
+.app-search-wrap {
     position: relative;
     display: flex;
     align-items: center;
@@ -2346,16 +2272,18 @@ table.project-table tbody tr:hover td {
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
     padding: 12px 16px;
+    width: 100%;
+    max-width: 1400px;
     margin-bottom: 22px;
 }
 
-.overview-search-icon {
+.app-search-icon {
     color: var(--text-faint);
     font-size: 14px;
     flex-shrink: 0;
 }
 
-.overview-search-input {
+.app-search-input {
     flex: 1;
     min-width: 0;
     background: transparent;
@@ -2365,11 +2293,11 @@ table.project-table tbody tr:hover td {
     font-size: 14px;
 }
 
-.overview-search-input::placeholder {
+.app-search-input::placeholder {
     color: var(--text-faint);
 }
 
-.overview-search-results {
+.app-search-results {
     position: absolute;
     left: 0;
     right: 0;
@@ -2383,7 +2311,7 @@ table.project-table tbody tr:hover td {
     overflow-y: auto;
 }
 
-.overview-search-result {
+.app-search-result {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -2398,17 +2326,17 @@ table.project-table tbody tr:hover td {
     cursor: pointer;
 }
 
-.overview-search-result:hover {
+.app-search-result:hover {
     background: var(--border-soft);
 }
 
-.overview-search-result-icon {
+.app-search-result-icon {
     color: var(--text-faint);
     font-size: 13px;
     flex-shrink: 0;
 }
 
-.overview-search-result-title {
+.app-search-result-title {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -2416,74 +2344,20 @@ table.project-table tbody tr:hover td {
     white-space: nowrap;
 }
 
-.overview-search-result-meta {
+.app-search-result-meta {
     color: var(--text-faint);
     font-size: 11px;
     flex-shrink: 0;
 }
 
-.overview-search-empty {
+.app-search-empty {
     padding: 8px 10px;
 }
 
-.overview-split {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-}
-
-.overview-launcher {
-    width: 260px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.overview-launcher-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--panel);
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
-    color: var(--text);
-    font-size: 13.5px;
-    text-align: left;
-    cursor: pointer;
-}
-
-.overview-launcher-row:hover {
-    background: var(--panel-alt);
-    border-color: var(--border);
-}
-
-.overview-launcher-icon {
-    font-size: 14px;
-    color: var(--text-faint);
-    flex-shrink: 0;
-    width: 18px;
-    text-align: center;
-}
-
-.overview-launcher-name {
-    flex: 1;
-    min-width: 0;
-    font-weight: 600;
-}
-
-.overview-launcher-count {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 12px;
-    color: var(--text-faint);
-}
-
-.overview-info {
-    flex: 1;
-    min-width: 0;
-}
+/* ---------- Overview hub ---------- */
+/* Just the stats/activity content now - the launcher and search bar that
+   used to live inside this page are persistent shell chrome shared by
+   every page (see .app-rail and .app-search-wrap above). */
 
 .overview-stats-grid {
     display: grid;

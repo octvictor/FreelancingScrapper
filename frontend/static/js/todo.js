@@ -85,8 +85,8 @@ async function selectTodoList(id) {
 }
 
 // ---------- List color ----------
-// Opens the shared color wheel (nav.js) rather than keeping its own
-// popover - setTodoListColor is just the save callback it's handed.
+// Opens the shared color preset popover (nav.js) rather than keeping its
+// own popover - setTodoListColor is just the save callback it's handed.
 
 function updateTodoColorBtn(color) {
     const btn = $("todo-list-color-btn");
@@ -114,7 +114,7 @@ $("todo-list-color-btn").addEventListener("click", (e) => {
     e.stopPropagation();
     if (activeListId === null) return;
     const current = todoLists.find((l) => l.id === activeListId)?.color || null;
-    openColorWheelPopover(e.currentTarget, current, {
+    openColorPresetPopover(e.currentTarget, current, {
         onChange: setTodoListColor,
         onClear: () => setTodoListColor(null),
     });

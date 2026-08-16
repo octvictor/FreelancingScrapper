@@ -19,246 +19,125 @@ function colorNeedsDarkText(hex) {
     return luminance > 0.55;
 }
 
-// ---------- Color wheel picker ----------
+// ---------- Color preset picker ----------
 // The one color picker for the whole app (To Do's list color, Notes'
-// card color, Calculator's row color, and anything added later) - a
-// free-form hue/saturation wheel plus a lightness slider and a hex
-// field for precision, instead of a fixed preset palette. Every tool
-// calls openColorWheelPopover with its own save/clear callbacks
-// rather than keeping its own popover and color list.
+// card color, Calculator's row color, and anything added later) - two
+// single-hue tonal ramps (green, blue) as one-click swatches. A free-form
+// hue/saturation wheel came before this and got replaced: precise but slow
+// for what's meant to be a quick pick. Every tool calls
+// openColorPresetPopover with its own save/clear callbacks rather than
+// keeping its own popover and color list.
 
-function _hexToHsl(hex) {
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const b = parseInt(hex.slice(5, 7), 16) / 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let h = 0, s = 0;
-    const l = (max + min) / 2;
-    if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-        h *= 60;
-    }
-    return { h, s: s * 100, l: l * 100 };
+const COLOR_PRESET_RAMPS = [
+    ["#2E4A3D", "#3E6653", "#5C8C74", "#8CB89E", "#C2E0CE"],
+    ["#1E2B33", "#324553", "#597792", "#88A8BF", "#C6D9E6"],
+];
+
+let _colorPresetPopover = null;
+
+function closeColorPresetPopover() {
+    if (!_colorPresetPopover) return;
+    _colorPresetPopover.remove();
+    _colorPresetPopover = null;
+    document.removeEventListener("click", _onColorPresetOutsideClick);
+    document.removeEventListener("keydown", _onColorPresetKeydown);
 }
 
-function _hslToHex(h, s, l) {
-    s /= 100; l /= 100;
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-    let r = 0, g = 0, b = 0;
-    if (h < 60) { r = c; g = x; }
-    else if (h < 120) { r = x; g = c; }
-    else if (h < 180) { g = c; b = x; }
-    else if (h < 240) { g = x; b = c; }
-    else if (h < 300) { r = x; b = c; }
-    else { r = c; b = x; }
-    const toHex = (v) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
-}
-
-let _colorWheelPopover = null;
-
-function closeColorWheelPopover() {
-    if (!_colorWheelPopover) return;
-    _colorWheelPopover.remove();
-    _colorWheelPopover = null;
-    document.removeEventListener("click", _onColorWheelOutsideClick);
-    document.removeEventListener("keydown", _onColorWheelKeydown);
-}
-
-function _onColorWheelOutsideClick(e) {
-    if (_colorWheelPopover && !_colorWheelPopover.contains(e.target) && !e.target.closest(".swatch-btn")) {
-        closeColorWheelPopover();
+function _onColorPresetOutsideClick(e) {
+    if (_colorPresetPopover && !_colorPresetPopover.contains(e.target) && !e.target.closest(".swatch-btn")) {
+        closeColorPresetPopover();
     }
 }
 
-function _onColorWheelKeydown(e) {
-    if (e.key === "Escape") closeColorWheelPopover();
+function _onColorPresetKeydown(e) {
+    if (e.key === "Escape") closeColorPresetPopover();
 }
 
 // triggerBtn: the swatch button that opened this. currentColor: hex or
-// null. callbacks.onChange(hex) fires once per committed pick (drag
-// release, lightness-slider release, or hex field blur/Enter) - never
-// on every drag frame. callbacks.onClear() fires from "No color".
-function openColorWheelPopover(triggerBtn, currentColor, { onChange, onClear }) {
-    closeColorWheelPopover();
+// null, used only to mark the matching swatch as selected. callbacks.
+// onChange(hex) fires on a swatch click, callbacks.onClear() on "No color" -
+// both close the popover immediately, since a single click is the whole
+// interaction.
+function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear }) {
+    closeColorPresetPopover();
     const rect = triggerBtn.getBoundingClientRect();
 
     const panel = document.createElement("div");
-    panel.className = "popover-panel color-wheel-popover open";
+    panel.className = "popover-panel color-preset-popover open";
     panel.style.left = rect.left + "px";
     panel.style.top = rect.bottom + 6 + "px";
 
-    const size = 160;
+    const current = currentColor ? currentColor.toUpperCase() : null;
     panel.innerHTML = `
-        <div class="color-wheel-canvas-wrap">
-            <canvas class="color-wheel-canvas" width="${size}" height="${size}"></canvas>
-            <div class="color-wheel-cursor"></div>
-        </div>
-        <input type="range" class="color-wheel-lightness" min="0" max="100" step="1" title="Lightness">
-        <div class="color-wheel-row">
-            <span class="color-wheel-preview"></span>
-            <input type="text" class="cell-input color-wheel-hex" maxlength="7" spellcheck="false">
-        </div>
-        <button type="button" class="btn-danger-text color-wheel-clear">No color</button>
+        ${COLOR_PRESET_RAMPS.map((ramp) => `
+            <div class="color-preset-row">
+                ${ramp.map((hex) => `
+                    <button type="button" class="color-preset-swatch ${hex === current ? "selected" : ""}" style="background:${hex};" data-hex="${hex}" title="${hex}"></button>
+                `).join("")}
+            </div>
+        `).join("")}
+        <button type="button" class="btn-danger-text color-preset-clear">No color</button>
     `;
     document.body.appendChild(panel);
-    _colorWheelPopover = panel;
+    _colorPresetPopover = panel;
 
-    const canvas = panel.querySelector(".color-wheel-canvas");
-    const ctx = canvas.getContext("2d");
-    const cursor = panel.querySelector(".color-wheel-cursor");
-    const lightnessInput = panel.querySelector(".color-wheel-lightness");
-    const hexInput = panel.querySelector(".color-wheel-hex");
-    const preview = panel.querySelector(".color-wheel-preview");
-    const clearBtn = panel.querySelector(".color-wheel-clear");
-
-    const cx = size / 2, cy = size / 2, radius = size / 2 - 4;
-    let state = currentColor ? _hexToHsl(currentColor) : { h: 0, s: 0, l: 55 };
-
-    function drawWheel(lightness) {
-        const img = ctx.createImageData(size, size);
-        for (let py = 0; py < size; py++) {
-            for (let px = 0; px < size; px++) {
-                const dx = px - cx, dy = py - cy;
-                const r = Math.sqrt(dx * dx + dy * dy);
-                const idx = (py * size + px) * 4;
-                if (r > radius) { img.data[idx + 3] = 0; continue; }
-                const hue = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
-                const sat = Math.min(100, (r / radius) * 100);
-                const hex = _hslToHex(hue, sat, lightness);
-                img.data[idx] = parseInt(hex.slice(1, 3), 16);
-                img.data[idx + 1] = parseInt(hex.slice(3, 5), 16);
-                img.data[idx + 2] = parseInt(hex.slice(5, 7), 16);
-                img.data[idx + 3] = 255;
-            }
-        }
-        ctx.putImageData(img, 0, 0);
-    }
-
-    function positionCursor() {
-        const angle = state.h * Math.PI / 180;
-        const r = Math.min(1, state.s / 100) * radius;
-        cursor.style.left = (cx + Math.cos(angle) * r) + "px";
-        cursor.style.top = (cy + Math.sin(angle) * r) + "px";
-    }
-
-    function syncUi() {
-        const hex = _hslToHex(state.h, state.s, state.l);
-        preview.style.background = hex;
-        hexInput.value = hex;
-        lightnessInput.value = Math.round(state.l);
-        drawWheel(state.l);
-        positionCursor();
-    }
-
-    function setFromPointer(clientX, clientY) {
-        const r = canvas.getBoundingClientRect();
-        const dx = (clientX - r.left) - cx, dy = (clientY - r.top) - cy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        state.h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
-        state.s = Math.min(100, (dist / radius) * 100);
-        syncUi();
-    }
-
-    let dragging = false;
-    canvas.addEventListener("pointerdown", (e) => {
-        dragging = true;
-        canvas.setPointerCapture(e.pointerId);
-        setFromPointer(e.clientX, e.clientY);
-    });
-    canvas.addEventListener("pointermove", (e) => {
-        if (dragging) setFromPointer(e.clientX, e.clientY);
-    });
-    canvas.addEventListener("pointerup", () => {
-        if (!dragging) return;
-        dragging = false;
-        onChange(_hslToHex(state.h, state.s, state.l));
+    panel.querySelectorAll(".color-preset-swatch").forEach((swatch) => {
+        swatch.addEventListener("click", () => {
+            onChange(swatch.dataset.hex);
+            closeColorPresetPopover();
+        });
     });
 
-    lightnessInput.addEventListener("input", () => {
-        state.l = parseInt(lightnessInput.value, 10);
-        syncUi();
-    });
-    lightnessInput.addEventListener("change", () => {
-        onChange(_hslToHex(state.h, state.s, state.l));
-    });
-
-    hexInput.addEventListener("blur", () => {
-        const v = hexInput.value.trim().replace(/^#/, "");
-        if (/^[0-9a-fA-F]{6}$/.test(v)) {
-            const hex = "#" + v.toUpperCase();
-            state = _hexToHsl(hex);
-            syncUi();
-            onChange(hex);
-        } else {
-            syncUi();
-        }
-    });
-    hexInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") hexInput.blur();
-    });
-
-    clearBtn.addEventListener("click", () => {
+    panel.querySelector(".color-preset-clear").addEventListener("click", () => {
         onClear();
-        closeColorWheelPopover();
+        closeColorPresetPopover();
     });
 
-    syncUi();
     setTimeout(() => {
-        document.addEventListener("click", _onColorWheelOutsideClick);
-        document.addEventListener("keydown", _onColorWheelKeydown);
+        document.addEventListener("click", _onColorPresetOutsideClick);
+        document.addEventListener("keydown", _onColorPresetKeydown);
     });
 }
 
 const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
-const WIDE_PAGES = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
 function showPage(page) {
     PAGE_IDS.forEach((id) => {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    document.querySelector(".main").classList.toggle("main-wide", WIDE_PAGES.includes(page));
-    // Overview is the one page without the persistent sidebar - its own
-    // launcher column replaces that job, so keeping both would just be two
-    // navs side by side.
-    document.querySelector(".app-shell").classList.toggle("sidebar-hidden", page === "overview");
-    if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
+    // The rail shows full labeled rows on Overview (nothing else competes
+    // for that width there) and narrows to icons everywhere else, since
+    // that's where a table/list actually wants the room back - hovering it
+    // still expands it, see the CSS (.app-rail.collapsed:hover).
+    $("app-rail").classList.toggle("collapsed", page !== "overview");
+    if (typeof refreshOverview === "function") refreshOverview();
 }
 
-// Shared by sidebar nav-item clicks and any other control that jumps to a
-// tool page (the Overview launcher rows and search results) - keeps the
-// sidebar's active state in sync no matter which UI triggered the move.
+// Shared by rail row clicks and any other control that jumps to a tool
+// page (search results) - keeps the rail's active state in sync no matter
+// which UI triggered the move.
 function navigateTo(page) {
-    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
+    document.querySelectorAll(".rail-row").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
     showPage(page);
 }
 
-document.querySelectorAll(".nav-item").forEach((btn) => {
+document.querySelectorAll(".rail-row").forEach((btn) => {
     btn.addEventListener("click", () => navigateTo(btn.dataset.page));
 });
 
-// The nav-item marked "active" in the HTML never fires a click, so the
+// The rail row marked "active" in the HTML never fires a click, so the
 // layout classes above would otherwise never apply to it on first load.
-showPage(document.querySelector(".nav-item.active").dataset.page);
+showPage(document.querySelector(".rail-row.active").dataset.page);
 
-// ---------- Collapsible sidebar groups ----------
-
-document.querySelectorAll(".sidebar-group-header").forEach((header) => {
-    header.addEventListener("click", () => {
-        const target = $(header.dataset.collapseTarget);
-        if (!target) return;
-        target.classList.toggle("collapsed");
-        header.classList.toggle("collapsed");
-    });
+// A popover (color preset picker, custom dropdown) positions itself once,
+// in pixels, relative to the button that opened it - if the rail then
+// expands under the pointer and shifts that button, the popover would be
+// left pointing at empty space. Closing on hover-start avoids that rather
+// than trying to keep a fixed-position element glued to a moving target.
+$("app-rail").addEventListener("mouseenter", () => {
+    closeColorPresetPopover();
+    _closeAllCustomSelects();
 });
 
 // ---------- Custom dropdown ----------

@@ -9,104 +9,67 @@
 </head>
 <body>
     <div class="app-shell">
-        <aside class="sidebar">
-            <div class="brand">Freelancing Tools</div>
-            <div class="sidebar-group">
-                <button class="sidebar-group-header" type="button" data-collapse-target="nav-group-management">
-                    <span class="sidebar-group-chevron">&#9662;</span>
-                    <span>Tools</span>
-                </button>
-                <ul class="nav-list" id="nav-group-management">
-                    <li><button class="nav-item nav-item-chip active" data-page="overview">
-                        <span class="nav-item-icon">&#8962;</span> Overview
-                    </button></li>
-                    <li><button class="nav-item nav-item-chip" data-page="tracker">
-                        <span class="nav-item-icon">&#9636;</span> Project Manager
-                    </button></li>
-                    <li><button class="nav-item nav-item-chip" data-page="gatherer">
-                        <span class="nav-item-icon">&#9638;</span> Studio Database
-                    </button></li>
-                </ul>
-            </div>
-
-            <div class="sidebar-group">
-                <button class="sidebar-group-header" type="button" data-collapse-target="nav-group-mgmt">
-                    <span class="sidebar-group-chevron">&#9662;</span>
-                    <span>Management</span>
-                </button>
-                <ul class="nav-list" id="nav-group-mgmt">
-                    <li><button class="nav-item nav-item-chip" data-page="todo">
-                        <span class="nav-item-icon">&#9745;</span> To Do
-                    </button></li>
-                    <li><button class="nav-item nav-item-chip" data-page="notes">
-                        <span class="nav-item-icon">&#9998;</span> Notes
-                    </button></li>
-                    <li><button class="nav-item nav-item-chip" data-page="finance">
-                        <span class="nav-item-icon">&#164;</span> Finances
-                    </button></li>
-                </ul>
-            </div>
+        <aside class="app-rail" id="app-rail">
+            <button class="rail-row active" type="button" data-page="overview">
+                <span class="rail-row-icon">&#8962;</span>
+                <span class="rail-row-name">Overview</span>
+            </button>
+            <button class="rail-row" type="button" data-page="tracker">
+                <span class="rail-row-icon">&#9636;</span>
+                <span class="rail-row-name">Project Manager</span>
+                <span class="rail-row-count" id="rail-count-tracker">&ndash;</span>
+            </button>
+            <button class="rail-row" type="button" data-page="gatherer">
+                <span class="rail-row-icon">&#9638;</span>
+                <span class="rail-row-name">Studio Database</span>
+                <span class="rail-row-count" id="rail-count-gatherer">&ndash;</span>
+            </button>
+            <button class="rail-row" type="button" data-page="todo">
+                <span class="rail-row-icon">&#9745;</span>
+                <span class="rail-row-name">To Do</span>
+                <span class="rail-row-count" id="rail-count-todo">&ndash;</span>
+            </button>
+            <button class="rail-row" type="button" data-page="notes">
+                <span class="rail-row-icon">&#9998;</span>
+                <span class="rail-row-name">Notes</span>
+                <span class="rail-row-count" id="rail-count-notes">&ndash;</span>
+            </button>
+            <button class="rail-row" type="button" data-page="finance">
+                <span class="rail-row-icon">&#164;</span>
+                <span class="rail-row-name">Finances</span>
+                <span class="rail-row-count" id="rail-count-finance">&ndash;</span>
+            </button>
         </aside>
 
         <main class="main">
+            <div class="app-search-wrap">
+                <span class="app-search-icon">&#128269;</span>
+                <input type="text" class="app-search-input" id="app-search-input" placeholder="Jump to a project, studio, task, or note&hellip;" autocomplete="off">
+                <div class="app-search-results" id="app-search-results" style="display:none;"></div>
+            </div>
+
             <section id="page-overview">
-                <div class="overview-search-wrap">
-                    <span class="overview-search-icon">&#128269;</span>
-                    <input type="text" class="overview-search-input" id="overview-search-input" placeholder="Jump to a project, studio, task, or note&hellip;" autocomplete="off">
-                    <div class="overview-search-results" id="overview-search-results" style="display:none;"></div>
+                <div class="overview-stats-grid">
+                    <div class="overview-stat">
+                        <div class="overview-stat-label">Active projects</div>
+                        <div class="overview-stat-value" id="overview-stat-projects">&ndash;</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="overview-stat-label">Tasks</div>
+                        <div class="overview-stat-value" id="overview-stat-tasks">&ndash;</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="overview-stat-label">Studios logged</div>
+                        <div class="overview-stat-value" id="overview-stat-studios">&ndash;</div>
+                    </div>
                 </div>
-                <div class="overview-split">
-                    <div class="overview-launcher" id="overview-launcher">
-                        <button class="overview-launcher-row" type="button" data-page="tracker">
-                            <span class="overview-launcher-icon">&#9636;</span>
-                            <span class="overview-launcher-name">Project Manager</span>
-                            <span class="overview-launcher-count" id="overview-count-tracker">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="gatherer">
-                            <span class="overview-launcher-icon">&#9638;</span>
-                            <span class="overview-launcher-name">Studio Database</span>
-                            <span class="overview-launcher-count" id="overview-count-gatherer">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="todo">
-                            <span class="overview-launcher-icon">&#9745;</span>
-                            <span class="overview-launcher-name">To Do</span>
-                            <span class="overview-launcher-count" id="overview-count-todo">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="notes">
-                            <span class="overview-launcher-icon">&#9998;</span>
-                            <span class="overview-launcher-name">Notes</span>
-                            <span class="overview-launcher-count" id="overview-count-notes">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="finance">
-                            <span class="overview-launcher-icon">&#164;</span>
-                            <span class="overview-launcher-name">Finances</span>
-                            <span class="overview-launcher-count" id="overview-count-finance">&ndash;</span>
-                        </button>
-                    </div>
-                    <div class="overview-info">
-                        <div class="overview-stats-grid">
-                            <div class="overview-stat">
-                                <div class="overview-stat-label">Active projects</div>
-                                <div class="overview-stat-value" id="overview-stat-projects">&ndash;</div>
-                            </div>
-                            <div class="overview-stat">
-                                <div class="overview-stat-label">Tasks</div>
-                                <div class="overview-stat-value" id="overview-stat-tasks">&ndash;</div>
-                            </div>
-                            <div class="overview-stat">
-                                <div class="overview-stat-label">Studios logged</div>
-                                <div class="overview-stat-value" id="overview-stat-studios">&ndash;</div>
-                            </div>
-                        </div>
-                        <div class="panel overview-panel">
-                            <div class="overview-panel-title">Due soon</div>
-                            <div id="overview-due-soon"></div>
-                        </div>
-                        <div class="panel overview-panel">
-                            <div class="overview-panel-title">Recent notes</div>
-                            <div id="overview-recent-notes"></div>
-                        </div>
-                    </div>
+                <div class="panel overview-panel">
+                    <div class="overview-panel-title">Due soon</div>
+                    <div id="overview-due-soon"></div>
+                </div>
+                <div class="panel overview-panel">
+                    <div class="overview-panel-title">Recent notes</div>
+                    <div id="overview-recent-notes"></div>
                 </div>
             </section>
 

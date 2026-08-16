@@ -232,7 +232,7 @@ function wireFinanceRowEvents() {
         tr.querySelector("[data-role='row-color']").addEventListener("click", (e) => {
             e.stopPropagation();
             const rowData = financeRows.find((r) => r.id === id);
-            openColorWheelPopover(e.currentTarget, rowData?.color || null, {
+            openColorPresetPopover(e.currentTarget, rowData?.color || null, {
                 onChange: (hex) => setFinanceRowColor(id, hex),
                 onClear: () => setFinanceRowColor(id, null),
             });
@@ -273,8 +273,8 @@ async function saveFinanceCell(rowId, columnId, value) {
 }
 
 // ---------- Row color ----------
-// Opens the shared color wheel (nav.js) - setFinanceRowColor is just
-// the save callback it's handed. Like To Do, the row itself is never
+// Opens the shared color preset popover (nav.js) - setFinanceRowColor is
+// just the save callback it's handed. Like To Do, the row itself is never
 // tinted - only the swatch icon shows the chosen color.
 
 async function setFinanceRowColor(rowId, color) {
