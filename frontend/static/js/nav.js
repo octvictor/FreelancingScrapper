@@ -100,32 +100,47 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
 }
 
 const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
+const WIDE_PAGES = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
 function showPage(page) {
     PAGE_IDS.forEach((id) => {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    // The rail's own counts are visible on every page now, not just
-    // Overview, so they need to stay current no matter where you are.
-    if (typeof refreshOverview === "function") refreshOverview();
+    document.querySelector(".main").classList.toggle("main-wide", WIDE_PAGES.includes(page));
+    // Overview is the one page without the persistent sidebar - its own
+    // launcher column replaces that job, so keeping both would just be two
+    // navs side by side.
+    document.querySelector(".app-shell").classList.toggle("sidebar-hidden", page === "overview");
+    if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
 }
 
-// Shared by rail row clicks and any other control that jumps to a tool
-// page (search results) - keeps the rail's active state in sync no matter
-// which UI triggered the move.
+// Shared by sidebar nav-item clicks and any other control that jumps to a
+// tool page (the Overview launcher rows and search results) - keeps the
+// sidebar's active state in sync no matter which UI triggered the move.
 function navigateTo(page) {
-    document.querySelectorAll(".rail-row").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
+    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
     showPage(page);
 }
 
-document.querySelectorAll(".rail-row").forEach((btn) => {
+document.querySelectorAll(".nav-item").forEach((btn) => {
     btn.addEventListener("click", () => navigateTo(btn.dataset.page));
 });
 
-// The rail row marked "active" in the HTML never fires a click, so the
+// The nav-item marked "active" in the HTML never fires a click, so the
 // layout classes above would otherwise never apply to it on first load.
-showPage(document.querySelector(".rail-row.active").dataset.page);
+showPage(document.querySelector(".nav-item.active").dataset.page);
+
+// ---------- Collapsible sidebar groups ----------
+
+document.querySelectorAll(".sidebar-group-header").forEach((header) => {
+    header.addEventListener("click", () => {
+        const target = $(header.dataset.collapseTarget);
+        if (!target) return;
+        target.classList.toggle("collapsed");
+        header.classList.toggle("collapsed");
+    });
+});
 
 // ---------- Custom dropdown ----------
 // Replaces a native <select>'s popup, which browsers won't let CSS fully

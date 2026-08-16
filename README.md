@@ -2,33 +2,35 @@
 
 A personal-use suite of tools for freelance 3D artist work: a FastAPI
 backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
-plain static files, so nothing extra to install). Navigation is a single
-persistent rail on the left plus a search bar on top, both present on
-every page - there's no separate sidebar to jump between. Currently:
+plain static files, so nothing extra to install), with a vertical tool
+menu in the sidebar. Currently:
 
-The rail lists Overview first, then every tool (Project Manager, Studio
-Database, To Do, Notes, Finances), each with a live count, at a fixed
-width on every page - the same rail whether you're on Overview or three
-tools deep. (An earlier version tried collapsing it to icons on non-
-Overview pages and expanding on hover; it had a real sizing bug in the
-collapsed state and made Overview itself feel off-balance, so this went
-back to one plain, static rail instead of chasing that further.) Above
-both the rail and the page content, a search bar ("Jump to a project,
-studio, task, or note...") searches titles across Tracker projects,
-Gatherer studios, To Do tasks, and Notes as you type, in a dropdown under
-the bar; clicking a result jumps to that tool and, where a detail view
-exists, opens it directly (a studio result just lands on Studio Database,
-which has no per-row detail view).
+Overview, Tracker, and Gatherer live under a collapsible **Tools**
+section in the sidebar (click the section header to fold/unfold it).
+Below it sits a second collapsible section, **Management**, for
+non-client-work items - To Do, Notes, and Finances.
 
-- **Overview** - the app's home page, first row in the rail and the
-  default page on launch. Three stat cards (Active projects, Tasks -
-  active count, Studios logged - deliberately no money figure) above two
-  panels, "Due soon" (active projects with a deadline, soonest first,
-  color-coded overdue/today/soon/later) and "Recent notes" (most
-  recently edited, newest first). The three stat cards repeat three of
-  the rail's own badges on purpose - it's the one intentional
-  duplication in the page, everything else appears once.
-- **Tracker** (shown in the rail as "Project Manager") - a project
+- **Overview** - the app's home page, first item in the Tools group and
+  the default page on launch. Unlike every other page it has no
+  persistent sidebar - a launcher column takes over that job, so the
+  page runs full width instead of squeezed beside a 220px rail. On top,
+  a single full-width search bar ("Jump to a project, studio, task, or
+  note...") searches titles across Tracker projects, Gatherer studios,
+  To Do tasks, and Notes as you type, in a dropdown under the bar;
+  clicking a result jumps to that tool and, where a detail view exists,
+  opens it directly (a studio result just lands on Studio Database,
+  which has no per-row detail view). Below the search bar, two columns:
+  on the left, a launcher row per tool (Project Manager, Studio
+  Database, To Do, Notes, Finances) with its icon, name, and a live
+  count - clicking a row is how you get to that tool, replacing the
+  sidebar's job here. On the right, three stat cards (Active projects,
+  Tasks - active count, Studios logged - deliberately no money figure)
+  above two panels, "Due soon" (active projects with a deadline,
+  soonest first, color-coded overdue/today/soon/later) and "Recent
+  notes" (most recently edited, newest first). The three stat cards
+  repeat three of the launcher badges on purpose - it's the one
+  intentional duplication in the page, everything else appears once.
+- **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
   (Active/Completed), and Paid/Unpaid, each pill directly editable
   inline like Gatherer's (Paid/Unpaid use a neutral grey/off-white
@@ -60,7 +62,7 @@ which has no per-row detail view).
   strikethrough), with "+ Add item" for more rows. Backed by its own
   `personal_projects`/`personal_checklist_items` tables, entirely
   separate from `projects`.
-- **Gatherer** (shown in the rail as "Studio Database") - a
+- **Gatherer** (shown in the sidebar as "Studio Database") - a
   manually-curated list of studios/companies you find yourself
   (Behance, Instagram, wherever) - Title, clickable URL, Type
   (Studio/Company, a neutral grey pill - the type doesn't carry a
@@ -70,14 +72,13 @@ which has no per-row detail view).
   separate save button. Click "+ Add row" for a new one. The Type and
   Status column headers double as filters - pick a value to narrow the
   table to just that value, blank to show everything again.
-- **To Do** (noticeably wider than the other tools - not full-width,
-  just roomier) - inspired by Microsoft To Do. Multiple lists in a
-  column on the left, its own to this page - not the app-wide rail
-  above; a star sits to the right of every list's name there - always
-  visible, grey by default and gold once favorited, toggled directly
-  from that column without selecting the list first - and a matching
-  star above the column filters it down to just favorited lists.
-  "+ New list" adds one. Click a list's name in
+- **To Do** (under Management, noticeably wider than the other tools -
+  not full-width, just roomier) - inspired by Microsoft To Do.
+  Multiple lists in a rail on the left; a star sits to the right of
+  every list's name there - always visible, grey by default and gold
+  once favorited, toggled directly from the rail without selecting the
+  list first - and a matching star above the rail filters it down to
+  just favorited lists. "+ New list" adds one. Click a list's name in
   the tasks pane to rename it; a color swatch to the title's left opens
   the shared color preset popover, shown as a dot next to the list's name in
   the rail. "Delete list" sits to the title's right. Favoriting
@@ -91,8 +92,8 @@ which has no per-row detail view).
   within the task, same checkbox-and-title pattern as Personal
   Projects' Checklist), and a freeform Notes text area. Everything
   autosaves on blur/change.
-- **Notes** (no page title of its own - the rail already labels it) -
-  a Google Keep-style board of cards. A dashed
+- **Notes** (under Management, no page title of its own - the sidebar
+  already labels it) - a Google Keep-style board of cards. A dashed
   "+" tile is always the first card; clicking it opens a small popover
   to choose Text note or List before creating anything (a note's type
   is fixed at creation - a text note has a freeform body, a list note
@@ -111,7 +112,7 @@ which has no per-row detail view).
   colors, applied as the card's full background - text on the card
   switches to dark automatically for a light enough pick - and an
   always-visible red delete button (with the themed confirm dialog).
-- **Finances** - a page for money tools, starting
+- **Finances** (under Management) - a page for money tools, starting
   with **Calculator**, a section labeled by its own heading inside the
   page (more Finances features can join it later). Calculator is
   browser-tab-style, holding any number of independent spreadsheet-
@@ -227,21 +228,18 @@ into a venv from before that change - the fix is on both scripts now.
 - `frontend/index.html` - the whole page shell (every tool's markup
   lives here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
-- `frontend/static/js/nav.js` - shared page navigation (including the
-  rail's collapsed/active state), the shared color preset popover, the
-  custom dropdown component, and a themed `confirmDialog()` (used in
-  place of the browser's native `confirm()` for every delete action) -
-  loaded first since every tool depends on it.
+- `frontend/static/js/nav.js` - shared page navigation (including
+  hiding the sidebar on Overview), the custom dropdown component, and a
+  themed `confirmDialog()` (used in place of the browser's native
+  `confirm()` for every delete action) - loaded first since every tool
+  depends on it.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
-- `frontend/static/js/overview.js` - the Overview page's stats/due-soon/
-  recent-notes, plus the persistent rail's live counts and the search
-  bar - both of those became shell-wide chrome rather than staying
-  Overview-specific once every page started sharing them. Reuses
-  `openProjectModal`/`openTodoTaskModal`/`openNoteModal` from the other
-  tools' own files to open a detail view after a search jump, rather
-  than duplicating that logic.
+- `frontend/static/js/overview.js` - the Overview hub's rendering and
+  search; reuses `openProjectModal`/`openTodoTaskModal`/`openNoteModal`
+  from the other tools' own files to open a detail view after a search
+  jump, rather than duplicating that logic.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data lives on disk.
 
@@ -306,6 +304,9 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+- Wider content area for the other tools too (To Do, Notes, and
+  Calculator already got this) - not full-width, just noticeably
+  roomier than today.
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.

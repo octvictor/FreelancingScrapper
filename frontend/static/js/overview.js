@@ -1,13 +1,11 @@
-// Overview hub - the app's home page: stat cards plus Due soon / Recent
-// notes panels. The rail (icon, name, live count per tool) and the "jump
-// to..." search bar aren't page-specific anymore - they're persistent
-// shell chrome shared by every page (see index.html/nav.js) - so this file
-// also owns refreshing the rail's counts and driving the search bar,
-// alongside the two panels below. $()/escapeAttr/navigateTo come from
-// nav.js/gatherer.js; openProjectModal, selectTodoList + openTodoTaskModal,
-// and openNoteModal (defined in tracker.js/todo.js/notes.js) are reused
-// as-is to open the right detail view after a search jump - nothing about
-// those tools is touched here.
+// Overview hub - the app's home page: a launcher column (replaces the
+// persistent sidebar on this one page only), three headline stats, Due
+// soon / Recent notes panels, and a "jump to..." search bar across every
+// tool. $()/escapeAttr/navigateTo come from nav.js/gatherer.js;
+// openProjectModal, selectTodoList + openTodoTaskModal, and openNoteModal
+// (defined in tracker.js/todo.js/notes.js) are reused as-is to open the
+// right detail view after a search jump - nothing about those tools is
+// touched here.
 
 const OVERVIEW_TYPE_META = {
     project: { icon: "&#9636;", label: "Project", page: "tracker" },
@@ -51,20 +49,17 @@ function overviewRowHtml(dotClass, titleText, subLabel) {
     `;
 }
 
-// Called on every navigation (see nav.js's showPage), not just while
-// Overview itself is visible - the rail's counts are on screen on every
-// page now, so they need to stay current no matter where you are.
 async function refreshOverview() {
     const resp = await fetch("/api/overview/stats");
     if (!resp.ok) return;
     const data = await resp.json();
     const counts = data.counts || {};
 
-    $("rail-count-tracker").textContent = counts.tracker ?? "0";
-    $("rail-count-gatherer").textContent = counts.gatherer ?? "0";
-    $("rail-count-todo").textContent = counts.todo ?? "0";
-    $("rail-count-notes").textContent = counts.notes ?? "0";
-    $("rail-count-finance").textContent = counts.finance ?? "0";
+    $("overview-count-tracker").textContent = counts.tracker ?? "0";
+    $("overview-count-gatherer").textContent = counts.gatherer ?? "0";
+    $("overview-count-todo").textContent = counts.todo ?? "0";
+    $("overview-count-notes").textContent = counts.notes ?? "0";
+    $("overview-count-finance").textContent = counts.finance ?? "0";
 
     $("overview-stat-projects").textContent = counts.tracker ?? "0";
     $("overview-stat-tasks").textContent = counts.todo ?? "0";
@@ -84,17 +79,20 @@ async function refreshOverview() {
         : `<p class="overview-empty">No notes yet.</p>`;
 }
 
+document.querySelectorAll(".overview-launcher-row").forEach((btn) => {
+    btn.addEventListener("click", () => navigateTo(btn.dataset.page));
+});
+
 // ---------- Search ----------
-// One search box across projects, studios, tasks, and notes, always
-// available in the shell's top bar. Clicking a result jumps to that
-// tool's page and, where a detail view exists, opens it directly via that
-// tool's own modal function.
+// One search box across projects, studios, tasks, and notes. Clicking a
+// result jumps to that tool's page and, where a detail view exists,
+// opens it directly via that tool's own modal function.
 
 let _overviewSearchToken = 0;
 let _overviewSearchDebounce = null;
 
 function closeOverviewSearchResults() {
-    const panel = $("app-search-results");
+    const panel = $("overview-search-results");
     panel.style.display = "none";
     panel.innerHTML = "";
 }
@@ -102,10 +100,10 @@ function closeOverviewSearchResults() {
 function overviewSearchResultHtml(result) {
     const meta = OVERVIEW_TYPE_META[result.type];
     return `
-        <button type="button" class="app-search-result" data-type="${result.type}" data-id="${result.id}" data-list-id="${result.list_id ?? ""}">
-            <span class="app-search-result-icon">${meta.icon}</span>
-            <span class="app-search-result-title">${escapeAttr(result.title)}</span>
-            <span class="app-search-result-meta">${meta.label}</span>
+        <button type="button" class="overview-search-result" data-type="${result.type}" data-id="${result.id}" data-list-id="${result.list_id ?? ""}">
+            <span class="overview-search-result-icon">${meta.icon}</span>
+            <span class="overview-search-result-title">${escapeAttr(result.title)}</span>
+            <span class="overview-search-result-meta">${meta.label}</span>
         </button>
     `;
 }
@@ -116,14 +114,14 @@ async function runOverviewSearch(query) {
     if (token !== _overviewSearchToken) return; // a newer keystroke superseded this request
     const data = await resp.json();
     const results = data.results || [];
-    const panel = $("app-search-results");
+    const panel = $("overview-search-results");
     panel.innerHTML = results.length
         ? results.map(overviewSearchResultHtml).join("")
-        : `<p class="overview-empty app-search-empty">No matches.</p>`;
+        : `<p class="overview-empty overview-search-empty">No matches.</p>`;
     panel.style.display = "block";
 }
 
-$("app-search-input").addEventListener("input", (e) => {
+$("overview-search-input").addEventListener("input", (e) => {
     const query = e.target.value.trim();
     clearTimeout(_overviewSearchDebounce);
     if (!query) {
@@ -133,14 +131,14 @@ $("app-search-input").addEventListener("input", (e) => {
     _overviewSearchDebounce = setTimeout(() => runOverviewSearch(query), 200);
 });
 
-$("app-search-results").addEventListener("click", async (e) => {
-    const item = e.target.closest(".app-search-result");
+$("overview-search-results").addEventListener("click", async (e) => {
+    const item = e.target.closest(".overview-search-result");
     if (!item) return;
     const { type, id, listId } = item.dataset;
     const numId = Number(id);
 
     closeOverviewSearchResults();
-    $("app-search-input").value = "";
+    $("overview-search-input").value = "";
 
     if (type === "project") {
         navigateTo("tracker");
@@ -158,7 +156,7 @@ $("app-search-results").addEventListener("click", async (e) => {
 });
 
 document.addEventListener("click", (e) => {
-    if (!e.target.closest(".app-search-wrap")) closeOverviewSearchResults();
+    if (!e.target.closest(".overview-search-wrap")) closeOverviewSearchResults();
 });
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeOverviewSearchResults();
