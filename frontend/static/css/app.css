@@ -63,6 +63,28 @@
     src: url("/static/fonts/GoogleSansFlex-Regular.ttf") format("truetype");
 }
 
+/* Medium/Bold added after the fact: everything that asked for
+   font-weight 500-700 was rendering against a font that only had
+   Light/Regular faces, so the browser was faking bold (synthetic
+   bold) - too heavy and prone to glyph-overlap glitches (a letter or
+   two rendering visibly greyed-out, e.g. the "n" in "Finances"). Real
+   faces fix both at once, no per-rule changes needed elsewhere. */
+@font-face {
+    font-family: "Google Sans Flex";
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+    src: url("/static/fonts/GoogleSansFlex-Medium.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Google Sans Flex";
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+    src: url("/static/fonts/GoogleSansFlex-Bold.ttf") format("truetype");
+}
+
 * {
     box-sizing: border-box;
 }
@@ -195,7 +217,7 @@ button, input, select, textarea {
     border: none;
     color: var(--text);
     font-size: 12px;
-    font-weight: 300;
+    font-weight: 400;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
@@ -226,10 +248,9 @@ button, input, select, textarea {
 }
 
 .page-title {
-    font-size: 26px;
-    font-weight: 600;
+    font-size: 22px;
+    font-weight: 400;
     margin: 0 0 20px 0;
-    letter-spacing: -0.01em;
 }
 
 /* A heading for one feature living inside a page that holds several
@@ -256,7 +277,7 @@ button, input, select, textarea {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-faint);
     margin: 0 0 14px 0;
 }
@@ -404,7 +425,7 @@ table.finance-table td:nth-child(2) {
     width: 100%;
     text-transform: uppercase;
     font-size: 10.5px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.05em;
     color: var(--text-faint);
 }
@@ -530,7 +551,7 @@ table.finance-table td:nth-child(2) {
 .finance-tab.active {
     background: var(--panel);
     color: var(--text);
-    font-weight: 600;
+    font-weight: 500;
     border-color: var(--border);
 }
 
@@ -981,7 +1002,7 @@ table.task-table td:nth-child(6) {
     border-radius: var(--radius-md);
     color: var(--text-muted);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     padding: 7px 14px;
     cursor: pointer;
 }
@@ -1029,7 +1050,7 @@ table.project-table td:nth-child(3) {
 }
 
 table.project-table td.project-row-title {
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text);
     cursor: pointer;
 }
@@ -1134,7 +1155,7 @@ table.project-table tbody tr:hover td {
 
 .project-card-title {
     font-size: 13.5px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text);
     padding-right: 22px;
 }
@@ -1175,7 +1196,7 @@ table.project-table tbody tr:hover td {
     border: none;
     color: var(--text);
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 500;
     padding: 0;
     cursor: pointer;
     text-align: left;
@@ -1425,7 +1446,7 @@ table.project-table tbody tr:hover td {
     border-radius: var(--radius-sm);
     color: var(--text-muted);
     font-size: 12.5px;
-    font-weight: 600;
+    font-weight: 500;
     padding: 6px 10px;
     cursor: pointer;
 }
@@ -1739,7 +1760,7 @@ table.project-table tbody tr:hover td {
 
 .todo-list-item.active {
     color: var(--text);
-    font-weight: 600;
+    font-weight: 500;
     background: var(--panel-alt);
 }
 
@@ -2082,7 +2103,7 @@ table.project-table tbody tr:hover td {
     border: none;
     color: var(--text-faint);
     font-size: 12.5px;
-    font-weight: 600;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     cursor: pointer;
@@ -2190,7 +2211,7 @@ table.project-table tbody tr:hover td {
    construction rather than needing padding to be kept in sync. */
 .note-card-title {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--text);
     margin: 0 0 8px;
     word-break: break-word;
@@ -2386,7 +2407,11 @@ table.project-table tbody tr:hover td {
     height: 16px;
 }
 
-.overview-search-input {
+/* Qualified with the element type (not just the class) so this ties
+   the generic input[type="text"] rule's specificity instead of losing
+   to it - without this, the search input was rendering with that
+   rule's bordered-box look on top of the pill's own background. */
+input.overview-search-input {
     flex: 1;
     min-width: 0;
     background: transparent;

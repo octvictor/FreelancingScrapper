@@ -352,12 +352,24 @@ rest of the app instead of drifting:
 - **Light theme, one typeface.** `--bg`/`--panel`/`--panel-alt`/`--text`/
   etc. in `:root` now hold the light palette (dark mode is parked, not
   deleted - it'll come back as a toggle). Every page uses the same
-  Google Sans Flex family (`frontend/static/fonts/`, Light 300 + Regular
-  400) - the sidebar/header are Light per the Figma spec, the rest of
-  the app kept whatever weights it already had. Don't reintroduce a
-  second typeface for a single element (the "VAIO" brand wordmark
-  briefly used a serif before this shipped) - one face, used
-  consistently, is the whole point.
+  Google Sans Flex family (`frontend/static/fonts/`, Light 300, Regular
+  400, Medium 500, Bold 700) - the sidebar/header are Light per the
+  Figma spec, the rest of the app kept whatever weights it already had.
+  Don't reintroduce a second typeface for a single element (the "VAIO"
+  brand wordmark briefly used a serif before this shipped) - one face,
+  used consistently, is the whole point. Only request weights that have
+  a real `@font-face` file backing them (300/400/500/700) - asking for
+  an unbacked weight like 600 makes the browser synthesize a faux-bold
+  face, which renders heavier than intended and can glitch into
+  mixed-weight/mixed-color glyphs on some letters. Page titles
+  (`.page-title`) are 22px/400, matching `.cc-greeting` exactly, and
+  `.note-card-title` is 500, not 700.
+- **Qualify selectors that override a generic input rule.** The catch-all
+  `input[type="text"], input[type="password"], ...` rule in app.css has
+  higher specificity than a bare class selector, so a class-only
+  override (e.g. `.overview-search-input`) can silently lose to it. Use
+  an element+class selector (`input.overview-search-input`) to tie
+  specificity and win on source order instead.
 - **One swatch size app-wide.** Every color-picker trigger (To Do's
   list color, Notes' card color, Calculator's row color) shares the
   same `.swatch-btn` class in app.css, which is what keeps them the
