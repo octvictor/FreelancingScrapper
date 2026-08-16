@@ -1,9 +1,10 @@
-// Overview hub - the app's home page: no persistent sidebar on this one
-// page (a search bar takes over that job), three headline stats as the
-// hero, Due soon / Recent notes panels, and a row of plain shortcut tiles
-// at the bottom - no per-tile counts, since the numbers already live in
-// the stat cards above and duplicating them was the thing this design is
-// explicitly avoiding. $()/escapeAttr/navigateTo come from nav.js/gatherer.js;
+// Overview hub - the app's home page, reached through the permanent
+// zone-nav like any other page: headline stats plus Due soon / Recent
+// notes, nothing else. It no longer carries its own shortcut tiles - the
+// zone-nav beside it is already that navigation, and refreshOverview()
+// (called on every page switch, not just Overview's) also keeps the
+// zone-nav's per-tool counts up to date. $()/escapeAttr/navigateTo come
+// from nav.js/gatherer.js;
 // openProjectModal, selectTodoList + openTodoTaskModal, and openNoteModal
 // (defined in tracker.js/todo.js/notes.js) are reused as-is to open the
 // right detail view after a search jump - nothing about those tools is
@@ -61,6 +62,12 @@ async function refreshOverview() {
     $("overview-stat-tasks").textContent = counts.todo ?? "0";
     $("overview-stat-studios").textContent = counts.gatherer ?? "0";
 
+    $("zone-count-tracker").textContent = counts.tracker ?? "0";
+    $("zone-count-gatherer").textContent = counts.gatherer ?? "0";
+    $("zone-count-todo").textContent = counts.todo ?? "0";
+    $("zone-count-notes").textContent = counts.notes ?? "0";
+    $("zone-count-finance").textContent = counts.finance ?? "0";
+
     const dueSoon = data.due_soon || [];
     $("overview-due-soon").innerHTML = dueSoon.length
         ? dueSoon.map((p) => {
@@ -74,10 +81,6 @@ async function refreshOverview() {
         ? recentNotes.map((n) => overviewRowHtml("overview-dot-later", escapeAttr(n.title) || "Untitled note", overviewRelativeTime(n.updated_at))).join("")
         : `<p class="overview-empty">No notes yet.</p>`;
 }
-
-document.querySelectorAll(".overview-tile").forEach((btn) => {
-    btn.addEventListener("click", () => navigateTo(btn.dataset.page));
-});
 
 // ---------- Search ----------
 // One search box across projects, studios, tasks, and notes. Clicking a
@@ -152,7 +155,7 @@ $("overview-search-results").addEventListener("click", async (e) => {
 });
 
 document.addEventListener("click", (e) => {
-    if (!e.target.closest(".overview-search-wrap")) closeOverviewSearchResults();
+    if (!e.target.closest(".command-bar")) closeOverviewSearchResults();
 });
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeOverviewSearchResults();

@@ -10,10 +10,10 @@ let activeCurrency = "USD";
 let activeView = "Active";
 let activeDayRate = null;
 
-// Each view (Active/Completed) shows at most this many rows until its own
-// "Show more" is clicked - keeps a long list from dwarfing the page.
+// Each view (All/Active/Completed) shows at most this many rows until its
+// own "Show more" is clicked - keeps a long list from dwarfing the page.
 const PROJECT_ROW_LIMIT = 5;
-let expandedViews = { Active: false, Completed: false };
+let expandedViews = { All: false, Active: false, Completed: false };
 
 const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
 
@@ -86,7 +86,7 @@ function projectCardHtml(project) {
 
 function renderProjectTable() {
     cleanupCustomSelectsIn($("project-table-body"));
-    const all = trackerProjects.filter((p) => p.status === activeView);
+    const all = activeView === "All" ? trackerProjects : trackerProjects.filter((p) => p.status === activeView);
     const expanded = expandedViews[activeView];
     const visible = expanded ? all : all.slice(0, PROJECT_ROW_LIMIT);
     $("project-table-body").innerHTML = visible.length
@@ -220,8 +220,9 @@ async function createProject() {
 
     // A new project defaults to Active - if the Completed tab is showing,
     // switch to Active so the project you just created is actually
-    // visible instead of silently landing on a hidden tab.
-    if (activeView !== "Active") {
+    // visible instead of silently landing on a hidden tab. The All tab
+    // already shows it, so it's left alone.
+    if (activeView !== "Active" && activeView !== "All") {
         activeView = "Active";
         document.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === "Active"));
     }

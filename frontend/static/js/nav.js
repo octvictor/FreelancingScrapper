@@ -101,26 +101,29 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
 
 const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
-// No persistent sidebar on any page - a page shows only its own content,
-// centered, same width as every other page. The only way back to Overview
-// (for now) is the small link at the top of every other page; a proper
-// way to jump straight between tool pages is still to be designed.
+// A permanent .zone-nav sits beside .zone-info on every page - it never
+// shrinks or hides, so switching pages only ever swaps which section is
+// visible inside .zone-info and which .zone-tile-row is marked active.
 function showPage(page) {
     PAGE_IDS.forEach((id) => {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    $("back-nav").style.display = page === "overview" ? "none" : "";
-    if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
+    document.querySelectorAll(".zone-tile-row").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.page === page);
+    });
+    if (typeof refreshOverview === "function") refreshOverview();
 }
 
-// Shared by the back-to-Overview link and any other control that jumps to
-// a tool page (the Overview tiles and search results).
+// Shared by the zone-nav rows and any other control that jumps to a page
+// (search results, etc).
 function navigateTo(page) {
     showPage(page);
 }
 
-document.querySelector(".back-to-overview-btn").addEventListener("click", () => navigateTo("overview"));
+document.querySelectorAll(".zone-tile-row").forEach((btn) => {
+    btn.addEventListener("click", () => navigateTo(btn.dataset.page));
+});
 
 showPage("overview");
 

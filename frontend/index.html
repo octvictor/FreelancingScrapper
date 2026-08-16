@@ -10,16 +10,47 @@
 <body>
     <div class="app-shell">
         <main class="main">
-            <div class="back-nav" id="back-nav" style="display:none;">
-                <button class="back-to-overview-btn" type="button" data-page="overview">&larr; Overview</button>
+            <div class="command-bar">
+                <span class="overview-search-icon">&#128269;</span>
+                <input type="text" class="overview-search-input" id="overview-search-input" placeholder="Jump to a project, studio, task, or note&hellip;" autocomplete="off">
+                <div class="overview-search-results" id="overview-search-results" style="display:none;"></div>
             </div>
 
+            <div class="zone-row">
+                <nav class="zone-nav" id="zone-nav">
+                    <button class="zone-tile-row" type="button" data-page="overview">
+                        <span class="zone-tile-icon">&#8962;</span>
+                        <span class="zone-tile-name">Overview</span>
+                    </button>
+                    <button class="zone-tile-row" type="button" data-page="tracker">
+                        <span class="zone-tile-icon">&#9636;</span>
+                        <span class="zone-tile-name">Project Manager</span>
+                        <span class="zone-tile-count" id="zone-count-tracker">&ndash;</span>
+                    </button>
+                    <button class="zone-tile-row" type="button" data-page="gatherer">
+                        <span class="zone-tile-icon">&#9638;</span>
+                        <span class="zone-tile-name">Studio Database</span>
+                        <span class="zone-tile-count" id="zone-count-gatherer">&ndash;</span>
+                    </button>
+                    <button class="zone-tile-row" type="button" data-page="todo">
+                        <span class="zone-tile-icon">&#9745;</span>
+                        <span class="zone-tile-name">To Do</span>
+                        <span class="zone-tile-count" id="zone-count-todo">&ndash;</span>
+                    </button>
+                    <button class="zone-tile-row" type="button" data-page="notes">
+                        <span class="zone-tile-icon">&#9998;</span>
+                        <span class="zone-tile-name">Notes</span>
+                        <span class="zone-tile-count" id="zone-count-notes">&ndash;</span>
+                    </button>
+                    <button class="zone-tile-row" type="button" data-page="finance">
+                        <span class="zone-tile-icon">&#164;</span>
+                        <span class="zone-tile-name">Finances</span>
+                        <span class="zone-tile-count" id="zone-count-finance">&ndash;</span>
+                    </button>
+                </nav>
+
+                <div class="zone-info">
             <section id="page-overview">
-                <div class="overview-search-wrap">
-                    <span class="overview-search-icon">&#128269;</span>
-                    <input type="text" class="overview-search-input" id="overview-search-input" placeholder="Jump to a project, studio, task, or note&hellip;" autocomplete="off">
-                    <div class="overview-search-results" id="overview-search-results" style="display:none;"></div>
-                </div>
                 <div class="overview-stats-grid">
                     <div class="overview-stat">
                         <div class="overview-stat-label">Active projects</div>
@@ -48,34 +79,13 @@
                         <div id="overview-recent-notes"></div>
                     </div>
                 </div>
-                <div class="overview-tile-grid">
-                    <button class="overview-tile" type="button" data-page="tracker">
-                        <span class="overview-tile-icon">&#9636;</span>
-                        <span class="overview-tile-name">Project Manager</span>
-                    </button>
-                    <button class="overview-tile" type="button" data-page="gatherer">
-                        <span class="overview-tile-icon">&#9638;</span>
-                        <span class="overview-tile-name">Studio Database</span>
-                    </button>
-                    <button class="overview-tile" type="button" data-page="todo">
-                        <span class="overview-tile-icon">&#9745;</span>
-                        <span class="overview-tile-name">To Do</span>
-                    </button>
-                    <button class="overview-tile" type="button" data-page="notes">
-                        <span class="overview-tile-icon">&#9998;</span>
-                        <span class="overview-tile-name">Notes</span>
-                    </button>
-                    <button class="overview-tile" type="button" data-page="finance">
-                        <span class="overview-tile-icon">&#164;</span>
-                        <span class="overview-tile-name">Finances</span>
-                    </button>
-                </div>
             </section>
 
             <section id="page-tracker" style="display:none;">
                 <h1 class="page-title">Project Manager</h1>
                 <div class="tracker-toolbar">
                     <div class="view-toggle" id="project-view-toggle">
+                        <button class="view-toggle-btn" id="view-toggle-all" type="button" data-view="All">All</button>
                         <button class="view-toggle-btn active" id="view-toggle-active" type="button" data-view="Active">Active</button>
                         <button class="view-toggle-btn" id="view-toggle-completed" type="button" data-view="Completed">Completed</button>
                     </div>
@@ -234,6 +244,8 @@
                     </div>
                 </div>
             </section>
+                </div>
+            </div>
         </main>
     </div>
 

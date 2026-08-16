@@ -84,9 +84,11 @@ button, input, select, textarea {
 }
 
 /* ---------- Main content ---------- */
-/* No sidebar on any page - every page's content is centered in the full
-   viewport width at the same max-width, itself included via
-   .back-nav below. */
+/* A permanent left nav (.zone-nav) sits beside every page's content
+   (.zone-info) - it never shrinks, hides, or collapses. The app grew
+   wider to make room for it: .zone-nav keeps a fixed width and the
+   extra space goes entirely to .zone-info, so each page's actual
+   working width matches what it was before the nav became permanent. */
 
 .main {
     flex: 1;
@@ -97,31 +99,89 @@ button, input, select, textarea {
     align-items: center;
 }
 
-.main > section,
-.main > .back-nav {
+.main > .command-bar,
+.main > .zone-row {
     width: 100%;
-    max-width: 1400px;
+    max-width: 1616px;
 }
 
-/* Shown on every page except Overview (toggled by nav.js's showPage) -
-   the only way back until a proper way to jump straight between tool
-   pages is designed. */
-.back-nav {
-    margin-bottom: 14px;
+.zone-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
 }
 
-.back-to-overview-btn {
-    background: none;
-    border: none;
+.zone-nav {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.zone-tile-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
     color: var(--text-muted);
     font-size: 13px;
     font-weight: 600;
-    padding: 6px 0;
+    text-align: left;
     cursor: pointer;
 }
 
-.back-to-overview-btn:hover {
+.zone-tile-row:hover {
+    background: var(--panel-alt);
+    border-color: var(--border);
     color: var(--text);
+}
+
+.zone-tile-row.active {
+    background: var(--panel-alt);
+    border-color: var(--border);
+    color: var(--text);
+    box-shadow: inset 2px 0 0 var(--accent-blue);
+}
+
+.zone-tile-icon {
+    width: 16px;
+    font-size: 14px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.zone-tile-row.active .zone-tile-icon {
+    color: var(--text-muted);
+}
+
+.zone-tile-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.zone-tile-count {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
+.zone-tile-row.active .zone-tile-count {
+    color: var(--accent-blue);
+}
+
+.zone-info {
+    flex: 1;
+    min-width: 0;
 }
 
 .page-title {
@@ -261,8 +321,8 @@ table.project-table tr:last-child td {
 }
 
 /* Title and URL get real room to breathe - the two fields most likely
-   to hold long text (see .main > section in the layout section above
-   for the width the table has to use). */
+   to hold long text (see .zone-info in the layout section above for
+   the width the table has to use). */
 table.gatherer-table th:nth-child(1),
 table.gatherer-table td:nth-child(1) {
     min-width: 220px;
@@ -2231,14 +2291,14 @@ table.project-table tbody tr:hover td {
     background: rgba(179, 38, 30, 0.12);
 }
 
-/* ---------- Overview hub ---------- */
-/* This app's home page - a full-width search bar on top for jumping to a
-   specific item. Below that, stats are the hero: three cards, then Due
-   soon / Recent notes, then a plain shortcut-tile footer for jumping to a
-   whole tool - no per-tile counts there, since those numbers already live
-   in the stat cards above. */
+/* ---------- Command bar + Overview hub ---------- */
+/* The search bar is the one piece of chrome shared by every page, sitting
+   above the permanent .zone-nav/.zone-info split (see the layout section
+   above). Overview itself, reached via .zone-nav like any other page, is
+   just its stat cards plus Due soon / Recent notes - no shortcut tiles of
+   its own anymore, since .zone-nav already is that navigation. */
 
-.overview-search-wrap {
+.command-bar {
     position: relative;
     display: flex;
     align-items: center;
@@ -2247,7 +2307,7 @@ table.project-table tbody tr:hover td {
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
     padding: 12px 16px;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
 }
 
 .overview-search-icon {
@@ -2343,45 +2403,6 @@ table.project-table tbody tr:hover td {
 
 .overview-panels-grid .overview-panel {
     margin-bottom: 0;
-}
-
-.overview-tile-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-}
-
-.overview-tile {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--panel);
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-md);
-    padding: 15px 16px;
-    color: var(--text);
-    font-size: 13.5px;
-    font-weight: 600;
-    text-align: left;
-    cursor: pointer;
-}
-
-.overview-tile:hover {
-    background: var(--panel-alt);
-    border-color: var(--border);
-}
-
-.overview-tile-icon {
-    font-size: 15px;
-    color: var(--text-faint);
-    flex-shrink: 0;
-}
-
-.overview-tile-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .overview-stat {

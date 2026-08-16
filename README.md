@@ -2,35 +2,38 @@
 
 A personal-use suite of tools for freelance 3D artist work: a FastAPI
 backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
-plain static files, so nothing extra to install). There's no persistent
-sidebar - every page shows only its own content, centered, at the same
-width as every other page. Overview is the home page and the default on
-launch; every other page has a small "&larr; Overview" link at the top to
-get back (a proper way to jump straight between tool pages, without
-detouring through Overview, is still to be designed). Currently:
+plain static files, so nothing extra to install). A permanent left nav
+column sits next to the page content on every page - it never shrinks,
+collapses, or hides, and clicking a row switches only the content beside
+it, not the nav itself. A single search bar ("Jump to a project, studio,
+task, or note...") spans the full width above both, also always present.
+The whole row grew wider to fit the nav without shrinking any page's
+actual content: each page's working width is unchanged from before the
+nav became permanent. Overview is the home page and the default on
+launch, reached through the nav like any other page. Currently:
 
-- **Overview** - the app's home page. Stats are the hero: a single
-  full-width search bar ("Jump to a project, studio, task, or note...")
-  on top - searches
-  titles across Tracker projects, Gatherer studios, To Do tasks, and
-  Notes as you type, in a dropdown under the bar; clicking a result
-  jumps to that tool and, where a detail view exists, opens it directly
-  (a studio result just lands on Studio Database, which has no per-row
-  detail view) - then three stat cards (Active projects, Tasks - active
-  count, Studios logged - deliberately no money figure), then "Due soon"
-  (active projects with a deadline, soonest first, color-coded overdue/
-  today/soon/later) and "Recent notes" (most recently edited, newest
-  first) side by side, then a row of five plain shortcut tiles (Project
-  Manager, Studio Database, To Do, Notes, Finances) at the very bottom -
-  icon and name only, no counts on the tiles themselves, since those
-  numbers already live in the stat cards above and repeating them there
-  too would just be the same fact shown twice.
+- **Overview** - the app's home page, opened via the nav like everywhere
+  else. Four stat cards (Active projects, Tasks - active count, Studios
+  logged - deliberately no money figure, and a placeholder "Unnamed"
+  card), then "Due soon" (active projects with a deadline, soonest
+  first, color-coded overdue/today/soon/later) and "Recent notes" (most
+  recently edited, newest first) side by side. No shortcut tiles of its
+  own anymore - the permanent nav beside it already covers that, so
+  repeating it here would just be the same links shown twice. The
+  search bar at the top of every page searches titles across Tracker
+  projects, Gatherer studios, To Do tasks, and Notes as you type, in a
+  dropdown under the bar; clicking a result jumps to that tool and,
+  where a detail view exists, opens it directly (a studio result just
+  lands on Studio Database, which has no per-row detail view). The nav
+  itself shows a live count next to each tool (Project Manager's active
+  count, studios logged, active tasks, notes, finance tables) and marks
+  whichever page is currently open.
 - **Tracker** (shown as "Project Manager") - a grid of project cards,
   three across (Title, a two-line description clip, and Status/Paid
   pills together at the bottom of the card), each pill directly
   editable inline like Gatherer's (Paid/Unpaid use a neutral grey/
   off-white tint rather than a status color, since being paid isn't a
-  workflow state). An Active/Completed toggle above the grid filters
+  workflow state). An All/Active/Completed toggle above the grid filters
   which cards show; each view caps at 5 cards with its own "Show more/
   less" button at the bottom so a long list doesn't dwarf the page. A
   "+ New project" button below the grid creates one. A small drag
@@ -297,9 +300,6 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- Wider content area for the other tools too (To Do, Notes, and
-  Calculator already got this) - not full-width, just noticeably
-  roomier than today.
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
