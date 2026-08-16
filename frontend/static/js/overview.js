@@ -1,7 +1,9 @@
-// Overview hub - the app's home page: a launcher column (replaces the
-// persistent sidebar on this one page only), three headline stats, Due
-// soon / Recent notes panels, and a "jump to..." search bar across every
-// tool. $()/escapeAttr/navigateTo come from nav.js/gatherer.js;
+// Overview hub - the app's home page: no persistent sidebar on this one
+// page (a search bar takes over that job), three headline stats as the
+// hero, Due soon / Recent notes panels, and a row of plain shortcut tiles
+// at the bottom - no per-tile counts, since the numbers already live in
+// the stat cards above and duplicating them was the thing this design is
+// explicitly avoiding. $()/escapeAttr/navigateTo come from nav.js/gatherer.js;
 // openProjectModal, selectTodoList + openTodoTaskModal, and openNoteModal
 // (defined in tracker.js/todo.js/notes.js) are reused as-is to open the
 // right detail view after a search jump - nothing about those tools is
@@ -55,12 +57,6 @@ async function refreshOverview() {
     const data = await resp.json();
     const counts = data.counts || {};
 
-    $("overview-count-tracker").textContent = counts.tracker ?? "0";
-    $("overview-count-gatherer").textContent = counts.gatherer ?? "0";
-    $("overview-count-todo").textContent = counts.todo ?? "0";
-    $("overview-count-notes").textContent = counts.notes ?? "0";
-    $("overview-count-finance").textContent = counts.finance ?? "0";
-
     $("overview-stat-projects").textContent = counts.tracker ?? "0";
     $("overview-stat-tasks").textContent = counts.todo ?? "0";
     $("overview-stat-studios").textContent = counts.gatherer ?? "0";
@@ -79,7 +75,7 @@ async function refreshOverview() {
         : `<p class="overview-empty">No notes yet.</p>`;
 }
 
-document.querySelectorAll(".overview-launcher-row").forEach((btn) => {
+document.querySelectorAll(".overview-tile").forEach((btn) => {
     btn.addEventListener("click", () => navigateTo(btn.dataset.page));
 });
 

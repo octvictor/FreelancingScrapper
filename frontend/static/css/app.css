@@ -2302,8 +2302,11 @@ table.project-table tbody tr:hover td {
 
 /* ---------- Overview hub ---------- */
 /* No persistent sidebar on this page (see .app-shell.sidebar-hidden above) -
-   a full-width search bar on top, then a launcher column (left) that takes
-   over the sidebar's navigating job plus a stats/activity column (right). */
+   a full-width search bar on top takes over the sidebar's navigating job
+   for jumping to a specific item. Below that, stats are the hero: three
+   cards, then Due soon / Recent notes, then a plain shortcut-tile footer
+   for jumping to a whole tool - no per-tile counts there, since those
+   numbers already live in the stat cards above. */
 
 .overview-search-wrap {
     position: relative;
@@ -2394,70 +2397,61 @@ table.project-table tbody tr:hover td {
     padding: 8px 10px;
 }
 
-.overview-split {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-}
-
-.overview-launcher {
-    width: 260px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.overview-launcher-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--panel);
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
-    color: var(--text);
-    font-size: 13.5px;
-    text-align: left;
-    cursor: pointer;
-}
-
-.overview-launcher-row:hover {
-    background: var(--panel-alt);
-    border-color: var(--border);
-}
-
-.overview-launcher-icon {
-    font-size: 14px;
-    color: var(--text-faint);
-    flex-shrink: 0;
-    width: 18px;
-    text-align: center;
-}
-
-.overview-launcher-name {
-    flex: 1;
-    min-width: 0;
-    font-weight: 600;
-}
-
-.overview-launcher-count {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-    font-size: 12px;
-    color: var(--text-faint);
-}
-
-.overview-info {
-    flex: 1;
-    min-width: 0;
-}
-
 .overview-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 16px;
+}
+
+.overview-panels-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.overview-panels-grid .overview-panel {
+    margin-bottom: 0;
+}
+
+.overview-tile-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.overview-tile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.overview-tile:hover {
+    background: var(--panel-alt);
+    border-color: var(--border);
+}
+
+.overview-tile-icon {
+    font-size: 13px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
+.overview-tile-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .overview-stat {

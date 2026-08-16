@@ -12,24 +12,22 @@ non-client-work items - To Do, Notes, and Finances.
 
 - **Overview** - the app's home page, first item in the Tools group and
   the default page on launch. Unlike every other page it has no
-  persistent sidebar - a launcher column takes over that job, so the
-  page runs full width instead of squeezed beside a 220px rail. On top,
-  a single full-width search bar ("Jump to a project, studio, task, or
-  note...") searches titles across Tracker projects, Gatherer studios,
-  To Do tasks, and Notes as you type, in a dropdown under the bar;
-  clicking a result jumps to that tool and, where a detail view exists,
-  opens it directly (a studio result just lands on Studio Database,
-  which has no per-row detail view). Below the search bar, two columns:
-  on the left, a launcher row per tool (Project Manager, Studio
-  Database, To Do, Notes, Finances) with its icon, name, and a live
-  count - clicking a row is how you get to that tool, replacing the
-  sidebar's job here. On the right, three stat cards (Active projects,
-  Tasks - active count, Studios logged - deliberately no money figure)
-  above two panels, "Due soon" (active projects with a deadline,
-  soonest first, color-coded overdue/today/soon/later) and "Recent
-  notes" (most recently edited, newest first). The three stat cards
-  repeat three of the launcher badges on purpose - it's the one
-  intentional duplication in the page, everything else appears once.
+  persistent sidebar - the page runs full width instead of squeezed
+  beside a 220px rail. Stats are the hero: a single full-width search
+  bar ("Jump to a project, studio, task, or note...") on top - searches
+  titles across Tracker projects, Gatherer studios, To Do tasks, and
+  Notes as you type, in a dropdown under the bar; clicking a result
+  jumps to that tool and, where a detail view exists, opens it directly
+  (a studio result just lands on Studio Database, which has no per-row
+  detail view) - then three stat cards (Active projects, Tasks - active
+  count, Studios logged - deliberately no money figure), then "Due soon"
+  (active projects with a deadline, soonest first, color-coded overdue/
+  today/soon/later) and "Recent notes" (most recently edited, newest
+  first) side by side, then a row of five plain shortcut tiles (Project
+  Manager, Studio Database, To Do, Notes, Finances) at the very bottom -
+  icon and name only, no counts on the tiles themselves, since those
+  numbers already live in the stat cards above and repeating them there
+  too would just be the same fact shown twice.
 - **Tracker** (shown in the sidebar as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
   (Active/Completed), and Paid/Unpaid, each pill directly editable

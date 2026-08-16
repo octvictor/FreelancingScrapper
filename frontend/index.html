@@ -55,58 +55,51 @@
                     <input type="text" class="overview-search-input" id="overview-search-input" placeholder="Jump to a project, studio, task, or note&hellip;" autocomplete="off">
                     <div class="overview-search-results" id="overview-search-results" style="display:none;"></div>
                 </div>
-                <div class="overview-split">
-                    <div class="overview-launcher" id="overview-launcher">
-                        <button class="overview-launcher-row" type="button" data-page="tracker">
-                            <span class="overview-launcher-icon">&#9636;</span>
-                            <span class="overview-launcher-name">Project Manager</span>
-                            <span class="overview-launcher-count" id="overview-count-tracker">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="gatherer">
-                            <span class="overview-launcher-icon">&#9638;</span>
-                            <span class="overview-launcher-name">Studio Database</span>
-                            <span class="overview-launcher-count" id="overview-count-gatherer">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="todo">
-                            <span class="overview-launcher-icon">&#9745;</span>
-                            <span class="overview-launcher-name">To Do</span>
-                            <span class="overview-launcher-count" id="overview-count-todo">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="notes">
-                            <span class="overview-launcher-icon">&#9998;</span>
-                            <span class="overview-launcher-name">Notes</span>
-                            <span class="overview-launcher-count" id="overview-count-notes">&ndash;</span>
-                        </button>
-                        <button class="overview-launcher-row" type="button" data-page="finance">
-                            <span class="overview-launcher-icon">&#164;</span>
-                            <span class="overview-launcher-name">Finances</span>
-                            <span class="overview-launcher-count" id="overview-count-finance">&ndash;</span>
-                        </button>
+                <div class="overview-stats-grid">
+                    <div class="overview-stat">
+                        <div class="overview-stat-label">Active projects</div>
+                        <div class="overview-stat-value" id="overview-stat-projects">&ndash;</div>
                     </div>
-                    <div class="overview-info">
-                        <div class="overview-stats-grid">
-                            <div class="overview-stat">
-                                <div class="overview-stat-label">Active projects</div>
-                                <div class="overview-stat-value" id="overview-stat-projects">&ndash;</div>
-                            </div>
-                            <div class="overview-stat">
-                                <div class="overview-stat-label">Tasks</div>
-                                <div class="overview-stat-value" id="overview-stat-tasks">&ndash;</div>
-                            </div>
-                            <div class="overview-stat">
-                                <div class="overview-stat-label">Studios logged</div>
-                                <div class="overview-stat-value" id="overview-stat-studios">&ndash;</div>
-                            </div>
-                        </div>
-                        <div class="panel overview-panel">
-                            <div class="overview-panel-title">Due soon</div>
-                            <div id="overview-due-soon"></div>
-                        </div>
-                        <div class="panel overview-panel">
-                            <div class="overview-panel-title">Recent notes</div>
-                            <div id="overview-recent-notes"></div>
-                        </div>
+                    <div class="overview-stat">
+                        <div class="overview-stat-label">Tasks</div>
+                        <div class="overview-stat-value" id="overview-stat-tasks">&ndash;</div>
                     </div>
+                    <div class="overview-stat">
+                        <div class="overview-stat-label">Studios logged</div>
+                        <div class="overview-stat-value" id="overview-stat-studios">&ndash;</div>
+                    </div>
+                </div>
+                <div class="overview-panels-grid">
+                    <div class="panel overview-panel">
+                        <div class="overview-panel-title">Due soon</div>
+                        <div id="overview-due-soon"></div>
+                    </div>
+                    <div class="panel overview-panel">
+                        <div class="overview-panel-title">Recent notes</div>
+                        <div id="overview-recent-notes"></div>
+                    </div>
+                </div>
+                <div class="overview-tile-grid">
+                    <button class="overview-tile" type="button" data-page="tracker">
+                        <span class="overview-tile-icon">&#9636;</span>
+                        <span class="overview-tile-name">Project Manager</span>
+                    </button>
+                    <button class="overview-tile" type="button" data-page="gatherer">
+                        <span class="overview-tile-icon">&#9638;</span>
+                        <span class="overview-tile-name">Studio Database</span>
+                    </button>
+                    <button class="overview-tile" type="button" data-page="todo">
+                        <span class="overview-tile-icon">&#9745;</span>
+                        <span class="overview-tile-name">To Do</span>
+                    </button>
+                    <button class="overview-tile" type="button" data-page="notes">
+                        <span class="overview-tile-icon">&#9998;</span>
+                        <span class="overview-tile-name">Notes</span>
+                    </button>
+                    <button class="overview-tile" type="button" data-page="finance">
+                        <span class="overview-tile-icon">&#164;</span>
+                        <span class="overview-tile-name">Finances</span>
+                    </button>
                 </div>
             </section>
 
