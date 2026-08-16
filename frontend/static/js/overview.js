@@ -1,11 +1,10 @@
 // Command Centre - the app's home page, reached through the permanent
-// sidebar like any other page: a greeting, a plain stat strip (Active
-// projects, Tasks, Studios logged), then Due Soon / Recent Notes side
-// by side. $()/escapeAttr/navigateTo come from nav.js/gatherer.js;
-// openProjectModal, selectTodoList + openTodoTaskModal, and openNoteModal
-// (defined in tracker.js/todo.js/notes.js) are reused as-is to open the
-// right detail view after a search jump - nothing about those tools is
-// touched here.
+// sidebar like any other page: just a greeting and the date for now
+// (stats/Due Soon/Recent Notes were dropped per the latest wireframe).
+// $()/escapeAttr/navigateTo come from nav.js/gatherer.js; openProjectModal,
+// selectTodoList + openTodoTaskModal, and openNoteModal (defined in
+// tracker.js/todo.js/notes.js) are reused as-is to open the right detail
+// view after a search jump - nothing about those tools is touched here.
 
 const OVERVIEW_TYPE_META = {
     project: { icon: "&#9636;", label: "Project", page: "tracker" },
@@ -23,67 +22,9 @@ function ccGreeting() {
     return "Good evening";
 }
 
-function ccDueMeta(dateStr) {
-    const target = new Date(dateStr + "T00:00:00");
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diffDays = Math.round((target - today) / 86400000);
-    if (diffDays < 0) return { label: "Overdue", urgency: "overdue" };
-    if (diffDays === 0) return { label: "Today", urgency: "today" };
-    if (diffDays === 1) return { label: "Tomorrow", urgency: "soon" };
-    if (diffDays <= 6) return { label: target.toLocaleDateString(undefined, { weekday: "short" }), urgency: "soon" };
-    return { label: target.toLocaleDateString(undefined, { month: "short", day: "numeric" }), urgency: "later" };
-}
-
-function ccRelativeTime(isoStr) {
-    const then = new Date(isoStr);
-    const diffMin = Math.round((Date.now() - then.getTime()) / 60000);
-    if (diffMin < 1) return "Just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHr = Math.round(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h ago`;
-    const diffDay = Math.round(diffHr / 24);
-    if (diffDay === 1) return "Yesterday";
-    if (diffDay < 7) return `${diffDay}d ago`;
-    return then.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function ccRowHtml(titleText, subLabel, dotClass) {
-    const dot = dotClass ? `<span class="cc-dot ${dotClass}"></span>` : "";
-    return `
-        <div class="cc-row">
-            ${dot}
-            <span class="cc-row-title">${titleText}</span>
-            <span class="cc-row-sub">${subLabel}</span>
-        </div>
-    `;
-}
-
-async function refreshOverview() {
+function refreshOverview() {
     $("cc-greeting").textContent = ccGreeting();
     $("cc-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-
-    const resp = await fetch("/api/overview/stats");
-    if (!resp.ok) return;
-    const data = await resp.json();
-    const counts = data.counts || {};
-
-    $("cc-stat-projects").textContent = counts.tracker ?? "0";
-    $("cc-stat-tasks").textContent = counts.todo ?? "0";
-    $("cc-stat-studios").textContent = counts.gatherer ?? "0";
-
-    const dueSoon = data.due_soon || [];
-    $("cc-due-soon").innerHTML = dueSoon.length
-        ? dueSoon.map((p) => {
-            const meta = ccDueMeta(p.deadline);
-            return ccRowHtml(escapeAttr(p.title) || "Untitled project", meta.label, `cc-dot-${meta.urgency}`);
-        }).join("")
-        : `<p class="cc-empty">No upcoming deadlines.</p>`;
-
-    const recentNotes = data.recent_notes || [];
-    $("cc-recent-notes").innerHTML = recentNotes.length
-        ? recentNotes.map((n) => ccRowHtml(escapeAttr(n.title) || "Untitled note", ccRelativeTime(n.updated_at))).join("")
-        : `<p class="cc-empty">No notes yet.</p>`;
 }
 
 // ---------- Search ----------

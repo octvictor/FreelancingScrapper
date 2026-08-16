@@ -4,30 +4,30 @@ A personal-use suite of tools for freelance 3D artist work: a FastAPI
 backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install). Light theme (dark
 mode returns later as a toggle), set in Google Sans Flex. A full-width
-header spans the top of the app - the "vaio" wordmark on the left, a
-single search box centered on the whole width. Below that, a permanent
-sidebar sits next to the page content and never shrinks, collapses, or
-hides; rows carry no background of their own at rest, and the open
-page's row gets a plain white card with a soft shadow, grouped under
+header spans the top of the app - an asterisk icon + the "vaio"
+wordmark on the left, a single search box centered on the whole width,
+a theme-toggle icon (sun-moon, drawn but not wired up yet) at the far
+right. Below that, a permanent sidebar sits next to the page content
+and never shrinks, collapses, or hides; every row carries a Lucide icon
+plus its label, no background of its own at rest, and the open page's
+row gets a plain white card with a soft shadow, grouped under
 "Workspace" (Command Centre, Project Manager, Studio Logs) and
-"Personal" (To Do, Notes, Finances). The content field itself bleeds to
-the window's right and bottom edges rather than floating with a margin
-on every side. Command Centre is the home page and the default on
-launch, reached through the sidebar like any other page.
+"Personal" (To Do, Notes, Finances). The content field sits flush
+against the header's bottom border with square corners on every side
+(no radius, no gap) - only its left edge, against the sidebar, keeps a
+border - and bleeds to the window's right and bottom edges rather than
+floating with a margin all around. Command Centre is the home page and
+the default on launch, reached through the sidebar like any other page.
 
 - **Command Centre** (shown as such, internally still "Overview") - the
-  app's home page. A greeting ("Good morning/afternoon/evening",
-  time-of-day driven) and today's date, then a plain-text stat strip
-  (Active projects, Tasks, Studios logged - just a number and a label,
-  no boxes) with a rule underneath, then Due Soon (active projects with
-  a deadline, soonest first, a colored dot for overdue/today/soon/
-  later) and Recent Notes (most recently edited, newest first) side by
-  side in their own bordered panels. The search box in the header
-  searches titles across Tracker projects, Gatherer studios, To Do
-  tasks, and Notes as you type, in a dropdown under the bar; clicking a
-  result jumps to that tool and, where a detail view exists, opens it
-  directly (a studio result just lands on Studio Logs, which has no
-  per-row detail view).
+  app's home page. Just a greeting ("Good morning/afternoon/evening",
+  time-of-day driven) and today's date for now, top-aligned with the
+  sidebar's "Workspace" label. The search box in the header searches
+  titles across Tracker projects, Gatherer studios, To Do tasks, and
+  Notes as you type, in a dropdown under the bar; clicking a result
+  jumps to that tool and, where a detail view exists, opens it directly
+  (a studio result just lands on Studio Logs, which has no per-row
+  detail view).
 - **Tracker** (shown as "Project Manager") - a grid of project cards,
   three across (Title, a two-line description clip, and Status/Paid
   pills together at the bottom of the card), each pill directly
@@ -218,8 +218,9 @@ into a venv from before that change - the fix is on both scripts now.
   reading/writing uploaded Docs files on disk (under
   `data/project_docs/<project_id>/`), since that's specific to Tracker
   rather than shared storage logic.
-- `api/overview.py` - read-only routes for Command Centre: stats/due-
-  soon/recent-notes, plus the search bar's cross-tool title search -
+- `api/overview.py` - read-only routes: the header search bar's
+  cross-tool title search, plus a stats/due-soon/recent-notes endpoint
+  kept for later (Command Centre's UI doesn't call it right now) -
   aggregates the other tools' tables, doesn't own any of its own.
 - `frontend/index.html` - the whole page shell (every tool's markup
   lives here, shown/hidden by `nav.js`).
@@ -232,11 +233,11 @@ into a venv from before that change - the fix is on both scripts now.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
-- `frontend/static/js/overview.js` - Command Centre's rendering (stat
-  strip, Due Soon, Recent Notes) and the header search bar's logic;
-  reuses `openProjectModal`/`openTodoTaskModal`/`openNoteModal` from the
-  other tools' own files to open a detail view after a search jump,
-  rather than duplicating that logic.
+- `frontend/static/js/overview.js` - Command Centre's rendering
+  (greeting + date) and the header search bar's logic; reuses
+  `openProjectModal`/`openTodoTaskModal`/`openNoteModal` from the other
+  tools' own files to open a detail view after a search jump, rather
+  than duplicating that logic.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data lives on disk.
 
@@ -345,10 +346,11 @@ rest of the app instead of drifting:
   popovers, the modal close button) previously shipped without one and
   read as sharp against everything else; that's the failure mode to
   avoid when adding something new. The one exception is the shell
-  itself (header/sidebar/content field) - it uses its own flat
-  `--radius-shell` (9px) per the Figma spec instead of the lg/md/sm
-  scale, since that scale predates the shell redesign and wasn't part
-  of it.
+  itself - the search bar and sidebar's active-row card still use the
+  flat `--radius-shell` (9px) per the Figma spec instead of the lg/md/sm
+  scale, but the content field (`.ct-card`) is deliberately square with
+  no radius at all, per the later wireframe that dropped its rounded
+  top-left corner.
 - **Light theme, one typeface.** `--bg`/`--panel`/`--panel-alt`/`--text`/
   etc. in `:root` now hold the light palette (dark mode is parked, not
   deleted - it'll come back as a toggle). Every page uses the same
