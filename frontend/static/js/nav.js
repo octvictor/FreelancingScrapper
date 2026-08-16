@@ -112,6 +112,7 @@ function showPage(page) {
     document.querySelectorAll(".sb-item").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.page === page);
     });
+    if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page

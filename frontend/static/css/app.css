@@ -2463,4 +2463,126 @@ table.project-table tbody tr:hover td {
     margin: 0;
 }
 
+/* ---------- Command Centre ---------- */
+/* "Stat strip + split panels" - the plainest of the three options
+   mocked up (Command Centre Options artifact): a greeting, a row of
+   plain number+label stats (no boxes), then Due Soon / Recent Notes
+   side by side in their own bordered panels. */
+
+.cc-greeting {
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text);
+    margin: 0 0 2px;
+}
+
+.cc-date {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.cc-stat-strip {
+    display: flex;
+    align-items: baseline;
+    gap: 40px;
+    margin: 28px 0 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.cc-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.cc-stat-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.cc-stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.cc-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.cc-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+}
+
+.cc-panel-title {
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 14px;
+}
+
+.cc-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 13.5px;
+}
+
+.cc-row:last-child {
+    border-bottom: none;
+}
+
+.cc-row-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+}
+
+.cc-row-sub {
+    color: var(--text-faint);
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.cc-empty {
+    color: var(--text-faint);
+    font-size: 12.5px;
+    margin: 0;
+}
+
+.cc-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.cc-dot-overdue,
+.cc-dot-today {
+    background: #c0392b;
+}
+
+.cc-dot-soon {
+    background: #b8791f;
+}
+
+.cc-dot-later {
+    background: var(--accent-blue);
+}
+
 /* ---------- Note detail modal ---------- */

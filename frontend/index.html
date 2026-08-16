@@ -42,7 +42,36 @@
             </nav>
 
             <div class="ct-card">
-            <section id="page-overview"></section>
+            <section id="page-overview">
+                <p class="cc-greeting" id="cc-greeting">&nbsp;</p>
+                <p class="cc-date" id="cc-date">&nbsp;</p>
+
+                <div class="cc-stat-strip">
+                    <div class="cc-stat">
+                        <span class="cc-stat-value" id="cc-stat-projects">&ndash;</span>
+                        <span class="cc-stat-label">Active projects</span>
+                    </div>
+                    <div class="cc-stat">
+                        <span class="cc-stat-value" id="cc-stat-tasks">&ndash;</span>
+                        <span class="cc-stat-label">Tasks</span>
+                    </div>
+                    <div class="cc-stat">
+                        <span class="cc-stat-value" id="cc-stat-studios">&ndash;</span>
+                        <span class="cc-stat-label">Studios logged</span>
+                    </div>
+                </div>
+
+                <div class="cc-cols">
+                    <div class="cc-panel">
+                        <p class="cc-panel-title">Due soon</p>
+                        <div id="cc-due-soon"></div>
+                    </div>
+                    <div class="cc-panel">
+                        <p class="cc-panel-title">Recent notes</p>
+                        <div id="cc-recent-notes"></div>
+                    </div>
+                </div>
+            </section>
 
             <section id="page-tracker" style="display:none;">
                 <h1 class="page-title">Project Manager</h1>

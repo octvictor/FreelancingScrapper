@@ -13,16 +13,21 @@ page's row gets a plain white card with a soft shadow, grouped under
 "Personal" (To Do, Notes, Finances). The content field itself bleeds to
 the window's right and bottom edges rather than floating with a margin
 on every side. Command Centre is the home page and the default on
-launch, reached through the sidebar like any other page - its own
-content is still being designed, so it's intentionally blank for now.
+launch, reached through the sidebar like any other page.
 
 - **Command Centre** (shown as such, internally still "Overview") - the
-  app's home page, currently blank while its design is worked out. The
-  search box in the header searches titles across Tracker projects,
-  Gatherer studios, To Do tasks, and Notes as you type, in a dropdown
-  under the bar; clicking a result jumps to that tool and, where a
-  detail view exists, opens it directly (a studio result just lands on
-  Studio Logs, which has no per-row detail view).
+  app's home page. A greeting ("Good morning/afternoon/evening",
+  time-of-day driven) and today's date, then a plain-text stat strip
+  (Active projects, Tasks, Studios logged - just a number and a label,
+  no boxes) with a rule underneath, then Due Soon (active projects with
+  a deadline, soonest first, a colored dot for overdue/today/soon/
+  later) and Recent Notes (most recently edited, newest first) side by
+  side in their own bordered panels. The search box in the header
+  searches titles across Tracker projects, Gatherer studios, To Do
+  tasks, and Notes as you type, in a dropdown under the bar; clicking a
+  result jumps to that tool and, where a detail view exists, opens it
+  directly (a studio result just lands on Studio Logs, which has no
+  per-row detail view).
 - **Tracker** (shown as "Project Manager") - a grid of project cards,
   three across (Title, a two-line description clip, and Status/Paid
   pills together at the bottom of the card), each pill directly
@@ -213,10 +218,9 @@ into a venv from before that change - the fix is on both scripts now.
   reading/writing uploaded Docs files on disk (under
   `data/project_docs/<project_id>/`), since that's specific to Tracker
   rather than shared storage logic.
-- `api/overview.py` - read-only routes: the search bar's cross-tool
-  title search (in active use) plus stats/due-soon/recent-notes
-  (currently unused by the frontend - Command Centre is blank until
-  its design is settled, but the routes are kept for when it isn't).
+- `api/overview.py` - read-only routes for Command Centre: stats/due-
+  soon/recent-notes, plus the search bar's cross-tool title search -
+  aggregates the other tools' tables, doesn't own any of its own.
 - `frontend/index.html` - the whole page shell (every tool's markup
   lives here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
@@ -228,7 +232,8 @@ into a venv from before that change - the fix is on both scripts now.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
-- `frontend/static/js/overview.js` - the header search bar's logic;
+- `frontend/static/js/overview.js` - Command Centre's rendering (stat
+  strip, Due Soon, Recent Notes) and the header search bar's logic;
   reuses `openProjectModal`/`openTodoTaskModal`/`openNoteModal` from the
   other tools' own files to open a detail view after a search jump,
   rather than duplicating that logic.
