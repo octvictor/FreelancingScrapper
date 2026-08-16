@@ -25,17 +25,17 @@ detouring through Overview, is still to be designed). Currently:
   icon and name only, no counts on the tiles themselves, since those
   numbers already live in the stat cards above and repeating them there
   too would just be the same fact shown twice.
-- **Tracker** (shown as "Project Manager") - a project
-  table with a drag handle, Title, Description, Status
-  (Active/Completed), and Paid/Unpaid, each pill directly editable
-  inline like Gatherer's (Paid/Unpaid use a neutral grey/off-white
-  tint rather than a status color, since being paid isn't a workflow
-  state). An Active/Completed toggle above the table filters which
-  rows show; each view caps at 5 rows with its own "Show more/less"
-  button at the bottom so a long list doesn't dwarf the page. A
-  "+ New project" button below the table creates one. Rows can be
-  dragged by the handle to reorder them - the order persists.
-  Clicking a row anywhere else opens a popup: a description,
+- **Tracker** (shown as "Project Manager") - a grid of project cards,
+  three across (Title, a two-line description clip, and Status/Paid
+  pills together at the bottom of the card), each pill directly
+  editable inline like Gatherer's (Paid/Unpaid use a neutral grey/
+  off-white tint rather than a status color, since being paid isn't a
+  workflow state). An Active/Completed toggle above the grid filters
+  which cards show; each view caps at 5 cards with its own "Show more/
+  less" button at the bottom so a long list doesn't dwarf the page. A
+  "+ New project" button below the grid creates one. A small drag
+  handle appears in a card's corner on hover, for reordering - the
+  order persists. Clicking a card anywhere else opens a popup: a description,
   project status, a client name, a deadline, a day rate (with a
   USD/EUR/GBP/BRL currency picker), "Docs" - a single place to attach
   both contract and invoice files (real file uploads, stored on disk
@@ -46,10 +46,11 @@ detouring through Overview, is still to be designed). Currently:
   from the day rate (Full = full rate, Half = half, Custom = manual,
   and unlocks the Observation cell) - with a running cost Sum in the
   selected currency. Every field autosaves on blur/change, no separate
-  save button. Below that table, a collapsible **Personal Projects**
+  save button. Below the grid, a collapsible **Personal Projects**
   section holds a second, simpler project list for work that isn't for
-  a client - same row/table look, Active/Completed toggle, 5-row cap,
-  and drag-to-reorder, but no Paid column. Its (wider) popup only has a
+  a client - keeps the original row/table look (not cards), plus the
+  same Active/Completed toggle, 5-row cap, and drag-to-reorder, but no
+  Paid column. Its (wider) popup only has a
   description, project status, an Assets/Notes/References panel (no
   Client/Deadline/Day rate/Docs/Log, since none of that applies to a
   personal project), and a Checklist - a plain to-do list, checkbox on

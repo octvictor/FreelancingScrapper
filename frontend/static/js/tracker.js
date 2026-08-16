@@ -62,27 +62,25 @@ function paidPillClass(paid) {
     return paid === "Paid" ? "paid-paid" : "paid-unpaid";
 }
 
-function projectRowHtml(project) {
+function projectCardHtml(project) {
     const isCompleted = project.status === "Completed";
     const isPaid = project.paid === "Paid";
     return `
-        <tr data-id="${project.id}">
-            <td class="row-drag-handle-cell"><span class="row-drag-handle" title="Drag to reorder">&#8942;</span></td>
-            <td class="project-row-title">${escapeAttr(project.title) || "Untitled project"}</td>
-            <td class="project-row-desc">${escapeAttr(project.description || "")}</td>
-            <td>
+        <div class="project-card" data-id="${project.id}">
+            <span class="row-drag-handle" title="Drag to reorder">&#8942;</span>
+            <div class="project-card-title">${escapeAttr(project.title) || "Untitled project"}</div>
+            <div class="project-card-desc">${escapeAttr(project.description || "")}</div>
+            <div class="project-card-pills">
                 <select class="cell-select color-pill ${trackerStatusPillClass(project.status)}" data-field="status">
                     <option value="Active" ${!isCompleted ? "selected" : ""}>&#9679; Active</option>
                     <option value="Completed" ${isCompleted ? "selected" : ""}>&#9679; Completed</option>
                 </select>
-            </td>
-            <td>
                 <select class="cell-select color-pill ${paidPillClass(project.paid)}" data-field="paid">
                     <option value="Unpaid" ${!isPaid ? "selected" : ""}>&#9679; Unpaid</option>
                     <option value="Paid" ${isPaid ? "selected" : ""}>&#9679; Paid</option>
                 </select>
-            </td>
-        </tr>
+            </div>
+        </div>
     `;
 }
 
@@ -92,8 +90,8 @@ function renderProjectTable() {
     const expanded = expandedViews[activeView];
     const visible = expanded ? all : all.slice(0, PROJECT_ROW_LIMIT);
     $("project-table-body").innerHTML = visible.length
-        ? visible.map(projectRowHtml).join("")
-        : `<tr><td colspan="5" class="muted" style="padding: 14px 10px;">No projects yet.</td></tr>`;
+        ? visible.map(projectCardHtml).join("")
+        : `<p class="muted project-card-empty">No projects yet.</p>`;
 
     const expandBtn = $("project-expand-btn");
     const hiddenCount = all.length - visible.length;
@@ -104,15 +102,15 @@ function renderProjectTable() {
         expandBtn.style.display = "none";
     }
 
-    document.querySelectorAll("#project-table-body tr[data-id]").forEach((tr) => {
-        const projectId = parseInt(tr.dataset.id, 10);
+    document.querySelectorAll("#project-table-body .project-card[data-id]").forEach((card) => {
+        const projectId = parseInt(card.dataset.id, 10);
 
-        tr.addEventListener("click", (e) => {
+        card.addEventListener("click", (e) => {
             if (e.target.closest(".custom-select-wrap, .row-drag-handle")) return;
             openProjectModal(projectId);
         });
 
-        const statusSelect = tr.querySelector(".cell-select[data-field='status']");
+        const statusSelect = card.querySelector(".cell-select[data-field='status']");
         statusSelect.addEventListener("change", (e) => {
             statusSelect.classList.remove("status-active", "status-completed");
             statusSelect.classList.add(trackerStatusPillClass(e.target.value));
@@ -120,7 +118,7 @@ function renderProjectTable() {
         });
         enhanceSelect(statusSelect);
 
-        const paidSelect = tr.querySelector(".cell-select[data-field='paid']");
+        const paidSelect = card.querySelector(".cell-select[data-field='paid']");
         paidSelect.addEventListener("change", (e) => {
             paidSelect.classList.remove("paid-paid", "paid-unpaid");
             paidSelect.classList.add(paidPillClass(e.target.value));
@@ -128,7 +126,7 @@ function renderProjectTable() {
         });
         enhanceSelect(paidSelect);
 
-        wireRowDrag(tr, persistRowOrder);
+        wireRowDrag(card, persistRowOrder);
     });
 }
 
@@ -190,7 +188,7 @@ function wireRowDrag(tr, persistFn) {
 }
 
 async function persistRowOrder() {
-    const ids = Array.from(document.querySelectorAll("#project-table-body tr[data-id]")).map((tr) => parseInt(tr.dataset.id, 10));
+    const ids = Array.from(document.querySelectorAll("#project-table-body .project-card[data-id]")).map((card) => parseInt(card.dataset.id, 10));
     await fetch("/api/tracker/projects/reorder", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
