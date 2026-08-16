@@ -2,19 +2,16 @@
 
 A personal-use suite of tools for freelance 3D artist work: a FastAPI
 backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
-plain static files, so nothing extra to install), with a vertical tool
-menu in the sidebar. Currently:
+plain static files, so nothing extra to install). There's no persistent
+sidebar - every page shows only its own content, centered, at the same
+width as every other page. Overview is the home page and the default on
+launch; every other page has a small "&larr; Overview" link at the top to
+get back (a proper way to jump straight between tool pages, without
+detouring through Overview, is still to be designed). Currently:
 
-Overview, Tracker, and Gatherer live under a collapsible **Tools**
-section in the sidebar (click the section header to fold/unfold it).
-Below it sits a second collapsible section, **Management**, for
-non-client-work items - To Do, Notes, and Finances.
-
-- **Overview** - the app's home page, first item in the Tools group and
-  the default page on launch. Unlike every other page it has no
-  persistent sidebar - the page runs full width instead of squeezed
-  beside a 220px rail. Stats are the hero: a single full-width search
-  bar ("Jump to a project, studio, task, or note...") on top - searches
+- **Overview** - the app's home page. Stats are the hero: a single
+  full-width search bar ("Jump to a project, studio, task, or note...")
+  on top - searches
   titles across Tracker projects, Gatherer studios, To Do tasks, and
   Notes as you type, in a dropdown under the bar; clicking a result
   jumps to that tool and, where a detail view exists, opens it directly
@@ -28,7 +25,7 @@ non-client-work items - To Do, Notes, and Finances.
   icon and name only, no counts on the tiles themselves, since those
   numbers already live in the stat cards above and repeating them there
   too would just be the same fact shown twice.
-- **Tracker** (shown in the sidebar as "Project Manager") - a project
+- **Tracker** (shown as "Project Manager") - a project
   table with a drag handle, Title, Description, Status
   (Active/Completed), and Paid/Unpaid, each pill directly editable
   inline like Gatherer's (Paid/Unpaid use a neutral grey/off-white
@@ -60,7 +57,7 @@ non-client-work items - To Do, Notes, and Finances.
   strikethrough), with "+ Add item" for more rows. Backed by its own
   `personal_projects`/`personal_checklist_items` tables, entirely
   separate from `projects`.
-- **Gatherer** (shown in the sidebar as "Studio Database") - a
+- **Gatherer** (shown as "Studio Database") - a
   manually-curated list of studios/companies you find yourself
   (Behance, Instagram, wherever) - Title, clickable URL, Type
   (Studio/Company, a neutral grey pill - the type doesn't carry a
@@ -70,16 +67,15 @@ non-client-work items - To Do, Notes, and Finances.
   separate save button. Click "+ Add row" for a new one. The Type and
   Status column headers double as filters - pick a value to narrow the
   table to just that value, blank to show everything again.
-- **To Do** (under Management, noticeably wider than the other tools -
-  not full-width, just roomier) - inspired by Microsoft To Do.
-  Multiple lists in a rail on the left; a star sits to the right of
-  every list's name there - always visible, grey by default and gold
-  once favorited, toggled directly from the rail without selecting the
-  list first - and a matching star above the rail filters it down to
+- **To Do** - inspired by Microsoft To Do. Multiple lists in a column on
+  the left, its own to this page; a star sits to the right of every
+  list's name there - always visible, grey by default and gold once
+  favorited, toggled directly from that column without selecting the
+  list first - and a matching star above the column filters it down to
   just favorited lists. "+ New list" adds one. Click a list's name in
   the tasks pane to rename it; a color swatch to the title's left opens
-  the shared color preset popover, shown as a dot next to the list's name in
-  the rail. "Delete list" sits to the title's right. Favoriting
+  the shared color preset popover, shown as a dot next to the list's name
+  in that column. "Delete list" sits to the title's right. Favoriting
   only applies to lists - there's no importance concept for individual
   tasks. Each list is a set of checkbox tasks - check one off and it
   drops into a collapsed "Completed (n)" section below the active
@@ -90,8 +86,7 @@ non-client-work items - To Do, Notes, and Finances.
   within the task, same checkbox-and-title pattern as Personal
   Projects' Checklist), and a freeform Notes text area. Everything
   autosaves on blur/change.
-- **Notes** (under Management, no page title of its own - the sidebar
-  already labels it) - a Google Keep-style board of cards. A dashed
+- **Notes** - a Google Keep-style board of cards. A dashed
   "+" tile is always the first card; clicking it opens a small popover
   to choose Text note or List before creating anything (a note's type
   is fixed at creation - a text note has a freeform body, a list note
@@ -110,7 +105,7 @@ non-client-work items - To Do, Notes, and Finances.
   colors, applied as the card's full background - text on the card
   switches to dark automatically for a light enough pick - and an
   always-visible red delete button (with the themed confirm dialog).
-- **Finances** (under Management) - a page for money tools, starting
+- **Finances** - a page for money tools, starting
   with **Calculator**, a section labeled by its own heading inside the
   page (more Finances features can join it later). Calculator is
   browser-tab-style, holding any number of independent spreadsheet-
@@ -219,18 +214,17 @@ into a venv from before that change - the fix is on both scripts now.
   reading/writing uploaded Docs files on disk (under
   `data/project_docs/<project_id>/`), since that's specific to Tracker
   rather than shared storage logic.
-- `api/overview.py` - read-only routes for the Overview hub (launcher
-  counts/stats/due-soon/recent-notes, plus the search bar's cross-tool
-  title search) - aggregates the other tools' tables, doesn't own any
-  of its own.
+- `api/overview.py` - read-only routes for the Overview hub (stats/due-
+  soon/recent-notes, plus the search bar's cross-tool title search) -
+  aggregates the other tools' tables, doesn't own any of its own.
 - `frontend/index.html` - the whole page shell (every tool's markup
   lives here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
-- `frontend/static/js/nav.js` - shared page navigation (including
-  hiding the sidebar on Overview), the custom dropdown component, and a
-  themed `confirmDialog()` (used in place of the browser's native
-  `confirm()` for every delete action) - loaded first since every tool
-  depends on it.
+- `frontend/static/js/nav.js` - shared page navigation (no sidebar to
+  manage - just which page section is visible and the "&larr; Overview"
+  link's visibility), the custom dropdown component, and a themed
+  `confirmDialog()` (used in place of the browser's native `confirm()`
+  for every delete action) - loaded first since every tool depends on it.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.

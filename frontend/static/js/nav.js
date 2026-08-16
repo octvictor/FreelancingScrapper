@@ -100,47 +100,29 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
 }
 
 const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
-const WIDE_PAGES = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
+// No persistent sidebar on any page - a page shows only its own content,
+// centered, same width as every other page. The only way back to Overview
+// (for now) is the small link at the top of every other page; a proper
+// way to jump straight between tool pages is still to be designed.
 function showPage(page) {
     PAGE_IDS.forEach((id) => {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    document.querySelector(".main").classList.toggle("main-wide", WIDE_PAGES.includes(page));
-    // Overview is the one page without the persistent sidebar - its own
-    // launcher column replaces that job, so keeping both would just be two
-    // navs side by side.
-    document.querySelector(".app-shell").classList.toggle("sidebar-hidden", page === "overview");
+    $("back-nav").style.display = page === "overview" ? "none" : "";
     if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
 }
 
-// Shared by sidebar nav-item clicks and any other control that jumps to a
-// tool page (the Overview launcher rows and search results) - keeps the
-// sidebar's active state in sync no matter which UI triggered the move.
+// Shared by the back-to-Overview link and any other control that jumps to
+// a tool page (the Overview tiles and search results).
 function navigateTo(page) {
-    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
     showPage(page);
 }
 
-document.querySelectorAll(".nav-item").forEach((btn) => {
-    btn.addEventListener("click", () => navigateTo(btn.dataset.page));
-});
+document.querySelector(".back-to-overview-btn").addEventListener("click", () => navigateTo("overview"));
 
-// The nav-item marked "active" in the HTML never fires a click, so the
-// layout classes above would otherwise never apply to it on first load.
-showPage(document.querySelector(".nav-item.active").dataset.page);
-
-// ---------- Collapsible sidebar groups ----------
-
-document.querySelectorAll(".sidebar-group-header").forEach((header) => {
-    header.addEventListener("click", () => {
-        const target = $(header.dataset.collapseTarget);
-        if (!target) return;
-        target.classList.toggle("collapsed");
-        header.classList.toggle("collapsed");
-    });
-});
+showPage("overview");
 
 // ---------- Custom dropdown ----------
 // Replaces a native <select>'s popup, which browsers won't let CSS fully

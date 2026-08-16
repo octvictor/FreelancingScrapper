@@ -78,157 +78,16 @@ button, input, select, textarea {
     min-height: 100vh;
 }
 
-/* Overview is the one page without the persistent sidebar - its own
-   launcher column (see below) replaces that job, so keeping both would
-   just be two navs side by side. Toggled by nav.js's showPage(). */
-.app-shell.sidebar-hidden .sidebar {
-    display: none;
-}
-
-/* ---------- Sidebar ---------- */
-
-.sidebar {
-    width: 220px;
-    flex-shrink: 0;
-    background: var(--panel);
-    border-right: 1px solid var(--border-soft);
-    display: flex;
-    flex-direction: column;
-    padding: 20px 14px;
-}
-
-.brand {
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: -0.01em;
-    padding: 4px 8px 18px 8px;
-}
-
-.nav-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.nav-item {
-    display: block;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    text-decoration: none;
-    font-size: 13.5px;
-    cursor: pointer;
-    border: none;
-    background: none;
-    text-align: left;
-    width: 100%;
-}
-
-/* Shown in a sidebar group that has no real nav items wired up yet. */
-.nav-empty-placeholder {
-    padding: 8px 10px;
-    color: var(--text-faint);
-    font-size: 13px;
-    font-style: italic;
-}
-
-.nav-item:hover {
-    background: var(--panel-alt);
-    color: var(--text);
-}
-
-.nav-item.active {
-    background: var(--border-soft);
-    color: var(--text);
-    font-weight: 600;
-}
-
-/* ---------- Collapsible sidebar group ---------- */
-
-.sidebar-group {
-    margin-bottom: 10px;
-}
-
-.sidebar-group-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 8px 8px;
-    cursor: pointer;
-}
-
-.sidebar-group-header:hover {
-    color: var(--text-muted);
-}
-
-.sidebar-group-chevron {
-    display: inline-block;
-    font-size: 9px;
-    transition: transform 0.15s ease;
-}
-
-.sidebar-group-header.collapsed .sidebar-group-chevron {
-    transform: rotate(-90deg);
-}
-
-.nav-list.collapsed {
-    display: none;
-}
-
-/* Plain text nav items with a small icon - no button/chip box. Hover
-   and active states are carried entirely by text color/weight, so the
-   base .nav-item background-fill states are explicitly turned off. */
-.nav-item-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-}
-
-.nav-item-chip:last-child {
-    margin-bottom: 0;
-}
-
-.nav-item-chip:hover {
-    background: none;
-    color: var(--text);
-}
-
-.nav-item-chip.active {
-    background: none;
-    color: var(--text);
-    font-weight: 600;
-}
-
-.nav-item-icon {
-    font-size: 13px;
-    color: var(--text-faint);
-    flex-shrink: 0;
-}
-
 .muted {
     color: var(--text-muted);
     font-size: 12.5px;
 }
 
 /* ---------- Main content ---------- */
+/* No sidebar on any page - every page's content is centered in the full
+   viewport width at the same max-width, itself included via
+   .back-nav below. */
 
-/* EXPERIMENT: centered layout (vs. the original left-aligned one) -
-   .main fills the space next to the sidebar as before, but now centers
-   its page section within that space instead of letting it sit flush
-   against the sidebar. Revert by restoring max-width directly on
-   .main and dropping the flex/align-items/> section rules below. */
 .main {
     flex: 1;
     min-width: 0;
@@ -238,27 +97,31 @@ button, input, select, textarea {
     align-items: center;
 }
 
-.main > section {
+.main > section,
+.main > .back-nav {
     width: 100%;
-    max-width: 900px;
-}
-
-/* Gatherer's table needs more room for long titles/URLs than the forms
-   on other pages do - toggled by nav.js when Gatherer is the active page. */
-.main.main-wide > section {
     max-width: 1400px;
 }
 
-/* To Do and Notes get noticeably more room than the other tools - not
-   literally edge-to-edge, .main's own 40px side padding plus the
-   sidebar already provide margin, this just stops capping the page
-   short of that. Without this, the section's own (narrower) max-width
-   would get centered by .main's centering experiment above, pushing
-   its content's left edge past the sidebar gap that To Do (and now
-   Notes) is meant to start flush against. */
-.main.main-wide > #page-todo,
-.main.main-wide > #page-notes {
-    max-width: 100%;
+/* Shown on every page except Overview (toggled by nav.js's showPage) -
+   the only way back until a proper way to jump straight between tool
+   pages is designed. */
+.back-nav {
+    margin-bottom: 14px;
+}
+
+.back-to-overview-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 0;
+    cursor: pointer;
+}
+
+.back-to-overview-btn:hover {
+    color: var(--text);
 }
 
 .page-title {
@@ -398,8 +261,8 @@ table.project-table tr:last-child td {
 }
 
 /* Title and URL get real room to breathe - the two fields most likely
-   to hold long text. Widths only bite once .main-wide gives the table
-   space to use (see .main.main-wide in the layout section above). */
+   to hold long text (see .main > section in the layout section above
+   for the width the table has to use). */
 table.gatherer-table th:nth-child(1),
 table.gatherer-table td:nth-child(1) {
     min-width: 220px;
@@ -2301,12 +2164,11 @@ table.project-table tbody tr:hover td {
 }
 
 /* ---------- Overview hub ---------- */
-/* No persistent sidebar on this page (see .app-shell.sidebar-hidden above) -
-   a full-width search bar on top takes over the sidebar's navigating job
-   for jumping to a specific item. Below that, stats are the hero: three
-   cards, then Due soon / Recent notes, then a plain shortcut-tile footer
-   for jumping to a whole tool - no per-tile counts there, since those
-   numbers already live in the stat cards above. */
+/* This app's home page - a full-width search bar on top for jumping to a
+   specific item. Below that, stats are the hero: three cards, then Due
+   soon / Recent notes, then a plain shortcut-tile footer for jumping to a
+   whole tool - no per-tile counts there, since those numbers already live
+   in the stat cards above. */
 
 .overview-search-wrap {
     position: relative;
@@ -2424,13 +2286,13 @@ table.project-table tbody tr:hover td {
 .overview-tile {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: var(--panel);
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
-    padding: 10px 12px;
+    padding: 15px 16px;
     color: var(--text);
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 600;
     text-align: left;
     cursor: pointer;
@@ -2442,7 +2304,7 @@ table.project-table tbody tr:hover td {
 }
 
 .overview-tile-icon {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--text-faint);
     flex-shrink: 0;
 }
@@ -2478,6 +2340,7 @@ table.project-table tbody tr:hover td {
 }
 
 .overview-panel {
+    min-height: 175px;
     margin-bottom: 12px;
 }
 
