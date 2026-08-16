@@ -9,77 +9,40 @@
 </head>
 <body>
     <div class="app-shell">
-        <main class="main">
-            <div class="command-bar">
-                <span class="overview-search-icon">&#128269;</span>
-                <input type="text" class="overview-search-input" id="overview-search-input" placeholder="Jump to a project, studio, task, or note&hellip;" autocomplete="off">
+        <div class="top-strip">
+            <div class="top-strip-brand">vaio</div>
+            <div class="top-strip-search">
+                <span class="overview-search-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
+                </span>
+                <input type="text" class="overview-search-input" id="overview-search-input" placeholder="Search" autocomplete="off">
                 <div class="overview-search-results" id="overview-search-results" style="display:none;"></div>
             </div>
+            <div class="top-strip-spacer"></div>
+        </div>
 
-            <div class="zone-row">
-                <nav class="zone-nav" id="zone-nav">
-                    <button class="zone-tile-row" type="button" data-page="overview">
-                        <span class="zone-tile-icon">&#8962;</span>
-                        <span class="zone-tile-name">Overview</span>
-                    </button>
-                    <button class="zone-tile-row" type="button" data-page="tracker">
-                        <span class="zone-tile-icon">&#9636;</span>
-                        <span class="zone-tile-name">Project Manager</span>
-                        <span class="zone-tile-count" id="zone-count-tracker">&ndash;</span>
-                    </button>
-                    <button class="zone-tile-row" type="button" data-page="gatherer">
-                        <span class="zone-tile-icon">&#9638;</span>
-                        <span class="zone-tile-name">Studio Database</span>
-                        <span class="zone-tile-count" id="zone-count-gatherer">&ndash;</span>
-                    </button>
-                    <button class="zone-tile-row" type="button" data-page="todo">
-                        <span class="zone-tile-icon">&#9745;</span>
-                        <span class="zone-tile-name">To Do</span>
-                        <span class="zone-tile-count" id="zone-count-todo">&ndash;</span>
-                    </button>
-                    <button class="zone-tile-row" type="button" data-page="notes">
-                        <span class="zone-tile-icon">&#9998;</span>
-                        <span class="zone-tile-name">Notes</span>
-                        <span class="zone-tile-count" id="zone-count-notes">&ndash;</span>
-                    </button>
-                    <button class="zone-tile-row" type="button" data-page="finance">
-                        <span class="zone-tile-icon">&#164;</span>
-                        <span class="zone-tile-name">Finances</span>
-                        <span class="zone-tile-count" id="zone-count-finance">&ndash;</span>
-                    </button>
-                </nav>
-
-                <div class="zone-info">
-            <section id="page-overview">
-                <div class="overview-stats-grid">
-                    <div class="overview-stat">
-                        <div class="overview-stat-label">Active projects</div>
-                        <div class="overview-stat-value" id="overview-stat-projects">&ndash;</div>
-                    </div>
-                    <div class="overview-stat">
-                        <div class="overview-stat-label">Tasks</div>
-                        <div class="overview-stat-value" id="overview-stat-tasks">&ndash;</div>
-                    </div>
-                    <div class="overview-stat">
-                        <div class="overview-stat-label">Studios logged</div>
-                        <div class="overview-stat-value" id="overview-stat-studios">&ndash;</div>
-                    </div>
-                    <div class="overview-stat">
-                        <div class="overview-stat-label">Unnamed</div>
-                        <div class="overview-stat-value">&ndash;</div>
+        <div class="body-row">
+            <nav class="sb" id="sb">
+                <div class="sb-group">
+                    <div class="sb-group-label">Workspace</div>
+                    <div class="sb-group-items">
+                        <button class="sb-item" type="button" data-page="overview">Command Centre</button>
+                        <button class="sb-item" type="button" data-page="tracker">Project Manager</button>
+                        <button class="sb-item" type="button" data-page="gatherer">Studio Logs</button>
                     </div>
                 </div>
-                <div class="overview-panels-grid">
-                    <div class="panel overview-panel">
-                        <div class="overview-panel-title">Due soon</div>
-                        <div id="overview-due-soon"></div>
-                    </div>
-                    <div class="panel overview-panel">
-                        <div class="overview-panel-title">Recent notes</div>
-                        <div id="overview-recent-notes"></div>
+                <div class="sb-group">
+                    <div class="sb-group-label">Personal</div>
+                    <div class="sb-group-items">
+                        <button class="sb-item" type="button" data-page="todo">To Do</button>
+                        <button class="sb-item" type="button" data-page="notes">Notes</button>
+                        <button class="sb-item" type="button" data-page="finance">Finances</button>
                     </div>
                 </div>
-            </section>
+            </nav>
+
+            <div class="ct-card">
+            <section id="page-overview"></section>
 
             <section id="page-tracker" style="display:none;">
                 <h1 class="page-title">Project Manager</h1>
@@ -128,7 +91,7 @@
             </section>
 
             <section id="page-gatherer" style="display:none;">
-                <h1 class="page-title">Studio Database</h1>
+                <h1 class="page-title">Studio Logs</h1>
                 <p class="muted" style="margin: -10px 0 18px;">Studios and companies you're tracking - add a row, fill it in, it saves as you type.</p>
 
                 <div class="panel">
@@ -244,9 +207,8 @@
                     </div>
                 </div>
             </section>
-                </div>
             </div>
-        </main>
+        </div>
     </div>
 
     <div class="modal-backdrop" id="project-modal-backdrop" style="display:none;">

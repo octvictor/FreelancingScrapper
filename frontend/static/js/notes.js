@@ -51,10 +51,11 @@ function notePreviewContentHtml(note) {
 function noteCardHtml(note) {
     const bg = note.color || "var(--panel-alt)";
     // Several of the shared preset colors are light enough that the
-    // card's usual white text would be unreadable on them - switch to
-    // dark text for those instead of restricting Notes to a separate,
-    // pre-darkened palette.
-    const lightClass = note.color && colorNeedsDarkText(note.color) ? "note-card-light" : "";
+    // app's default (dark) text would be unreadable on them, and the
+    // rest are dark enough that it needs to flip the other way instead -
+    // note-card-light/-dark pick whichever contrast the chosen color
+    // actually needs, rather than assuming one direction.
+    const lightClass = note.color ? (colorNeedsDarkText(note.color) ? "note-card-light" : "note-card-dark") : "";
     const titleText = escapeAttr(note.title) || "Untitled note";
     const titleClass = note.title ? "" : "empty";
     return `

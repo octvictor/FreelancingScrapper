@@ -101,27 +101,26 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
 
 const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
-// A permanent .zone-nav sits beside .zone-info on every page - it never
-// shrinks or hides, so switching pages only ever swaps which section is
-// visible inside .zone-info and which .zone-tile-row is marked active.
+// A permanent .sb sits beside .ct-card on every page - it never shrinks
+// or hides, so switching pages only ever swaps which section is visible
+// inside .ct-card and which .sb-item is marked active.
 function showPage(page) {
     PAGE_IDS.forEach((id) => {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
     });
-    document.querySelectorAll(".zone-tile-row").forEach((btn) => {
+    document.querySelectorAll(".sb-item").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.page === page);
     });
-    if (typeof refreshOverview === "function") refreshOverview();
 }
 
-// Shared by the zone-nav rows and any other control that jumps to a page
+// Shared by the sidebar rows and any other control that jumps to a page
 // (search results, etc).
 function navigateTo(page) {
     showPage(page);
 }
 
-document.querySelectorAll(".zone-tile-row").forEach((btn) => {
+document.querySelectorAll(".sb-item").forEach((btn) => {
     btn.addEventListener("click", () => navigateTo(btn.dataset.page));
 });
 

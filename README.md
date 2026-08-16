@@ -2,32 +2,27 @@
 
 A personal-use suite of tools for freelance 3D artist work: a FastAPI
 backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
-plain static files, so nothing extra to install). A permanent left nav
-column sits next to the page content on every page - it never shrinks,
-collapses, or hides, and clicking a row switches only the content beside
-it, not the nav itself. A single search bar ("Jump to a project, studio,
-task, or note...") spans the full width above both, also always present.
-The whole row grew wider to fit the nav without shrinking any page's
-actual content: each page's working width is unchanged from before the
-nav became permanent. Overview is the home page and the default on
-launch, reached through the nav like any other page. Currently:
+plain static files, so nothing extra to install). Light theme (dark
+mode returns later as a toggle), set in Google Sans Flex. A full-width
+header spans the top of the app - the "vaio" wordmark on the left, a
+single search box centered on the whole width. Below that, a permanent
+sidebar sits next to the page content and never shrinks, collapses, or
+hides; rows carry no background of their own at rest, and the open
+page's row gets a plain white card with a soft shadow, grouped under
+"Workspace" (Command Centre, Project Manager, Studio Logs) and
+"Personal" (To Do, Notes, Finances). The content field itself bleeds to
+the window's right and bottom edges rather than floating with a margin
+on every side. Command Centre is the home page and the default on
+launch, reached through the sidebar like any other page - its own
+content is still being designed, so it's intentionally blank for now.
 
-- **Overview** - the app's home page, opened via the nav like everywhere
-  else. Four stat cards (Active projects, Tasks - active count, Studios
-  logged - deliberately no money figure, and a placeholder "Unnamed"
-  card), then "Due soon" (active projects with a deadline, soonest
-  first, color-coded overdue/today/soon/later) and "Recent notes" (most
-  recently edited, newest first) side by side. No shortcut tiles of its
-  own anymore - the permanent nav beside it already covers that, so
-  repeating it here would just be the same links shown twice. The
-  search bar at the top of every page searches titles across Tracker
-  projects, Gatherer studios, To Do tasks, and Notes as you type, in a
-  dropdown under the bar; clicking a result jumps to that tool and,
-  where a detail view exists, opens it directly (a studio result just
-  lands on Studio Database, which has no per-row detail view). The nav
-  itself shows a live count next to each tool (Project Manager's active
-  count, studios logged, active tasks, notes, finance tables) and marks
-  whichever page is currently open.
+- **Command Centre** (shown as such, internally still "Overview") - the
+  app's home page, currently blank while its design is worked out. The
+  search box in the header searches titles across Tracker projects,
+  Gatherer studios, To Do tasks, and Notes as you type, in a dropdown
+  under the bar; clicking a result jumps to that tool and, where a
+  detail view exists, opens it directly (a studio result just lands on
+  Studio Logs, which has no per-row detail view).
 - **Tracker** (shown as "Project Manager") - a grid of project cards,
   three across (Title, a two-line description clip, and Status/Paid
   pills together at the bottom of the card), each pill directly
@@ -61,7 +56,7 @@ launch, reached through the nav like any other page. Currently:
   strikethrough), with "+ Add item" for more rows. Backed by its own
   `personal_projects`/`personal_checklist_items` tables, entirely
   separate from `projects`.
-- **Gatherer** (shown as "Studio Database") - a
+- **Gatherer** (shown as "Studio Logs") - a
   manually-curated list of studios/companies you find yourself
   (Behance, Instagram, wherever) - Title, clickable URL, Type
   (Studio/Company, a neutral grey pill - the type doesn't carry a
@@ -122,7 +117,7 @@ launch, reached through the nav like any other page. Currently:
   that field, right-aligned, and removes the active table (confirms
   first) - if it was the last one left, a fresh blank table takes its
   place so Calculator is never left empty. Each table is the same
-  inline-editable "+ Add row" look as Studio Database: every row has a
+  inline-editable "+ Add row" look as Studio Logs: every row has a
   Title, a small round color swatch to its left (opening the same
   shared color preset popover as To Do/Notes' colors - like To Do, only the
   swatch itself shows the color, the row's own background never gets
@@ -211,31 +206,32 @@ into a venv from before that change - the fix is on both scripts now.
 - `server.py` - FastAPI app: mounts the frontend and the API routers.
   This is the whole "navigation shell" - the extension point for a new
   tool is one new file under `api/`, one under `frontend/static/js/`,
-  and one `<button class="nav-item">` + `<section>` in
+  and one `<button class="sb-item">` + `<section>` in
   `frontend/index.html`.
 - `api/gatherer.py`, `api/tracker.py`, `api/todo.py` - HTTP routes per
   tool, wrapping the storage logic below. `api/tracker.py` also owns
   reading/writing uploaded Docs files on disk (under
   `data/project_docs/<project_id>/`), since that's specific to Tracker
   rather than shared storage logic.
-- `api/overview.py` - read-only routes for the Overview hub (stats/due-
-  soon/recent-notes, plus the search bar's cross-tool title search) -
-  aggregates the other tools' tables, doesn't own any of its own.
+- `api/overview.py` - read-only routes: the search bar's cross-tool
+  title search (in active use) plus stats/due-soon/recent-notes
+  (currently unused by the frontend - Command Centre is blank until
+  its design is settled, but the routes are kept for when it isn't).
 - `frontend/index.html` - the whole page shell (every tool's markup
   lives here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
-- `frontend/static/js/nav.js` - shared page navigation (no sidebar to
-  manage - just which page section is visible and the "&larr; Overview"
-  link's visibility), the custom dropdown component, and a themed
-  `confirmDialog()` (used in place of the browser's native `confirm()`
-  for every delete action) - loaded first since every tool depends on it.
+- `frontend/static/js/nav.js` - shared page navigation (which page
+  section is visible inside `.ct-card` and which `.sb-item` is marked
+  active), the custom dropdown component, and a themed `confirmDialog()`
+  (used in place of the browser's native `confirm()` for every delete
+  action) - loaded first since every tool depends on it.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
-- `frontend/static/js/overview.js` - the Overview hub's rendering and
-  search; reuses `openProjectModal`/`openTodoTaskModal`/`openNoteModal`
-  from the other tools' own files to open a detail view after a search
-  jump, rather than duplicating that logic.
+- `frontend/static/js/overview.js` - the header search bar's logic;
+  reuses `openProjectModal`/`openTodoTaskModal`/`openNoteModal` from the
+  other tools' own files to open a detail view after a search jump,
+  rather than duplicating that logic.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data lives on disk.
 
@@ -343,7 +339,20 @@ rest of the app instead of drifting:
   unset. A couple of elements (Notes cards, Calculator's tab buttons,
   popovers, the modal close button) previously shipped without one and
   read as sharp against everything else; that's the failure mode to
-  avoid when adding something new.
+  avoid when adding something new. The one exception is the shell
+  itself (header/sidebar/content field) - it uses its own flat
+  `--radius-shell` (9px) per the Figma spec instead of the lg/md/sm
+  scale, since that scale predates the shell redesign and wasn't part
+  of it.
+- **Light theme, one typeface.** `--bg`/`--panel`/`--panel-alt`/`--text`/
+  etc. in `:root` now hold the light palette (dark mode is parked, not
+  deleted - it'll come back as a toggle). Every page uses the same
+  Google Sans Flex family (`frontend/static/fonts/`, Light 300 + Regular
+  400) - the sidebar/header are Light per the Figma spec, the rest of
+  the app kept whatever weights it already had. Don't reintroduce a
+  second typeface for a single element (the "VAIO" brand wordmark
+  briefly used a serif before this shipped) - one face, used
+  consistently, is the whole point.
 - **One swatch size app-wide.** Every color-picker trigger (To Do's
   list color, Notes' card color, Calculator's row color) shares the
   same `.swatch-btn` class in app.css, which is what keeps them the
@@ -361,8 +370,12 @@ rest of the app instead of drifting:
   callback and a clear callback, rather than keeping its own popover or
   preset list. `colorNeedsDarkText()` (also in nav.js, a standard luma
   check) decides whether a chosen color is light enough to need dark
-  text instead of white on top of it - it only matters for a picker that
-  tints an entire surface with text on it (currently just Notes' card
-  background); a picker that only fills a small standalone swatch icon
-  (To Do, Calculator) never needs this since there's no text sitting on
-  the color itself.
+  text instead of light text on top of it - it only matters for a
+  picker that tints an entire surface with text on it (currently just
+  Notes' card background); a picker that only fills a small standalone
+  swatch icon (To Do, Calculator) never needs this since there's no
+  text sitting on the color itself. Notes applies `note-card-light` or
+  `note-card-dark` depending on which way that check goes - two classes,
+  not one, since the app's own default text color is dark now (light
+  theme) and needs to flip the opposite way for a note whose own chosen
+  color happens to be dark.
