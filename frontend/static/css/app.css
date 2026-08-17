@@ -1286,6 +1286,12 @@ table.project-table tbody tr:hover td {
     max-width: 1100px;
 }
 
+/* Narrower than modal-personal's default - a plain notepad-style note
+   doesn't need that much width, it'd just read as an empty room. */
+.modal.note-modal {
+    max-width: 520px;
+}
+
 .modal-section {
     border-top: 1px solid var(--border-soft);
     padding-top: 18px;
@@ -1388,6 +1394,59 @@ table.project-table tbody tr:hover td {
 .modal-description-input:hover,
 .modal-description-input:focus {
     border-color: var(--border);
+}
+
+/* Notes have no title and no boxed fields - just a flush writing
+   surface on the modal's own background, a thin rule above Delete
+   note (.modal-footer already provides that), and a toggle to switch
+   the note into list/checkbox mode. */
+.note-modal-toggle-btn {
+    position: absolute;
+    top: 10px;
+    right: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-faint);
+    cursor: pointer;
+    padding: 6px;
+}
+
+.note-modal-toggle-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.note-modal-toggle-btn:hover {
+    color: var(--text);
+    background: var(--panel-alt);
+}
+
+.note-modal-toggle-btn.active {
+    color: var(--accent-blue);
+}
+
+.note-modal-plain {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 220px;
+    margin-top: 6px;
+    padding: 0;
+}
+
+.note-modal-plain::placeholder {
+    color: var(--text-faint);
 }
 
 .modal-top-row {
@@ -2010,41 +2069,6 @@ table.project-table tbody tr:hover td {
     margin-top: 2px;
 }
 
-/* Notes' "+" add-card popover: pick Text note or List before creating. */
-.note-type-popover {
-    flex-direction: column;
-    gap: 2px;
-    min-width: 160px;
-}
-
-.note-type-popover.open {
-    display: flex;
-}
-
-.note-type-option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: none;
-    border: none;
-    color: var(--text);
-    font-size: 13.5px;
-    text-align: left;
-    padding: 8px 10px;
-    cursor: pointer;
-}
-
-.note-type-option:hover {
-    background: var(--panel);
-}
-
-.note-type-option-icon {
-    font-size: 15px;
-    width: 18px;
-    text-align: center;
-    flex-shrink: 0;
-}
-
 .todo-list-title-input:hover {
     background: var(--panel-alt);
 }
@@ -2232,21 +2256,12 @@ table.project-table tbody tr:hover td {
 /* Card content is a read-only preview - no inputs, no in-place editing.
    Clicking the card (see notes.js's click-to-open handling) opens the
    detail modal for the real editing surface; the card is purely a
-   launcher + at-a-glance summary, Keep-style. Title and preview text
-   both sit flush against the card's own 14px padding with no extra
-   left offset of their own, so they align with each other by
-   construction rather than needing padding to be kept in sync. */
-.note-card-title {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text);
-    margin: 0 0 8px;
-    word-break: break-word;
-}
-
-.note-card-title.empty {
+   launcher + at-a-glance summary, Keep-style. Notes have no title -
+   preview text sits flush against the card's own 14px padding with no
+   extra left offset of its own. */
+.note-preview-empty {
     color: var(--text-faint);
-    font-weight: 500;
+    font-size: 13.5px;
 }
 
 /* No line-clamp - a long body just grows the card taller (masonry
@@ -2350,13 +2365,12 @@ table.project-table tbody tr:hover td {
    is light enough that the card's usual white text would wash out
    against it - switches every text element on the card to a dark
    equivalent instead. */
-.note-card.note-card-light .note-card-title,
 .note-card.note-card-light .note-preview-body,
 .note-card.note-card-light .note-preview-item {
     color: #242322;
 }
 
-.note-card.note-card-light .note-card-title.empty,
+.note-card.note-card-light .note-preview-empty,
 .note-card.note-card-light .note-preview-item.checked span,
 .note-card.note-card-light .note-preview-more {
     color: #6b6a63;
@@ -2385,13 +2399,12 @@ table.project-table tbody tr:hover td {
    app's now-dark default (var(--text)) - added once the base theme
    flipped to light, since before this the default text was already
    bright and worked for dark swatches without a special case. */
-.note-card.note-card-dark .note-card-title,
 .note-card.note-card-dark .note-preview-body,
 .note-card.note-card-dark .note-preview-item {
     color: #f5f4f1;
 }
 
-.note-card.note-card-dark .note-card-title.empty,
+.note-card.note-card-dark .note-preview-empty,
 .note-card.note-card-dark .note-preview-item.checked span,
 .note-card.note-card-dark .note-preview-more {
     color: #b3b1a9;
@@ -2418,7 +2431,7 @@ table.project-table tbody tr:hover td {
 /* ---------- Search (lives inside .top-strip-search) ---------- */
 /* The one search bar in the app, sitting in the header instead of on
    any page's own content, so it's available no matter which page is
-   open. Command Centre itself, reached via the sidebar like every
+   open. Command Center itself, reached via the sidebar like every
    other page, has no content of its own yet - left blank until its
    design is settled (see the persisted spec sheet in the UI Overhaul
    artifact for what's already locked in). */
@@ -2515,7 +2528,7 @@ input.overview-search-input {
     margin: 0;
 }
 
-/* ---------- Command Centre: "Full Board" ---------- */
+/* ---------- Command Center: "Full Board" ---------- */
 /* Greeting, a quick-capture line that drops straight into Notes, then
    two paired rows (Today's Focus + Due Soon, Active Projects + Recent
    Notes) and a small visual strip of the newest notes. Every value

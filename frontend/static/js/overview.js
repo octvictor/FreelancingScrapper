@@ -1,4 +1,4 @@
-// Command Centre - the app's home page, reached through the permanent
+// Command Center - the app's home page, reached through the permanent
 // sidebar like any other page: greeting, a quick-capture line straight
 // into Notes, Today's Focus + Due Soon, Active Projects + Recent Notes,
 // and a small visual strip of the newest notes ("Full Board" - approved
@@ -17,7 +17,7 @@ const OVERVIEW_TYPE_META = {
     note: { icon: "&#9998;", label: "Note", page: "notes" },
 };
 
-// ---------- Command Centre content ----------
+// ---------- Command Center content ----------
 
 function ccGreeting() {
     const hour = new Date().getHours();
@@ -49,6 +49,16 @@ function ccRelativeTime(isoStr) {
     if (diffDay === 1) return "Yesterday";
     if (diffDay < 7) return `${diffDay}d ago`;
     return then.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Notes have no title - a short snippet of the actual content stands
+// in for one wherever a note needs a one-line label (Recent Notes here;
+// ccNoteChipHtml below does its own version for the bigger strip).
+function ccNoteLabel(n) {
+    const firstLine = (n.body || "").trim().split("\n")[0].trim();
+    if (firstLine) return escapeAttr(firstLine.length > 60 ? firstLine.slice(0, 60) + "…" : firstLine);
+    if (n.first_item_text) return escapeAttr(n.first_item_text);
+    return "Empty note";
 }
 
 function ccRowHtml(role, id, titleText, subLabel, dotClass) {
@@ -85,21 +95,27 @@ function ccProjectMiniHtml(p) {
     `;
 }
 
+// Notes have no title - the chip's headline is a snippet of the note's
+// own content instead: a text note's first line, or a list note's
+// item count (with its first item as a small preview underneath).
 function ccNoteChipHtml(n) {
     const bg = n.color || "var(--panel-alt)";
     const lightTextClass = n.color && !colorNeedsDarkText(n.color) ? "chip-light-text" : "";
-    const title = escapeAttr(n.title) || "Untitled note";
-    let body;
+    let headline;
+    let preview = "";
     if (n.type === "list") {
-        body = n.item_count ? `${n.item_count} item${n.item_count === 1 ? "" : "s"}` : "No items yet";
+        headline = n.item_count ? `${n.item_count} item${n.item_count === 1 ? "" : "s"}` : "Empty list";
+        if (n.first_item_text) preview = escapeAttr(n.first_item_text);
     } else {
-        const snippet = (n.body || "").trim();
-        body = snippet ? escapeAttr(snippet.length > 60 ? snippet.slice(0, 60) + "…" : snippet) : "";
+        const firstLine = (n.body || "").trim().split("\n")[0].trim();
+        headline = firstLine
+            ? escapeAttr(firstLine.length > 60 ? firstLine.slice(0, 60) + "…" : firstLine)
+            : "Empty note";
     }
     return `
         <div class="note-chip ${lightTextClass}" style="background:${bg};" data-role="cc-note" data-id="${n.id}">
-            <p class="note-chip-title">${title}</p>
-            <p class="note-chip-body">${body}</p>
+            <p class="note-chip-title">${headline}</p>
+            <p class="note-chip-body">${preview}</p>
         </div>
     `;
 }
@@ -132,7 +148,7 @@ async function refreshOverview() {
 
     const recentNotes = data.recent_notes || [];
     $("cc-recent-notes").innerHTML = recentNotes.length
-        ? recentNotes.map((n) => ccRowHtml("cc-note", n.id, escapeAttr(n.title) || "Untitled note", ccRelativeTime(n.updated_at))).join("")
+        ? recentNotes.map((n) => ccRowHtml("cc-note", n.id, ccNoteLabel(n), ccRelativeTime(n.updated_at))).join("")
         : `<p class="cc-empty">No notes yet.</p>`;
 
     const notesPreview = data.notes_preview || [];
@@ -202,7 +218,7 @@ $("qc-input").addEventListener("keydown", async (e) => {
     await fetch(`/api/notes/${note.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: text }),
+        body: JSON.stringify({ body: text }),
     });
     e.target.value = "";
     e.target.disabled = false;

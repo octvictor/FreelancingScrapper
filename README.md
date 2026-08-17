@@ -11,15 +11,15 @@ right. Below that, a permanent sidebar sits next to the page content
 and never shrinks, collapses, or hides; every row carries a Lucide icon
 plus its label, no background of its own at rest, and the open page's
 row gets a plain white card with a soft shadow, grouped under
-"Workspace" (Command Centre, Project Manager, Studio Logs) and
+"Workspace" (Command Center, Project Manager, Studio Logs) and
 "Personal" (To Do, Notes, Finances). The content field sits flush
 against the header's bottom border with square corners on every side
 (no radius, no gap) - only its left edge, against the sidebar, keeps a
 border - and bleeds to the window's right and bottom edges rather than
-floating with a margin all around. Command Centre is the home page and
+floating with a margin all around. Command Center is the home page and
 the default on launch, reached through the sidebar like any other page.
 
-- **Command Centre** (shown as such, internally still "Overview") - the
+- **Command Center** (shown as such, internally still "Overview") - the
   app's home page, its "Full Board" layout (one of three combinations
   mocked up and compared side by side before shipping). A greeting
   ("Good morning/afternoon/evening", time-of-day driven) and today's
@@ -104,25 +104,32 @@ the default on launch, reached through the sidebar like any other page.
   within the task, same checkbox-and-title pattern as Personal
   Projects' Checklist), and a freeform Notes text area. Everything
   autosaves on blur/change.
-- **Notes** - a Google Keep-style board of cards. A dashed
-  "+" tile is always the first card; clicking it opens a small popover
-  to choose Text note or List before creating anything (a note's type
-  is fixed at creation - a text note has a freeform body, a list note
-  has a checklist instead) and immediately opens the new note's detail
-  modal so title/content get entered in a bigger space. Cards
-  themselves are read-only previews - clicking one (anywhere but its
-  color/delete controls or a list item's checkbox) reopens that modal
-  for full editing; a list note's items use the same checkbox-and-title
-  row as To Do's Steps, with "+ Add item" for more, and can also be
-  checked off straight from the card preview without opening the
-  modal. Cards flow into a responsive masonry grid (CSS columns, so it
-  reflows its own column count as the window resizes) and can be
-  dragged by a small handle to reorder - the order persists. Each card
-  has a color button (a fixed grey glyph, not tinted by the note's own
-  color) opening the same shared color preset popover used by To Do's list
-  colors, applied as the card's full background - text on the card
-  switches to dark automatically for a light enough pick - and an
-  always-visible red delete button (with the themed confirm dialog).
+- **Notes** - a Google Keep-style board of cards, titleless - a note is
+  just a body of text, or a checklist, with no separate title field
+  anywhere. A dashed "+" tile is always the first card; clicking it
+  creates a blank text note and drops straight into its detail modal,
+  Notepad-style, no picker in the way. The modal itself is flush -
+  borderless, background-less textarea, just a thin divider and the
+  delete control - with a toggle button that switches the *same* note
+  between Text and List at any time (not just at creation): text-to-list
+  splits the body on newlines into checklist items, list-to-text joins
+  the items back into lines. Cards themselves are read-only previews -
+  clicking one (anywhere but its color/delete controls or a list item's
+  checkbox) reopens that modal for full editing; a list note's items use
+  the same checkbox-and-title row as To Do's Steps, with "+ Add item" for
+  more, and can also be checked off straight from the card preview
+  without opening the modal. Since there's no title, both the card
+  preview and any place Notes show up elsewhere (Command Center's rows
+  and strip, search results) derive a short label from the body's first
+  line, or a list's first item text. Cards flow into a responsive
+  masonry grid (CSS columns, so it reflows its own column count as the
+  window resizes) and can be dragged by a small handle to reorder - the
+  order persists. Each card has a color button (a fixed grey glyph, not
+  tinted by the note's own color) opening the same shared color preset
+  popover used by To Do's list colors, applied as the card's full
+  background - text on the card switches to dark automatically for a
+  light enough pick - and an always-visible red delete button (with the
+  themed confirm dialog).
 - **Finances** - a page for money tools, starting
   with **Calculator**, a section labeled by its own heading inside the
   page (more Finances features can join it later). Calculator is
@@ -234,7 +241,7 @@ into a venv from before that change - the fix is on both scripts now.
   rather than shared storage logic.
 - `api/overview.py` - read-only routes: the header search bar's
   cross-tool title search, plus the stats endpoint powering Command
-  Centre's Full Board (counts, due-soon, recent-notes, today's-focus,
+  Center's Full Board (counts, due-soon, recent-notes, today's-focus,
   active-projects, notes-preview) - aggregates the other tools' tables,
   doesn't own any of its own. Quick capture and the Today's Focus
   checkbox don't add new routes - they call the existing Notes/To Do
@@ -250,7 +257,7 @@ into a venv from before that change - the fix is on both scripts now.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
-- `frontend/static/js/overview.js` - Command Centre's Full Board
+- `frontend/static/js/overview.js` - Command Center's Full Board
   rendering (quick capture, Today's Focus, Due Soon, Active Projects,
   Recent Notes, Notes preview) and the header search bar's logic;
   reuses `openProjectModal`/`selectTodoList`+`openTodoTaskModal`/
@@ -297,9 +304,12 @@ executable), shared across every tool:
   updated_at. A list's tasks.
 - `todo_steps` - task_id, text, checked, created_at, updated_at. Backs
   a task's Steps mini-checklist.
-- `notes` - title, body, type ('text' or 'list'), color, position
-  (manual drag order), created_at, updated_at. Notes' own table, a flat
-  board (no lists/nesting).
+- `notes` - body, type ('text' or 'list', mutable via the modal's toggle
+  button), color, position (manual drag order), created_at, updated_at.
+  Notes' own table, a flat board (no lists/nesting). Still has a `title`
+  column for schema compatibility, but the frontend no longer reads or
+  writes it - display everywhere derives a short label from `body`'s
+  first line, or a list's first item text, instead.
 - `note_items` - note_id, text, checked, created_at, updated_at. Backs
   a 'list'-type note's checklist.
 - `finance_tables` - title, currency, position, created_at, updated_at.
@@ -383,8 +393,7 @@ rest of the app instead of drifting:
   an unbacked weight like 600 makes the browser synthesize a faux-bold
   face, which renders heavier than intended and can glitch into
   mixed-weight/mixed-color glyphs on some letters. Page titles
-  (`.page-title`) are 22px/400, matching `.cc-greeting` exactly, and
-  `.note-card-title` is 500, not 700.
+  (`.page-title`) are 22px/400, matching `.cc-greeting` exactly.
 - **Qualify selectors that override a generic input rule.** The catch-all
   `input[type="text"], input[type="password"], ...` rule in app.css has
   higher specificity than a bare class selector, so a class-only

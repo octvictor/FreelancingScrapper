@@ -23,6 +23,7 @@ class NoteUpdate(BaseModel):
     title: str | None = None
     body: str | None = None
     color: str | None = None
+    type: str | None = None
 
 
 class ReorderPayload(BaseModel):

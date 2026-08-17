@@ -1,16 +1,20 @@
 // Notes tool - Google Keep-style cards in a responsive masonry grid
 // (see .notes-grid in app.css: CSS multi-column layout with
 // column-width, not a fixed column-count, so it reflows on its own as
-// the window resizes). A note is either "text" (title + freeform body)
-// or "list" (title + a checkbox checklist, same .checklist-item markup
-// as To Do's Steps). Cards in the grid are read-only previews - all
-// real editing happens in a detail modal, opened by clicking the card
-// (mirroring how Tracker/To Do already open a modal for full editing),
-// with two quick actions available straight from the card without
-// opening it: checking a list item, and changing the color. Cards can
-// be dragged by a grip handle to reorder, same pattern as Project
-// Manager's rows generalized from a table row to a card div.
-// $()/confirmDialog come from nav.js, escapeAttr from gatherer.js.
+// the window resizes). Notes have no title - a note is either "text"
+// (a plain freeform body, like a Notepad window) or "list" (a checkbox
+// checklist, same .checklist-item markup as To Do's Steps), and its
+// type can be switched either way from inside the detail modal
+// (toggleNoteType migrates content across: body -> a single item,
+// items -> newline-joined body). Cards in the grid are read-only
+// previews - all real editing happens in a detail modal, opened by
+// clicking the card (mirroring how Tracker/To Do already open a modal
+// for full editing) or immediately after creating one, with two quick
+// actions available straight from the card without opening it: checking
+// a list item, and changing the color. Cards can be dragged by a grip
+// handle to reorder, same pattern as Project Manager's rows generalized
+// from a table row to a card div. $()/confirmDialog come from nav.js,
+// escapeAttr from gatherer.js.
 
 let notes = [];
 let draggedNote = null;
@@ -35,6 +39,7 @@ const PREVIEW_ITEM_LIMIT = 6;
 function notePreviewContentHtml(note) {
     if (note.type === "list") {
         const items = note.items || [];
+        if (!items.length) return `<div class="note-preview-empty">Empty list</div>`;
         const shown = items.slice(0, PREVIEW_ITEM_LIMIT);
         const rows = shown.map((item) => `
             <div class="note-preview-item ${item.checked ? "checked" : ""}">
@@ -45,7 +50,9 @@ function notePreviewContentHtml(note) {
         const more = items.length > shown.length ? `<div class="note-preview-more">+${items.length - shown.length} more</div>` : "";
         return `<div class="note-preview-items">${rows}${more}</div>`;
     }
-    return note.body ? `<div class="note-preview-body">${escapeAttr(note.body)}</div>` : "";
+    return note.body
+        ? `<div class="note-preview-body">${escapeAttr(note.body)}</div>`
+        : `<div class="note-preview-empty">Empty note</div>`;
 }
 
 function noteCardHtml(note) {
@@ -56,12 +63,9 @@ function noteCardHtml(note) {
     // note-card-light/-dark pick whichever contrast the chosen color
     // actually needs, rather than assuming one direction.
     const lightClass = note.color ? (colorNeedsDarkText(note.color) ? "note-card-light" : "note-card-dark") : "";
-    const titleText = escapeAttr(note.title) || "Untitled note";
-    const titleClass = note.title ? "" : "empty";
     return `
         <div class="note-card ${lightClass}" data-id="${note.id}" data-type="${note.type}" style="background:${bg};">
             <span class="note-drag-handle" title="Drag to reorder">&#8942;</span>
-            <div class="note-card-title ${titleClass}">${titleText}</div>
             ${notePreviewContentHtml(note)}
             <div class="note-card-footer">
                 <button class="note-color-btn swatch-btn" data-role="color" type="button" title="Note color">${NOTE_COLOR_GLYPH}</button>
@@ -212,68 +216,25 @@ async function persistNoteOrder() {
     notes = data.notes;
 }
 
-// ---------- Add-note popover ----------
-// The "+" tile opens a small popover to pick Text note or List before
-// anything is created - a note's type can't change after creation (a
-// text note has no items, a list note has no body). Once a type is
-// chosen, a blank note is created and its detail modal opens right
-// away so title/content get entered in the bigger modal space instead
-// of tiny inline fields.
-
-let noteTypePopover = null;
-
-function closeNoteTypePopover() {
-    if (!noteTypePopover) return;
-    noteTypePopover.remove();
-    noteTypePopover = null;
-    document.removeEventListener("click", onNoteTypePopoverOutsideClick);
-}
-
-function onNoteTypePopoverOutsideClick(e) {
-    if (noteTypePopover && !noteTypePopover.contains(e.target) && !e.target.closest("#note-add-btn")) {
-        closeNoteTypePopover();
-    }
-}
-
-function openNoteTypePopover(btn) {
-    closeNoteTypePopover();
-    const rect = btn.getBoundingClientRect();
-
-    const panel = document.createElement("div");
-    panel.className = "popover-panel note-type-popover open";
-    panel.style.left = rect.left + "px";
-    panel.style.top = rect.bottom + 6 + "px";
-    panel.innerHTML = `
-        <button type="button" class="note-type-option" data-type="text">
-            <span class="note-type-option-icon">&#9998;</span> Text note
-        </button>
-        <button type="button" class="note-type-option" data-type="list">
-            <span class="note-type-option-icon">&#9745;</span> List
-        </button>
-    `;
-    panel.querySelectorAll(".note-type-option").forEach((opt) => {
-        opt.addEventListener("click", () => createNote(opt.dataset.type));
-    });
-
-    document.body.appendChild(panel);
-    noteTypePopover = panel;
-    setTimeout(() => document.addEventListener("click", onNoteTypePopoverOutsideClick));
-}
+// ---------- Add a note ----------
+// The "+" tile creates a blank text note straight away, no type-picker
+// popup first - opens its detail modal directly, like a fresh Notepad
+// window. List mode is a toggle inside that modal instead of a choice
+// made up front (see toggleNoteType below), so there's nothing to pick
+// before you've even started writing.
 
 function wireNoteAddCard() {
     $("note-add-btn").addEventListener("click", (e) => {
         e.stopPropagation();
-        if (noteTypePopover) closeNoteTypePopover();
-        else openNoteTypePopover(e.currentTarget);
+        createNote();
     });
 }
 
-async function createNote(type) {
-    closeNoteTypePopover();
+async function createNote() {
     const resp = await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({ type: "text" }),
     });
     const created = await resp.json();
     notes.unshift(created);
@@ -293,16 +254,17 @@ function openNoteModal(noteId) {
     if (!note) return;
     activeNoteId = noteId;
 
-    $("note-modal-title").value = note.title || "";
+    $("note-modal-type-toggle").classList.toggle("active", note.type === "list");
+    $("note-modal-type-toggle").title = note.type === "list" ? "Switch to text" : "Switch to list";
 
     if (note.type === "list") {
         $("note-modal-body").style.display = "none";
-        $("note-modal-items-section").style.display = "";
+        $("note-modal-items-wrap").style.display = "";
         renderNoteModalItems(note.items || []);
     } else {
         $("note-modal-body").style.display = "";
         $("note-modal-body").value = note.body || "";
-        $("note-modal-items-section").style.display = "none";
+        $("note-modal-items-wrap").style.display = "none";
     }
 
     $("note-modal-backdrop").style.display = "flex";
@@ -317,24 +279,22 @@ async function closeNoteModal() {
     const note = notes.find((n) => n.id === noteId);
     if (!note) return;
 
-    // Save directly from the modal's current input values rather than
+    // Save directly from the modal's current input value rather than
     // trusting `notes` as-is: a blur's save may still be in flight
     // (async, fire-and-forget) when the close click lands right after
     // it, and checking stale state below could wrongly judge a note
-    // the user just titled as empty and delete it.
-    const updates = { title: $("note-modal-title").value.trim() };
+    // the user just wrote as empty and delete it.
     if (note.type !== "list") {
-        updates.body = $("note-modal-body").value.trim() || null;
+        await saveNoteField(noteId, { body: $("note-modal-body").value.trim() || null });
     }
-    await saveNoteField(noteId, updates);
 
     // A note created and closed without ever being given content is
     // just clutter - discard it instead of leaving a blank card, same
     // as the old compose-card flow did.
     const saved = notes.find((n) => n.id === noteId);
     const isEmpty = saved.type === "list"
-        ? !saved.title && (!saved.items || saved.items.length === 0)
-        : !saved.title && !saved.body;
+        ? !saved.items || saved.items.length === 0
+        : !saved.body;
 
     if (isEmpty) {
         await fetch(`/api/notes/${noteId}`, { method: "DELETE" });
@@ -350,10 +310,48 @@ $("note-modal-backdrop").addEventListener("click", (e) => {
     if (e.target.id === "note-modal-backdrop") closeNoteModal();
 });
 
-$("note-modal-title").addEventListener("blur", () => {
+// Switches the open note between text and list mode, carrying content
+// across rather than discarding it: text -> list turns the body into a
+// single item, list -> text joins every item's text into body lines.
+async function toggleNoteType() {
     if (activeNoteId === null) return;
-    saveNoteField(activeNoteId, { title: $("note-modal-title").value.trim() });
-});
+    const note = notes.find((n) => n.id === activeNoteId);
+    if (!note) return;
+
+    if (note.type === "list") {
+        const joined = (note.items || []).map((it) => it.text).filter(Boolean).join("\n");
+        for (const item of note.items || []) {
+            await fetch(`/api/notes/${activeNoteId}/items/${item.id}`, { method: "DELETE" });
+        }
+        // saveNoteField replaces this note's entry in `notes` with the
+        // server's response, so nothing about the object should be
+        // mutated locally after it - any local edit here would just be
+        // discarded along with the stale reference.
+        await saveNoteField(activeNoteId, { type: "text", body: joined || null });
+    } else {
+        const bodyText = $("note-modal-body").value.trim();
+        await saveNoteField(activeNoteId, { type: "list", body: null });
+        if (bodyText) {
+            const resp = await fetch(`/api/notes/${activeNoteId}/items`, { method: "POST" });
+            const item = await resp.json();
+            await fetch(`/api/notes/${activeNoteId}/items/${item.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: bodyText }),
+            });
+            item.text = bodyText;
+            // Re-fetch the reference - saveNoteField just swapped it out
+            // for the server's version above.
+            const freshNote = notes.find((n) => n.id === activeNoteId);
+            if (freshNote) freshNote.items.push(item);
+        }
+    }
+
+    openNoteModal(activeNoteId);
+    refreshNoteCard(activeNoteId);
+}
+
+$("note-modal-type-toggle").addEventListener("click", toggleNoteType);
 
 $("note-modal-body").addEventListener("blur", () => {
     if (activeNoteId === null) return;
@@ -417,9 +415,16 @@ $("note-modal-add-item-btn").addEventListener("click", async () => {
     wireNoteModalItemRow(row).focus();
 });
 
-(async function initNotes() {
+// Re-fetches and re-renders the whole grid - called once at load and
+// again every time nav.js switches to the Notes page (see showPage),
+// so a note created elsewhere (Command Center's quick capture, which
+// doesn't go through this file at all) shows up instead of the grid
+// staying frozen at whatever it looked like on first load.
+async function refreshNotes() {
     const resp = await fetch("/api/notes");
     const data = await resp.json();
     notes = data.notes;
     renderNotes();
-})();
+}
+
+refreshNotes();

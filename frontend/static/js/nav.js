@@ -113,6 +113,7 @@ function showPage(page) {
         btn.classList.toggle("active", btn.dataset.page === page);
     });
     if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
+    if (page === "notes" && typeof refreshNotes === "function") refreshNotes();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page

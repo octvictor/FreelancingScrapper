@@ -790,7 +790,7 @@ def reorder_notes(ids: list[int]) -> None:
 
 
 def update_note(note_id: int, **fields) -> dict | None:
-    allowed = {"title", "body", "color"}
+    allowed = {"title", "body", "color", "type"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         with get_connection() as conn:
@@ -1020,7 +1020,7 @@ def get_overview_stats() -> dict:
     three of those badges - the hub deliberately repeats them, nothing is
     computed twice), upcoming project deadlines, the most recently touched
     notes, incomplete to-dos, active projects, and a small preview of the
-    newest notes for Command Centre's Full Board layout."""
+    newest notes for Command Center's Full Board layout."""
     with get_connection() as conn:
         active_projects = conn.execute(
             "SELECT COUNT(*) FROM projects WHERE status='Active'"
@@ -1044,7 +1044,9 @@ def get_overview_stats() -> dict:
         recent_notes = [
             dict(row)
             for row in conn.execute(
-                "SELECT id, title, updated_at FROM notes ORDER BY updated_at DESC LIMIT 3"
+                "SELECT id, body, type, updated_at, "
+                "(SELECT text FROM note_items WHERE note_id = notes.id ORDER BY id LIMIT 1) AS first_item_text "
+                "FROM notes ORDER BY updated_at DESC LIMIT 3"
             ).fetchall()
         ]
 
@@ -1069,8 +1071,9 @@ def get_overview_stats() -> dict:
         notes_preview = [
             dict(row)
             for row in conn.execute(
-                "SELECT id, title, body, type, color, created_at, "
-                "(SELECT COUNT(*) FROM note_items WHERE note_id = notes.id) AS item_count "
+                "SELECT id, body, type, color, created_at, "
+                "(SELECT COUNT(*) FROM note_items WHERE note_id = notes.id) AS item_count, "
+                "(SELECT text FROM note_items WHERE note_id = notes.id ORDER BY id LIMIT 1) AS first_item_text "
                 "FROM notes ORDER BY created_at DESC LIMIT 4"
             ).fetchall()
         ]
@@ -1091,10 +1094,22 @@ def get_overview_stats() -> dict:
     }
 
 
+def _note_label(body: str | None, first_item_text: str | None) -> str:
+    """Notes have no title - the search/overview surfaces that used to
+    show one now show a short snippet of the actual content instead:
+    the first line of a text note's body, or a list note's first item."""
+    snippet = (body or "").strip().splitlines()[0].strip() if body and body.strip() else (first_item_text or "").strip()
+    if not snippet:
+        return "Empty note"
+    return snippet if len(snippet) <= 60 else snippet[:60].rstrip() + "…"
+
+
 def search_all(query: str, limit_per_type: int = 6) -> list[dict]:
     """Backs the Overview search bar - one LIKE query per searchable
-    table, title matches only. SQLite's LIKE is already case-insensitive
-    for ASCII, which covers this app's use case."""
+    table. SQLite's LIKE is already case-insensitive for ASCII, which
+    covers this app's use case. Notes have no title field to match
+    against - matches their body text or, for a list note, any item's
+    text, and returns a short snippet as the display label."""
     like = f"%{query}%"
     results: list[dict] = []
     with get_connection() as conn:
@@ -1116,7 +1131,11 @@ def search_all(query: str, limit_per_type: int = 6) -> list[dict]:
                 "title": row["title"] or "Untitled task",
             })
         for row in conn.execute(
-            "SELECT id, title FROM notes WHERE title LIKE ? LIMIT ?", (like, limit_per_type)
+            "SELECT DISTINCT n.id, n.body, "
+            "(SELECT text FROM note_items WHERE note_id = n.id AND text LIKE ? ORDER BY id LIMIT 1) AS matched_item_text "
+            "FROM notes n LEFT JOIN note_items ni ON ni.note_id = n.id "
+            "WHERE n.body LIKE ? OR ni.text LIKE ? LIMIT ?",
+            (like, like, like, limit_per_type),
         ):
-            results.append({"type": "note", "id": row["id"], "title": row["title"] or "Untitled note"})
+            results.append({"type": "note", "id": row["id"], "title": _note_label(row["body"], row["matched_item_text"])})
     return results

@@ -35,7 +35,7 @@
                     <div class="sb-group-items">
                         <button class="sb-item" type="button" data-page="overview">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect></svg>
-                            <span>Command Centre</span>
+                            <span>Command Center</span>
                         </button>
                         <button class="sb-item" type="button" data-page="tracker">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path><path d="M8 10v4"></path><path d="M12 10v2"></path><path d="M16 10v6"></path></svg>
@@ -432,17 +432,17 @@
     </div>
 
     <div class="modal-backdrop" id="note-modal-backdrop" style="display:none;">
-        <div class="modal modal-personal">
+        <div class="modal modal-personal note-modal">
             <button class="modal-close" id="note-modal-close" title="Close">&times;</button>
+            <button class="note-modal-toggle-btn" id="note-modal-type-toggle" type="button" title="Switch to list">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h13"></path><path d="M13 12h8"></path><path d="M13 19h8"></path><path d="M3 10a2 2 0 0 0 2 2h3"></path><path d="M3 5v12a2 2 0 0 0 2 2h3"></path></svg>
+            </button>
 
-            <input type="text" class="modal-title-input" id="note-modal-title" placeholder="Title">
+            <textarea class="note-modal-plain" id="note-modal-body" placeholder="Take a note..."></textarea>
 
-            <textarea class="modal-description-input" id="note-modal-body" placeholder="Take a note..."></textarea>
-
-            <div class="modal-section" id="note-modal-items-section">
-                <p class="modal-section-title">Items</p>
+            <div id="note-modal-items-wrap" style="display:none;">
                 <div class="checklist-list" id="note-modal-items-list"></div>
-                <button class="btn" id="note-modal-add-item-btn" style="margin-top: 10px;" type="button">+ Add item</button>
+                <button class="btn btn-text" id="note-modal-add-item-btn" type="button">+ Add item</button>
             </div>
 
             <div class="modal-footer">
