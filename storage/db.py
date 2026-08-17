@@ -1018,8 +1018,9 @@ def get_overview_stats() -> dict:
     """Everything the Overview hub needs in one round trip: each tool's
     launcher badge count, the three headline stat values (same numbers as
     three of those badges - the hub deliberately repeats them, nothing is
-    computed twice), upcoming project deadlines, and the most recently
-    touched notes."""
+    computed twice), upcoming project deadlines, the most recently touched
+    notes, incomplete to-dos, active projects, and a small preview of the
+    newest notes for Command Centre's Full Board layout."""
     with get_connection() as conn:
         active_projects = conn.execute(
             "SELECT COUNT(*) FROM projects WHERE status='Active'"
@@ -1047,6 +1048,33 @@ def get_overview_stats() -> dict:
             ).fetchall()
         ]
 
+        today_focus = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT t.id, t.title, t.list_id, tl.title AS list_title, tl.color AS list_color "
+                "FROM todo_tasks t JOIN todo_lists tl ON tl.id = t.list_id "
+                "WHERE t.completed = 0 "
+                "ORDER BY t.created_at DESC LIMIT 5"
+            ).fetchall()
+        ]
+
+        active_project_list = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT id, title, client, status FROM projects "
+                "WHERE status='Active' ORDER BY position ASC, id DESC LIMIT 5"
+            ).fetchall()
+        ]
+
+        notes_preview = [
+            dict(row)
+            for row in conn.execute(
+                "SELECT id, title, body, type, color, created_at, "
+                "(SELECT COUNT(*) FROM note_items WHERE note_id = notes.id) AS item_count "
+                "FROM notes ORDER BY created_at DESC LIMIT 4"
+            ).fetchall()
+        ]
+
     return {
         "counts": {
             "tracker": active_projects,
@@ -1057,6 +1085,9 @@ def get_overview_stats() -> dict:
         },
         "due_soon": due_soon,
         "recent_notes": recent_notes,
+        "today_focus": today_focus,
+        "active_projects": active_project_list,
+        "notes_preview": notes_preview,
     }
 
 

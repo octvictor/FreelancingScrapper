@@ -70,6 +70,39 @@
             <section id="page-overview">
                 <p class="cc-greeting" id="cc-greeting">&nbsp;</p>
                 <p class="cc-date" id="cc-date">&nbsp;</p>
+
+                <div class="qc-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                    <input type="text" id="qc-input" class="qc-input" placeholder="Jot something down&hellip;" autocomplete="off">
+                </div>
+                <p class="qc-hint">Enter saves it straight to Notes.</p>
+
+                <div class="cc-cols cc-block">
+                    <div>
+                        <p class="cc-section-title">Today's Focus</p>
+                        <div id="cc-today-focus"></div>
+                    </div>
+                    <div>
+                        <p class="cc-section-title">Due Soon</p>
+                        <div id="cc-due-soon"></div>
+                    </div>
+                </div>
+
+                <div class="cc-cols cc-block">
+                    <div>
+                        <p class="cc-section-title">Active Projects</p>
+                        <div id="cc-active-projects"></div>
+                    </div>
+                    <div>
+                        <p class="cc-section-title">Recent Notes</p>
+                        <div id="cc-recent-notes"></div>
+                    </div>
+                </div>
+
+                <div class="cc-block">
+                    <p class="cc-section-title">Notes</p>
+                    <div class="notes-strip" id="cc-notes-strip"></div>
+                </div>
             </section>
 
             <section id="page-tracker" style="display:none;">

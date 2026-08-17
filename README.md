@@ -20,14 +20,25 @@ floating with a margin all around. Command Centre is the home page and
 the default on launch, reached through the sidebar like any other page.
 
 - **Command Centre** (shown as such, internally still "Overview") - the
-  app's home page. Just a greeting ("Good morning/afternoon/evening",
-  time-of-day driven) and today's date for now, top-aligned with the
-  sidebar's "Workspace" label. The search box in the header searches
-  titles across Tracker projects, Gatherer studios, To Do tasks, and
-  Notes as you type, in a dropdown under the bar; clicking a result
-  jumps to that tool and, where a detail view exists, opens it directly
-  (a studio result just lands on Studio Logs, which has no per-row
-  detail view).
+  app's home page, its "Full Board" layout (one of three combinations
+  mocked up and compared side by side before shipping). A greeting
+  ("Good morning/afternoon/evening", time-of-day driven) and today's
+  date, top-aligned with the sidebar's "Workspace" label; a quick-capture
+  field right below it drops a line straight into Notes on Enter, no
+  need to leave the page. Below that, two paired rows - Today's Focus
+  (up to 5 incomplete to-dos, newest first, check one off right there
+  without navigating) beside Due Soon (active projects with a deadline,
+  soonest first, an urgency-colored dot), then Active Projects beside
+  Recent Notes - and a small visual strip of the 4 most recently
+  *created* notes at the bottom (each one its own color, same contrast
+  logic Notes' own cards use). Every row is clickable and opens that
+  item's real detail view via the same functions the header search
+  already uses - nothing here is a dead end. The search box in the
+  header searches titles across Tracker projects, Gatherer studios, To
+  Do tasks, and Notes as you type, in a dropdown under the bar; clicking
+  a result jumps to that tool and, where a detail view exists, opens it
+  directly (a studio result just lands on Studio Logs, which has no
+  per-row detail view).
 - **Tracker** (shown as "Project Manager") - a grid of project cards,
   three across (Title, a two-line description clip, and Status/Paid
   pills together at the bottom of the card), each pill directly
@@ -219,9 +230,12 @@ into a venv from before that change - the fix is on both scripts now.
   `data/project_docs/<project_id>/`), since that's specific to Tracker
   rather than shared storage logic.
 - `api/overview.py` - read-only routes: the header search bar's
-  cross-tool title search, plus a stats/due-soon/recent-notes endpoint
-  kept for later (Command Centre's UI doesn't call it right now) -
-  aggregates the other tools' tables, doesn't own any of its own.
+  cross-tool title search, plus the stats endpoint powering Command
+  Centre's Full Board (counts, due-soon, recent-notes, today's-focus,
+  active-projects, notes-preview) - aggregates the other tools' tables,
+  doesn't own any of its own. Quick capture and the Today's Focus
+  checkbox don't add new routes - they call the existing Notes/To Do
+  endpoints directly.
 - `frontend/index.html` - the whole page shell (every tool's markup
   lives here, shown/hidden by `nav.js`).
 - `frontend/static/css/app.css` - design tokens + all component styles.
@@ -233,11 +247,13 @@ into a venv from before that change - the fix is on both scripts now.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
-- `frontend/static/js/overview.js` - Command Centre's rendering
-  (greeting + date) and the header search bar's logic; reuses
-  `openProjectModal`/`openTodoTaskModal`/`openNoteModal` from the other
-  tools' own files to open a detail view after a search jump, rather
-  than duplicating that logic.
+- `frontend/static/js/overview.js` - Command Centre's Full Board
+  rendering (quick capture, Today's Focus, Due Soon, Active Projects,
+  Recent Notes, Notes preview) and the header search bar's logic;
+  reuses `openProjectModal`/`selectTodoList`+`openTodoTaskModal`/
+  `openNoteModal` from the other tools' own files to open a detail view
+  on click, the same functions a search jump already used, rather than
+  duplicating that logic.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data lives on disk.
 
