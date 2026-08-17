@@ -27,13 +27,16 @@ the default on launch, reached through the sidebar like any other page.
   field right below it drops a line straight into Notes on Enter, no
   need to leave the page. Below that, two paired rows - Today's Focus
   (up to 5 incomplete to-dos, newest first, check one off right there
-  without navigating) beside Due Soon (active projects with a deadline,
-  soonest first, an urgency-colored dot), then Active Projects beside
-  Recent Notes - and a small visual strip of the 4 most recently
-  *created* notes at the bottom (each one its own color, same contrast
-  logic Notes' own cards use). Every row is clickable and opens that
-  item's real detail view via the same functions the header search
-  already uses - nothing here is a dead end. The search box in the
+  without navigating) beside Due Soon (up to 5 active projects with a
+  deadline, soonest first, an urgency-colored dot), then Active
+  Projects beside Recent Notes - both capped at 3, tighter above than
+  the row above them since there's less in them - and a small visual
+  strip of the 4 most recently *created* notes at the bottom (each one
+  its own color, same contrast logic Notes' own cards use). Every row's
+  title renders in the Regular weight (Light reads too faint at this
+  size) and is clickable, opening that item's real detail view via the
+  same functions the header search already uses - nothing here is a
+  dead end. The search box in the
   header searches titles across Tracker projects, Gatherer studios, To
   Do tasks, and Notes as you type, in a dropdown under the bar; clicking
   a result jumps to that tool and, where a detail view exists, opens it

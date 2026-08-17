@@ -148,7 +148,7 @@ button, input, select, textarea {
 .top-strip-brand {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 3px;
     font-weight: 400;
     font-size: 27px;
     color: var(--text);
@@ -159,6 +159,9 @@ button, input, select, textarea {
     width: 19px;
     height: 19px;
     flex-shrink: 0;
+    position: relative;
+    top: 1px;
+    color: var(--text);
 }
 
 .top-strip-search {
@@ -2551,7 +2554,10 @@ input.overview-search-input {
     color: var(--text-muted);
 }
 
-.qc-input {
+/* Qualified with the element type (not just the class), same fix as
+   .overview-search-input - otherwise the generic input[type="text"]
+   rule's bordered-box look wins over this pill's own background. */
+input.qc-input {
     flex: 1;
     min-width: 0;
     background: transparent;
@@ -2590,6 +2596,10 @@ input.overview-search-input {
 
 .cc-block {
     margin-top: 36px;
+}
+
+.cc-block-tight {
+    margin-top: 18px;
 }
 
 .cc-empty {
@@ -2644,6 +2654,7 @@ input.overview-search-input {
     flex: 1;
     min-width: 0;
     color: var(--text);
+    font-weight: 400;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2683,6 +2694,7 @@ input.overview-search-input {
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text);
+    font-weight: 400;
 }
 
 .cc-row-sub {
@@ -2729,6 +2741,7 @@ input.overview-search-input {
     min-width: 0;
     font-size: 13.5px;
     color: var(--text);
+    font-weight: 400;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

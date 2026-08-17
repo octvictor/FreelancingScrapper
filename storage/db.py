@@ -1044,7 +1044,7 @@ def get_overview_stats() -> dict:
         recent_notes = [
             dict(row)
             for row in conn.execute(
-                "SELECT id, title, updated_at FROM notes ORDER BY updated_at DESC LIMIT 5"
+                "SELECT id, title, updated_at FROM notes ORDER BY updated_at DESC LIMIT 3"
             ).fetchall()
         ]
 
@@ -1062,7 +1062,7 @@ def get_overview_stats() -> dict:
             dict(row)
             for row in conn.execute(
                 "SELECT id, title, client, status FROM projects "
-                "WHERE status='Active' ORDER BY position ASC, id DESC LIMIT 5"
+                "WHERE status='Active' ORDER BY position ASC, id DESC LIMIT 3"
             ).fetchall()
         ]
 
