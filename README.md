@@ -331,6 +331,16 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+- Replace Command Center's "Full Board" layout with a node/graph system,
+  renamed **Nexus**. An Obsidian-style graph reflecting the real DB
+  hierarchy: Project Manager as a root node with its projects as
+  children (Personal Projects nested as Project Manager's own child);
+  To Do as a root with lists as children and tasks under their list;
+  Notes as a flat root (notes as direct children, no nesting); Finances
+  as a root with its tables as children (no individual rows). Studio
+  Logs excluded from the graph entirely. Redesigned appearance,
+  filtering/coloring, and interaction model still to be worked out -
+  not yet designed in detail.
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
