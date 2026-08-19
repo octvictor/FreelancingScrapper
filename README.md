@@ -343,6 +343,23 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+- Redesign To Do as a Kanban board - approved, not yet built. Drops the
+  rail-plus-single-list-pane layout for columns, one per list, laid out
+  side by side so every list is visible at once instead of clicked
+  through one at a time. Each task becomes a compact card: a colored
+  stripe across the top in that list's own color (standing in for a
+  label), the task title, and a small pill badge showing the task's
+  real Steps sub-checklist progress (e.g. "2/5 steps", turning green
+  once complete) when it has any steps - no invented due-dates,
+  attachments, or avatars, since this app's To Do model doesn't have
+  those. A checkbox in the card's footer still completes the task
+  without opening it. Loosely inspired by Trello's card language
+  (colored stripe + checklist badge) but rebuilt in the app's own
+  palette/type, not Trello's chrome. A trailing "+ New list" column
+  adds more lists. Note for whoever builds this: the list endpoint
+  will need to start returning each task's steps count/completed count
+  (today that's only fetched per-task when its detail modal opens) so
+  the card badge has real data to show.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
