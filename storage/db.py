@@ -316,8 +316,16 @@ def delete_gatherer_entry(entry_id: int) -> None:
 # ---------- Tracker: project cards + docs ----------
 
 def list_projects() -> list[dict]:
+    """log_count/log_sum back the card's footer stat - the number of Log
+    rows under a project and their cost total, without a client round
+    trip through the Log table."""
     with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM projects ORDER BY position ASC, id DESC").fetchall()
+        rows = conn.execute(
+            "SELECT p.*, "
+            "(SELECT COUNT(*) FROM project_tasks WHERE project_id = p.id) AS log_count, "
+            "(SELECT COALESCE(SUM(cost), 0) FROM project_tasks WHERE project_id = p.id) AS log_sum "
+            "FROM projects p ORDER BY position ASC, id DESC"
+        ).fetchall()
         return [dict(row) for row in rows]
 
 

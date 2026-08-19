@@ -128,6 +128,7 @@
                     <div class="personal-projects-body" id="personal-projects-body" style="display:none;">
                         <div class="tracker-toolbar">
                             <div class="view-toggle" id="personal-view-toggle">
+                                <button class="view-toggle-btn" id="personal-view-toggle-all" type="button" data-view="All">All</button>
                                 <button class="view-toggle-btn active" id="personal-view-toggle-active" type="button" data-view="Active">Active</button>
                                 <button class="view-toggle-btn" id="personal-view-toggle-completed" type="button" data-view="Completed">Completed</button>
                             </div>
@@ -288,6 +289,13 @@
                             <select class="cell-select color-pill" id="modal-status">
                                 <option value="Active">&#9679; Active</option>
                                 <option value="Completed">&#9679; Completed</option>
+                            </select>
+                        </div>
+                        <div class="modal-field">
+                            <label for="modal-paid">Paid</label>
+                            <select class="cell-select color-pill" id="modal-paid">
+                                <option value="Unpaid">&#9679; Unpaid</option>
+                                <option value="Paid">&#9679; Paid</option>
                             </select>
                         </div>
                         <div class="modal-field">

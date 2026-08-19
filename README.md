@@ -42,18 +42,26 @@ the default on launch, reached through the sidebar like any other page.
   a result jumps to that tool and, where a detail view exists, opens it
   directly (a studio result just lands on Studio Logs, which has no
   per-row detail view).
-- **Tracker** (shown as "Project Manager") - a grid of project cards,
-  three across (Title, a two-line description clip, and Status/Paid
-  pills together at the bottom of the card), each pill directly
-  editable inline like Gatherer's (Paid/Unpaid use a neutral grey/
-  off-white tint rather than a status color, since being paid isn't a
-  workflow state). An All/Active/Completed toggle above the grid filters
-  which cards show; each view caps at 5 cards with its own "Show more/
-  less" button at the bottom so a long list doesn't dwarf the page. A
-  "+ New project" button below the grid creates one. A small drag
-  handle appears in a card's corner on hover, for reordering - the
-  order persists. Clicking a card anywhere else opens a popup: a description,
-  project status, a client name, a deadline, a day rate (with a
+- **Tracker** (shown as "Project Manager") - a grid of project cards
+  (auto-fits its cards to a 300px minimum width, so it may show two,
+  three, or more across depending on window size), styled as an accent
+  stripe rather than status pills: a colored left edge (amber Active,
+  green Completed), a title, a two-line description clip, then Client
+  and a Logs count (the number of Log rows under that project) at
+  top-right. A hairline divider separates that from the footer -
+  Status and Paid as plain colored/muted text with a dot between them
+  on the left, the project's running Log Sum total (in its own
+  currency) on the right. No date on the card itself. Status/Paid are
+  no longer directly editable from the card (that pill-and-select look
+  was dropped on purpose) - both live in the modal now, alongside
+  everything else. An All/Active/Completed toggle above the grid
+  filters which cards show; each view caps at 5 cards with its own
+  "Show more/less" button at the bottom so a long list doesn't dwarf
+  the page. A "+ New project" button below the grid creates one. A
+  small drag handle sits at the top-right of a card (next to the
+  Client/Logs meta) on hover, for reordering - the order persists.
+  Clicking a card anywhere else opens a popup: a description, project
+  status, Paid, a client name, a deadline, a day rate (with a
   USD/EUR/GBP/BRL currency picker), "Docs" - a single place to attach
   both contract and invoice files (real file uploads, stored on disk
   next to the database) - and a side panel with Assets/Notes/Briefing
@@ -62,12 +70,16 @@ the default on launch, reached through the sidebar like any other page.
   Date), inline-editable like a spreadsheet - Duration auto-fills Cost
   from the day rate (Full = full rate, Half = half, Custom = manual,
   and unlocks the Observation cell) - with a running cost Sum in the
-  selected currency. Every field autosaves on blur/change, no separate
+  selected currency; the card behind the modal keeps its own Logs/SUM
+  stat live as tasks are added, removed, or re-costed, not just after
+  the modal closes. Every field autosaves on blur/change, no separate
   save button. Below the grid, a collapsible **Personal Projects**
   section holds a second, simpler project list for work that isn't for
-  a client - keeps the original row/table look (not cards), plus the
-  same Active/Completed toggle, 5-row cap, and drag-to-reorder, but no
-  Paid column. Its (wider) popup only has a
+  a client - keeps the original row/table look (not cards; softened
+  row striping - a faint tint plus a hairline under each row, not the
+  harsh alternating grey the main table's cards moved away from), plus
+  the same All/Active/Completed toggle, 5-row cap, and drag-to-reorder,
+  but no Paid column. Its (wider) popup only has a
   description, project status, an Assets/Notes/References panel (no
   Client/Deadline/Day rate/Docs/Log, since none of that applies to a
   personal project), and a Checklist - a plain to-do list, checkbox on
@@ -331,28 +343,6 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- Redesign the Project Manager card - approved, not yet built. Keeps
-  the current card's overall shape (same width class as the Compact
-  Grid) but restyled: a thin colored left edge stripe standing in for
-  the status pill (amber for Active, green for Completed), status shown
-  as plain colored text next to Paid (a muted grey/dark label, not a
-  pill) with a small dot separator between them, and a hairline divider
-  above that footer row instead of extra gap. Widened a bit from
-  today's card to fit two new pieces of real data at top-right: Client
-  name and a Logs count (the number of Log/Task rows under that
-  project), plus the project's running Log Sum total in the footer,
-  right-aligned opposite Status/Paid. No date field (no Deadline, no
-  Created) on the card itself - explicitly ruled out in favor of
-  keeping it compact.
-- Personal Projects table (`table.project-table`) - approved direction,
-  not yet built. The current alternating white/`--panel-alt` row
-  striping reads too harsh (the grey band is too dark against the
-  white one); replace it with a subtler way to tell rows apart - a
-  lighter tint step and/or thin hairline dividers between rows instead
-  of a strong alternating fill. Also add an "All" filter button next to
-  Personal Projects' existing Active/Completed toggle
-  (`.view-toggle-btn`), matching the All/Active/Completed toggle the
-  main Project Manager list already has.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as

@@ -32,11 +32,31 @@ function updateCurrencyDisplay() {
 
 function renderLogSum() {
     let total = 0;
-    document.querySelectorAll("#task-table-body input[data-field='cost']").forEach((input) => {
-        const value = parseFloat(input.value);
+    const rows = document.querySelectorAll("#task-table-body tr[data-id]");
+    rows.forEach((row) => {
+        const value = parseFloat(row.querySelector("input[data-field='cost']").value);
         if (!isNaN(value)) total += value;
     });
     $("log-sum-value").textContent = currencySymbol() + total.toFixed(2);
+    syncCardLogStats(rows.length, total);
+}
+
+// Keeps the Compact Grid card's Logs/SUM stat in step with task
+// add/delete/cost edits made inside the modal, without waiting for the
+// modal to close - the card sits right behind it, still in the DOM.
+function syncCardLogStats(count, sum) {
+    if (activeProjectId === null) return;
+    const idx = trackerProjects.findIndex((p) => p.id === activeProjectId);
+    if (idx !== -1) {
+        trackerProjects[idx].log_count = count;
+        trackerProjects[idx].log_sum = sum;
+    }
+    const card = document.querySelector(`#project-table-body .project-card[data-id="${activeProjectId}"]`);
+    if (!card) return;
+    const logsEl = card.querySelector(".project-card-meta div:last-child b");
+    if (logsEl) logsEl.textContent = count;
+    const sumEl = card.querySelector(".project-card-sum-value");
+    if (sumEl) sumEl.textContent = currencySymbol() + sum.toFixed(2);
 }
 
 function trackerStatusPillClass(status) {
@@ -62,23 +82,37 @@ function paidPillClass(paid) {
     return paid === "Paid" ? "paid-paid" : "paid-unpaid";
 }
 
+function projectCardCurrencySymbol(project) {
+    return CURRENCY_SYMBOLS[project.currency] || "$";
+}
+
 function projectCardHtml(project) {
     const isCompleted = project.status === "Completed";
     const isPaid = project.paid === "Paid";
+    const logSum = project.log_sum || 0;
     return `
-        <div class="project-card" data-id="${project.id}">
-            <span class="row-drag-handle" title="Drag to reorder">&#8942;</span>
-            <div class="project-card-title">${escapeAttr(project.title) || "Untitled project"}</div>
+        <div class="project-card ${trackerStatusPillClass(project.status)}" data-id="${project.id}">
+            <div class="project-card-top">
+                <div class="project-card-title">${escapeAttr(project.title) || "Untitled project"}</div>
+                <div class="project-card-top-right">
+                    <span class="row-drag-handle" title="Drag to reorder">&#8942;</span>
+                    <div class="project-card-meta">
+                        <div>Client: <b>${escapeAttr(project.client) || "&mdash;"}</b></div>
+                        <div>Logs: <b>${project.log_count || 0}</b></div>
+                    </div>
+                </div>
+            </div>
             <div class="project-card-desc">${escapeAttr(project.description || "")}</div>
-            <div class="project-card-pills">
-                <select class="cell-select color-pill ${trackerStatusPillClass(project.status)}" data-field="status">
-                    <option value="Active" ${!isCompleted ? "selected" : ""}>&#9679; Active</option>
-                    <option value="Completed" ${isCompleted ? "selected" : ""}>&#9679; Completed</option>
-                </select>
-                <select class="cell-select color-pill ${paidPillClass(project.paid)}" data-field="paid">
-                    <option value="Unpaid" ${!isPaid ? "selected" : ""}>&#9679; Unpaid</option>
-                    <option value="Paid" ${isPaid ? "selected" : ""}>&#9679; Paid</option>
-                </select>
+            <div class="project-card-foot">
+                <div class="project-card-status-group">
+                    <span class="project-card-status">${isCompleted ? "Completed" : "Active"}</span>
+                    <span class="project-card-sep">&middot;</span>
+                    <span class="project-card-paid ${isPaid ? "is-paid" : ""}">${isPaid ? "Paid" : "Unpaid"}</span>
+                </div>
+                <div class="project-card-sum">
+                    <span class="project-card-sum-label">SUM</span>
+                    <span class="project-card-sum-value">${projectCardCurrencySymbol(project)}${logSum.toFixed(2)}</span>
+                </div>
             </div>
         </div>
     `;
@@ -106,44 +140,12 @@ function renderProjectTable() {
         const projectId = parseInt(card.dataset.id, 10);
 
         card.addEventListener("click", (e) => {
-            if (e.target.closest(".custom-select-wrap, .row-drag-handle")) return;
+            if (e.target.closest(".row-drag-handle")) return;
             openProjectModal(projectId);
         });
 
-        const statusSelect = card.querySelector(".cell-select[data-field='status']");
-        statusSelect.addEventListener("change", (e) => {
-            statusSelect.classList.remove("status-active", "status-completed");
-            statusSelect.classList.add(trackerStatusPillClass(e.target.value));
-            saveProjectField(projectId, { status: e.target.value });
-        });
-        enhanceSelect(statusSelect);
-
-        const paidSelect = card.querySelector(".cell-select[data-field='paid']");
-        paidSelect.addEventListener("change", (e) => {
-            paidSelect.classList.remove("paid-paid", "paid-unpaid");
-            paidSelect.classList.add(paidPillClass(e.target.value));
-            saveProjectField(projectId, { paid: e.target.value });
-        });
-        enhanceSelect(paidSelect);
-
         wireRowDrag(card, persistRowOrder);
     });
-}
-
-async function saveProjectField(projectId, updates) {
-    const resp = await fetch(`/api/tracker/projects/${projectId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-    });
-    if (!resp.ok) return;
-    const updated = await resp.json();
-    const idx = trackerProjects.findIndex((p) => p.id === updated.id);
-    if (idx !== -1) trackerProjects[idx] = updated;
-    // A status change can move the row out of the currently visible
-    // tab - re-render so it disappears/appears immediately rather than
-    // waiting for the next unrelated refresh.
-    if (updates.status !== undefined) renderProjectTable();
 }
 
 // ---------- Drag-to-reorder ----------
@@ -402,6 +404,10 @@ async function openProjectModal(id) {
     $("modal-status").classList.remove("status-active", "status-completed");
     $("modal-status").classList.add(trackerStatusPillClass(project.status));
     refreshCustomSelect($("modal-status"));
+    $("modal-paid").value = project.paid || "Unpaid";
+    $("modal-paid").classList.remove("paid-paid", "paid-unpaid");
+    $("modal-paid").classList.add(paidPillClass(project.paid));
+    refreshCustomSelect($("modal-paid"));
     $("modal-client").value = project.client || "";
     $("modal-deadline").value = project.deadline || "";
     $("modal-day-rate").value = project.day_rate ?? "";
@@ -433,7 +439,11 @@ async function saveActiveProject(updates) {
     if (!resp.ok) return;
     const updated = await resp.json();
     const idx = trackerProjects.findIndex((p) => p.id === updated.id);
-    if (idx !== -1) trackerProjects[idx] = updated;
+    // Merge rather than replace - update_project's response doesn't
+    // carry log_count/log_sum (those are only computed by the list
+    // endpoint), so a full replace would blank out the card's Logs/SUM
+    // stat on every unrelated field save.
+    if (idx !== -1) trackerProjects[idx] = { ...trackerProjects[idx], ...updated };
     renderProjectTable();
 }
 
@@ -493,6 +503,12 @@ $("modal-status").addEventListener("change", (e) => {
     saveActiveProject({ status: e.target.value });
 });
 enhanceSelect($("modal-status"));
+$("modal-paid").addEventListener("change", (e) => {
+    e.target.classList.remove("paid-paid", "paid-unpaid");
+    e.target.classList.add(paidPillClass(e.target.value));
+    saveActiveProject({ paid: e.target.value });
+});
+enhanceSelect($("modal-paid"));
 $("modal-client").addEventListener("blur", (e) => saveActiveProject({ client: e.target.value.trim() || null }));
 $("modal-client").addEventListener("keydown", (e) => {
     if (e.key === "Enter") e.target.blur();
@@ -551,7 +567,7 @@ let personalProjects = [];
 let activePersonalProjectId = null;
 let personalActiveView = "Active";
 const PERSONAL_ROW_LIMIT = 5;
-let personalExpandedViews = { Active: false, Completed: false };
+let personalExpandedViews = { All: false, Active: false, Completed: false };
 
 function personalProjectRowHtml(project) {
     const isCompleted = project.status === "Completed";
@@ -572,7 +588,7 @@ function personalProjectRowHtml(project) {
 
 function renderPersonalProjectTable() {
     cleanupCustomSelectsIn($("personal-project-table-body"));
-    const all = personalProjects.filter((p) => p.status === personalActiveView);
+    const all = personalActiveView === "All" ? personalProjects : personalProjects.filter((p) => p.status === personalActiveView);
     const expanded = personalExpandedViews[personalActiveView];
     const visible = expanded ? all : all.slice(0, PERSONAL_ROW_LIMIT);
     $("personal-project-table-body").innerHTML = visible.length
@@ -652,7 +668,7 @@ async function createPersonalProject() {
     const project = await resp.json();
     personalProjects.unshift(project);
 
-    if (personalActiveView !== "Active") {
+    if (personalActiveView !== "Active" && personalActiveView !== "All") {
         personalActiveView = "Active";
         document.querySelectorAll("#personal-view-toggle .view-toggle-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === "Active"));
     }
