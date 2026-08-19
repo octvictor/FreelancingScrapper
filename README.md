@@ -331,6 +331,19 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+- Redesign the Project Manager card - approved, not yet built. Keeps
+  the current card's overall shape (same width class as the Compact
+  Grid) but restyled: a thin colored left edge stripe standing in for
+  the status pill (amber for Active, green for Completed), status shown
+  as plain colored text next to Paid (a muted grey/dark label, not a
+  pill) with a small dot separator between them, and a hairline divider
+  above that footer row instead of extra gap. Widened a bit from
+  today's card to fit two new pieces of real data at top-right: Client
+  name and a Logs count (the number of Log/Task rows under that
+  project), plus the project's running Log Sum total in the footer,
+  right-aligned opposite Status/Paid. No date field (no Deadline, no
+  Created) on the card itself - explicitly ruled out in favor of
+  keeping it compact.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
