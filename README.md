@@ -100,31 +100,31 @@ the default on launch, reached through the sidebar like any other page.
 - **To Do** - a Kanban board, one column per list, laid out side by side
   (horizontally scrolling once there are more than fit on screen) so
   every list is visible at once instead of clicked through one at a
-  time. A column's header holds a color swatch (opens the shared color
-  preset popover; shown as a stripe on every card in that list), an
-  editable title, an open-task count, and a delete (only visible on
-  hover). "+ Add task" sits at the bottom of each column; a trailing
-  "+ New list" column adds another list. Each task is a compact card: a
-  colored stripe across the top in its list's color, the title, a
-  checkbox to complete it without opening it, a Steps sub-checklist
-  progress badge when the task has any steps (e.g. "2/5 steps", turning
-  green once complete), and - when set - a due date shown as a small
-  urgency-colored dot plus a relative label ("Today", "Tomorrow", "in 3
-  days") - red for overdue/today, amber for this week, blue for later,
-  the same convention Command Center's Due Soon row uses. Checking a
-  task off drops its card into a "Completed (n)" toggle at the column's
-  bottom (collapsed by default, click to expand), with a "Clean" link
-  to clear every completed task in that list at once (confirms first,
-  shows how many). Favoriting lists exists at the data layer but isn't
-  currently exposed in the UI. Clicking
-  a card (anywhere but its checkbox) opens a detail view: title, a Due
-  date field, a Steps checklist (a mini to-do list within the task,
-  same checkbox-and-title pattern as Personal Projects' Checklist), and
-  a freeform Notes text area. Everything autosaves on blur/change.
-  Loosely inspired by Trello's card language (colored stripe + a
-  checklist badge) but rebuilt in the app's own palette/type, not
-  Trello's chrome. A **Due Soon** toast (bottom-right corner) checks for
-  tasks due today or in the next couple of days whenever the app loads
+  time. Column width stays fixed regardless of content - task titles
+  wrap instead of stretching the column. A column's header holds a
+  small color swatch (opens the shared color preset popover; shown as
+  a stripe on every card in that list), an editable title, a task
+  count, and a delete (only visible on hover). "+ Add task" sits at the
+  bottom of each column; a trailing "+ New list" column adds another
+  list. Each task is a compact card: a colored stripe across the top in
+  its list's color, the title, a checkbox to complete it without
+  opening it, a Steps sub-checklist progress badge when the task has
+  any steps (e.g. "2/5 steps", turning green once complete), and - when
+  set - a due date shown as a small urgency-colored dot plus a relative
+  label ("Today", "Tomorrow", "in 3 days") - red for overdue/today,
+  amber for this week, blue for later, the same convention Command
+  Center's Due Soon row uses. Checking a task off doesn't move it -
+  it stays in place, title struck through and greyed, checkbox filled
+  green. Favoriting lists exists at the data layer but isn't currently
+  exposed in the UI. Clicking a card (anywhere but its checkbox) opens
+  a detail view: title, a Due date field, a Steps checklist (a mini
+  to-do list within the task, same checkbox-and-title pattern as
+  Personal Projects' Checklist), and a freeform Notes text area.
+  Everything autosaves on blur/change. Loosely inspired by Trello's
+  card language (colored stripe + a checklist badge) but rebuilt in the
+  app's own palette/type, not Trello's chrome. A **Due Soon** toast
+  (bottom-right corner) checks for tasks due today or in the next
+  couple of days whenever the app loads
   and every 30 minutes while the tab stays open - in-app only, no
   email/Slack/background job - listing them with the same urgency-dot
   convention; dismissing it holds for the rest of the session, and

@@ -1891,6 +1891,7 @@ table.project-table tbody tr:hover td {
 
 .kanban-col {
     flex: 0 0 230px;
+    min-width: 0;
     background: var(--panel-alt);
     border-radius: var(--radius-lg);
     padding: 10px;
@@ -1903,13 +1904,12 @@ table.project-table tbody tr:hover td {
     margin-bottom: 10px;
 }
 
-/* Bigger than the shared .swatch-btn default (16px) - it's the one
-   visual identifier for the whole column, not a small inline accent,
-   so it needs to read clearly at a glance. */
+/* Smaller than the shared .swatch-btn default (16px) - a quiet label
+   dot next to the title, not a control meant to draw the eye. */
 .kanban-col-head .swatch-btn {
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
+    width: 9px;
+    height: 9px;
+    font-size: 7px;
 }
 
 /* Qualified with the element type (not just the class) so this ties the
@@ -1931,6 +1931,7 @@ input.kanban-col-title-input {
     color: var(--text);
     padding: 4px 6px;
     margin-left: -6px;
+    margin-right: -6px;
 }
 
 input.kanban-col-title-input:hover,
@@ -1992,19 +1993,6 @@ input.kanban-col-title-input:focus {
 .kanban-add-task:hover {
     background: rgba(40, 40, 40, 0.05);
     color: var(--text);
-}
-
-.kanban-completed-wrap {
-    margin-top: 12px;
-    border-top: 1px solid var(--border-soft);
-    padding-top: 8px;
-}
-
-.kanban-completed-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 8px;
 }
 
 .kanban-col-new {
@@ -2165,6 +2153,8 @@ input.kanban-col-title-input:focus {
     color: var(--text);
     margin-bottom: 7px;
     overflow: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -2259,36 +2249,6 @@ input.kanban-col-title-input:focus {
     color: #15803d;
     background: rgba(34, 197, 94, 0.14);
     border-color: transparent;
-}
-
-.todo-completed-toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
-    color: var(--text-faint);
-    font-size: 12.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    padding: 4px 0;
-}
-
-.todo-completed-toggle:hover {
-    color: var(--text-muted);
-}
-
-.todo-completed-chevron {
-    display: inline-block;
-    font-size: 9px;
-    transition: transform 0.15s ease;
-    transform: rotate(-90deg);
-}
-
-.todo-completed-toggle.expanded .todo-completed-chevron {
-    transform: rotate(0deg);
 }
 
 .todo-modal-header {

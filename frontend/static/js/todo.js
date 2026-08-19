@@ -14,7 +14,6 @@ let todoLists = [];
 let todoTasksByList = {};
 let activeTodoTaskId = null;
 let activeTodoTaskListId = null;
-let todoCompletedExpanded = {};
 
 // ---------- Board ----------
 
@@ -43,32 +42,19 @@ function todoCardHtml(task, listColor) {
 
 function todoColumnHtml(list) {
     const tasks = todoTasksByList[list.id] || [];
-    const active = tasks.filter((t) => !t.completed);
-    const completed = tasks.filter((t) => t.completed);
-    const expanded = !!todoCompletedExpanded[list.id];
-    const dotStyle = list.color ? `background:${list.color}; border-color:transparent;` : "background:transparent;";
 
     return `
         <div class="kanban-col" data-id="${list.id}">
             <div class="kanban-col-head">
                 <button class="swatch-btn ${list.color ? "" : "swatch-btn-empty"}" data-role="color" type="button" title="List color" style="${list.color ? `background:${list.color};` : ""}">${list.color ? "" : "&#9681;"}</button>
                 <input type="text" class="kanban-col-title-input" data-role="title" value="${escapeAttr(list.title)}" placeholder="List name">
-                <span class="kanban-col-count">${active.length}</span>
+                <span class="kanban-col-count">${tasks.length}</span>
                 <button class="kanban-col-delete" data-role="delete" type="button" title="Delete list">&times;</button>
             </div>
             <div class="kanban-col-tasks" data-role="tasks">
-                ${active.length ? active.map((t) => todoCardHtml(t, list.color)).join("") : `<p class="todo-empty-state">No tasks yet.</p>`}
+                ${tasks.length ? tasks.map((t) => todoCardHtml(t, list.color)).join("") : `<p class="todo-empty-state">No tasks yet.</p>`}
             </div>
             <button class="kanban-add-task" data-role="add-task" type="button">+ Add task</button>
-            <div class="kanban-completed-wrap" data-role="completed-wrap" style="${completed.length ? "" : "display:none;"}">
-                <button class="todo-completed-toggle ${expanded ? "expanded" : ""}" data-role="completed-toggle" type="button">
-                    <span class="todo-completed-chevron">&#9662;</span>
-                    <span data-role="completed-label">Completed (${completed.length})</span>
-                </button>
-                <div class="kanban-completed-list" data-role="completed-list" style="${expanded ? "" : "display:none;"}">
-                    ${completed.map((t) => todoCardHtml(t, list.color)).join("")}
-                </div>
-            </div>
         </div>
     `;
 }
@@ -137,13 +123,7 @@ function wireTodoColumn(col) {
         openTodoTaskModal(listId, task.id);
     });
 
-    col.querySelector("[data-role='completed-toggle']").addEventListener("click", () => {
-        todoCompletedExpanded[listId] = !todoCompletedExpanded[listId];
-        renderTodoBoard();
-    });
-
     wireTodoCards(col.querySelector("[data-role='tasks']"), listId);
-    wireTodoCards(col.querySelector("[data-role='completed-list']"), listId);
 }
 
 function wireTodoCards(container, listId) {
