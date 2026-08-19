@@ -155,10 +155,7 @@ the default on launch, reached through the sidebar like any other page.
   background - text on the card switches to dark automatically for a
   light enough pick - and an always-visible red delete button (with the
   themed confirm dialog).
-- **Finances** - a page for money tools, starting
-  with **Calculator**, a section labeled by its own heading inside the
-  page (more Finances features can join it later). Calculator is
-  browser-tab-style, holding any number of independent ledgers
+- **Calculator** - browser-tab-style, holding any number of independent ledgers
   ("tables"). A tab bar lists every table as a plain button showing its
   title - clicking one switches to it, and that's all a tab does;
   there's nothing to type into or delete on the tab itself. Renaming

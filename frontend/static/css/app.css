@@ -425,7 +425,7 @@ table.gatherer-table td:nth-child(2) {
 .finance-panel-head-left {
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 12px;
     flex: 1;
     min-width: 0;
 }
@@ -594,14 +594,22 @@ table.gatherer-table td:nth-child(2) {
     box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.2);
 }
 
+.finance-title-cell .cell-input[data-field="title"] {
+    font-size: 13.5px;
+}
+
 /* A direct flex child of .finance-row (unlike the Title/Value inputs,
    which sit inside their own wrapping div) - width:auto plus a fixed
    flex-basis overrides the shared .cell-input's width:100%, which
    would otherwise become this item's flex-basis and starve the Title
-   cell next to it down to nothing. */
+   cell next to it down to nothing. Muted text (not the shared
+   .cell-input default) so it reads as secondary data next to Title,
+   not the same weight. */
 .finance-row-col {
     width: auto;
     flex: 0 0 110px;
+    font-size: 13px;
+    color: var(--text-muted);
 }
 
 .finance-value-cell {
