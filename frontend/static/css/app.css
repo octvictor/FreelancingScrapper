@@ -309,6 +309,56 @@ button, input, select, textarea {
     margin: 0 0 14px 0;
 }
 
+/* Inverted panel, approved via mockup for Project Manager and Studio
+   Logs (not Calculator or Personal Projects' own sub-panel yet, and
+   never To Do, which already works this way through its own separate
+   classes) - the panel that wraps the board/table is the darker tone
+   instead of the lighter one, no outline, the same board/card
+   relationship To Do's .kanban-col/.kcard already has. Everything
+   inside that used to read as a grey field or pill against a light
+   panel would otherwise blend into the panel now that it's the same
+   grey, so those flip to the lighter tone to keep standing out.
+   Project cards need no change - they were already the lighter shade. */
+#page-tracker > .panel,
+#page-gatherer > .panel {
+    background: var(--panel-alt);
+    border: none;
+}
+
+#page-tracker .panel input.cell-input,
+#page-gatherer .panel input.cell-input {
+    background: var(--panel);
+}
+
+#page-tracker .panel .cell-select:hover,
+#page-tracker .panel .cell-select:focus,
+#page-gatherer .panel .cell-select:hover,
+#page-gatherer .panel .cell-select:focus {
+    background: var(--panel);
+}
+
+#page-gatherer .panel .cell-select.color-pill.status-not-sent,
+#page-gatherer .panel .cell-select.color-pill.type-studio,
+#page-gatherer .panel .cell-select.color-pill.type-company {
+    background: var(--panel);
+}
+
+#page-tracker .panel .header-filter:hover,
+#page-tracker .panel .header-filter:focus,
+#page-gatherer .panel .header-filter:hover,
+#page-gatherer .panel .header-filter:focus {
+    background: var(--panel);
+}
+
+#page-gatherer .panel .url-open-link:hover {
+    background: var(--panel);
+}
+
+#page-tracker .panel .btn:not(.btn-text),
+#page-gatherer .panel .btn:not(.btn-text) {
+    background: var(--panel);
+}
+
 input[type="text"],
 input[type="password"],
 input[type="number"],

@@ -42,7 +42,11 @@ the default on launch, reached through the sidebar like any other page.
   a result jumps to that tool and, where a detail view exists, opens it
   directly (a studio result just lands on Studio Logs, which has no
   per-row detail view).
-- **Tracker** (shown as "Project Manager") - a grid of project cards
+- **Tracker** (shown as "Project Manager") - the panel wrapping the grid
+  (and the Personal Projects panel below it) uses the darker `#e6e5e1`
+  tone with no outline, so the lighter cards/fields inside stand out
+  against it - the same panel/card relationship To Do's boards already
+  use, just applied here too. A grid of project cards
   (auto-fits its cards to a 300px minimum width, so it may show two,
   three, or more across depending on window size), styled as an accent
   stripe rather than status pills: a colored left edge (amber Active,
@@ -87,7 +91,9 @@ the default on launch, reached through the sidebar like any other page.
   strikethrough), with "+ Add item" for more rows. Backed by its own
   `personal_projects`/`personal_checklist_items` tables, entirely
   separate from `projects`.
-- **Gatherer** (shown as "Studio Logs") - a
+- **Gatherer** (shown as "Studio Logs") - the table's wrapping panel
+  uses the same darker `#e6e5e1`/no-outline treatment as Project
+  Manager, so its lighter inline-editable fields stand out against it. A
   manually-curated list of studios/companies you find yourself
   (Behance, Instagram, wherever) - Title, clickable URL, Type
   (Studio/Company, a neutral grey pill - the type doesn't carry a
