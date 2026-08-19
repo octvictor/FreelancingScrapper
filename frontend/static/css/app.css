@@ -1896,10 +1896,10 @@ table.project-table tbody tr:hover td {
 }
 
 .kanban-col {
-    flex: 0 0 260px;
+    flex: 0 0 230px;
     background: var(--panel-alt);
     border-radius: var(--radius-lg);
-    padding: 12px;
+    padding: 10px;
 }
 
 .kanban-col-head {
@@ -1909,9 +1909,16 @@ table.project-table tbody tr:hover td {
     margin-bottom: 10px;
 }
 
-.kanban-col-title-input {
+/* Qualified with the element type (not just the class) so this ties the
+   generic input[type="text"] rule's specificity instead of losing to it -
+   without this, the list title rendered with that rule's bordered-box
+   look instead of sitting flush like the mockup's plain title text. */
+input.kanban-col-title-input {
     flex: 1;
     min-width: 0;
+    width: auto;
+    appearance: none;
+    -webkit-appearance: none;
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -1923,13 +1930,13 @@ table.project-table tbody tr:hover td {
     margin-left: -6px;
 }
 
-.kanban-col-title-input:hover,
-.kanban-col-title-input:focus {
+input.kanban-col-title-input:hover,
+input.kanban-col-title-input:focus {
     background: var(--panel);
     outline: none;
 }
 
-.kanban-col-title-input:focus {
+input.kanban-col-title-input:focus {
     border-color: var(--border);
 }
 
@@ -1968,14 +1975,20 @@ table.project-table tbody tr:hover td {
 }
 
 .kanban-add-task {
-    margin-top: 8px;
-    font-size: 12.5px;
+    margin-top: 2px;
+    font-size: 12px;
     color: var(--text-muted);
-    background: var(--panel);
-    border: 1px solid var(--border-soft);
+    background: none;
+    border: none;
     border-radius: var(--radius-sm);
-    padding: 6px 10px;
+    padding: 6px 6px;
     cursor: pointer;
+    text-align: left;
+}
+
+.kanban-add-task:hover {
+    background: rgba(40, 40, 40, 0.05);
+    color: var(--text);
 }
 
 .kanban-completed-wrap {
@@ -1997,17 +2010,17 @@ table.project-table tbody tr:hover td {
     align-items: center;
     justify-content: center;
     min-height: 120px;
-    border: 1.5px dashed var(--border);
+    border: none;
     border-radius: var(--radius-lg);
     color: var(--text-faint);
     font-size: 12.5px;
     cursor: pointer;
-    background: none;
+    background: rgba(40, 40, 40, 0.03);
 }
 
 .kanban-col-new:hover {
     color: var(--text-muted);
-    border-color: var(--text-faint);
+    background: rgba(40, 40, 40, 0.06);
 }
 
 .todo-empty-state {
@@ -2230,9 +2243,18 @@ table.project-table tbody tr:hover td {
     flex-shrink: 0;
 }
 
+.kcard-due.overdue,
+.kcard-due.today {
+    color: var(--danger-text);
+}
+
 .kcard-due.overdue .kcard-due-dot,
 .kcard-due.today .kcard-due-dot {
     background: var(--danger-text);
+}
+
+.kcard-due.soon {
+    color: #8a5a12;
 }
 
 .kcard-due.soon .kcard-due-dot {
