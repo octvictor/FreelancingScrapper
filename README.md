@@ -452,6 +452,18 @@ rest of the app instead of drifting:
   face, which renders heavier than intended and can glitch into
   mixed-weight/mixed-color glyphs on some letters. Page titles
   (`.page-title`) are 22px/400, matching `.cc-greeting` exactly.
+- **Panel is the dark tone, contents are the light tone.** The container
+  that wraps a page's board/table/grid (`.panel` in Project Manager and
+  Studio Logs, `.kanban-col` in To Do) uses `--panel-alt` (`#e6e5e1`)
+  with no border, and everything inside it that reads as a discrete
+  card, field, or button - cards, `.cell-input`, dropdowns/pills on
+  hover or focus, non-text buttons - uses `--panel` (`#fafafa`) instead,
+  standing out against the darker wrapper rather than blending into a
+  light one behind an outline. This is the default for any new page or
+  panel going forward, not just the two it's been applied to so far -
+  match it rather than falling back to the older light-panel-with-border
+  look. Calculator and Personal Projects' own sub-panel still use the
+  older look and are due for the same treatment, just not done yet.
 - **Qualify selectors that override a generic input rule.** The catch-all
   `input[type="text"], input[type="password"], ...` rule in app.css has
   higher specificity than a bare class selector, so a class-only
