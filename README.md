@@ -166,9 +166,9 @@ the default on launch, reached through the sidebar like any other page.
   active table (confirms first) - if it was the last one left, a fresh
   blank table takes its place so Calculator is never left empty. Each
   table is a list of flex rows rather than a literal spreadsheet grid:
-  every row carries its own color as a stripe down the left edge (the
-  color set via a small round swatch, opening the same shared color
-  preset popover as To Do/Notes' colors), an editable Title, and a
+  every row carries its own color as a stripe down the left edge (how
+  a row picks that color is being redesigned - there's currently no
+  control for it in the UI), an editable Title, and a
   Value shown right-aligned and color-coded by sign - green for
   positive, red for negative, faint for zero/empty - so the numbers
   read at a glance without opening each row. A "+" in the header adds

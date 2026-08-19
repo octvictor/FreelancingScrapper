@@ -165,11 +165,9 @@ function financeRowHtml(row) {
     const dynamicCells = financeColumns.map((col) => `
         <input type="text" class="cell-input finance-row-col" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-">
     `).join("");
-    const colorGlyph = row.color ? "" : "&#9681;";
     return `
         <div class="finance-row" data-id="${row.id}" style="--stripe:${row.color || "var(--border-soft)"};">
             <div class="finance-title-cell">
-                <button class="swatch-btn ${row.color ? "" : "swatch-btn-empty"}" data-role="row-color" type="button" title="Row color" style="background:${row.color || "transparent"};">${colorGlyph}</button>
                 <input type="text" class="cell-input" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
             </div>
             ${dynamicCells}
@@ -234,15 +232,6 @@ function wireFinanceRowEvents() {
             });
         });
 
-        rowEl.querySelector("[data-role='row-color']").addEventListener("click", (e) => {
-            e.stopPropagation();
-            const rowData = financeRows.find((r) => r.id === id);
-            openColorPresetPopover(e.currentTarget, rowData?.color || null, {
-                onChange: (hex) => setFinanceRowColor(id, hex),
-                onClear: () => setFinanceRowColor(id, null),
-            });
-        });
-
         rowEl.querySelector("[data-role='delete']").addEventListener("click", async () => {
             if (!(await confirmDialog("This can't be undone.", { title: "Delete this row?" }))) return;
             await fetch(`/api/finance/rows/${id}`, { method: "DELETE" });
@@ -278,9 +267,10 @@ async function saveFinanceCell(rowId, columnId, value) {
 }
 
 // ---------- Row color ----------
-// Opens the shared color preset popover (nav.js) - setFinanceRowColor is
-// just the save callback it's handed. Like To Do, the row itself is never
-// tinted - only the swatch icon shows the chosen color.
+// The swatch button that opened the color preset popover (nav.js) was
+// removed from the row - it wasn't part of the approved design, only
+// the stripe was. This save function stays, ready for whatever new
+// trigger replaces it; nothing currently calls it.
 
 async function setFinanceRowColor(rowId, color) {
     await saveFinanceRow(rowId, { color });
@@ -336,7 +326,7 @@ function renderFinanceSum() {
         const value = parseFloat(liveInput ? liveInput.value : row.value);
         if (!isNaN(value)) total += value;
     });
-    $("finance-sum-value").textContent = financeCurrencySymbol() + total.toFixed(2);
+    $("finance-sum-value").textContent = financeCurrencySymbol() + total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ---------- Currency ----------
