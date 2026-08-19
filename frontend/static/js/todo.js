@@ -7,15 +7,13 @@
 // A task can carry freeform Notes and a Steps checklist (reusing the
 // same .checklist-item markup/pattern as Personal Projects' checklist,
 // namespaced separately so its buttons don't collide with that one).
-// Favoriting only applies to lists, not individual tasks. $()/
-// confirmDialog/dueDateMeta come from nav.js, escapeAttr from
+// $()/confirmDialog/dueDateMeta come from nav.js, escapeAttr from
 // gatherer.js, openColorPresetPopover from nav.js.
 
 let todoLists = [];
 let todoTasksByList = {};
 let activeTodoTaskId = null;
 let activeTodoTaskListId = null;
-let todoFavoritesOnly = false;
 let todoCompletedExpanded = {};
 
 // ---------- Board ----------
@@ -56,7 +54,6 @@ function todoColumnHtml(list) {
                 <button class="swatch-btn ${list.color ? "" : "swatch-btn-empty"}" data-role="color" type="button" title="List color" style="${list.color ? `background:${list.color};` : ""}">${list.color ? "" : "&#9681;"}</button>
                 <input type="text" class="kanban-col-title-input" data-role="title" value="${escapeAttr(list.title)}" placeholder="List name">
                 <span class="kanban-col-count">${active.length}</span>
-                <button class="todo-star-btn ${list.favorite ? "active" : ""}" data-role="favorite" type="button" title="Mark list favorite">&#9733;</button>
                 <button class="kanban-col-delete" data-role="delete" type="button" title="Delete list">&times;</button>
             </div>
             <div class="kanban-col-tasks" data-role="tasks">
@@ -78,20 +75,14 @@ function todoColumnHtml(list) {
 
 function renderTodoBoard() {
     const container = $("todo-board");
-    const visibleLists = todoFavoritesOnly ? todoLists.filter((l) => l.favorite) : todoLists;
 
-    if (visibleLists.length === 0 && !todoFavoritesOnly) {
+    if (todoLists.length === 0) {
         container.innerHTML = `<button class="kanban-col-new" id="todo-list-add-btn" type="button">+ New list</button>`;
         wireTodoAddListBtn();
         return;
     }
 
-    if (visibleLists.length === 0) {
-        container.innerHTML = `<p class="todo-empty-state">No favorite lists.</p>`;
-        return;
-    }
-
-    container.innerHTML = visibleLists.map(todoColumnHtml).join("") +
+    container.innerHTML = todoLists.map(todoColumnHtml).join("") +
         `<button class="kanban-col-new" id="todo-list-add-btn" type="button">+ New list</button>`;
 
     container.querySelectorAll(".kanban-col").forEach(wireTodoColumn);
@@ -127,8 +118,6 @@ function wireTodoColumn(col) {
     titleInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") e.target.blur();
     });
-
-    col.querySelector("[data-role='favorite']").addEventListener("click", () => toggleTodoListFavorite(listId));
 
     col.querySelector("[data-role='delete']").addEventListener("click", async () => {
         const ok = await confirmDialog("This deletes all its tasks too. This can't be undone.", { title: "Delete this list?" });
@@ -190,17 +179,6 @@ async function saveTodoListField(listId, updates) {
 function setTodoListColor(listId, color) {
     saveTodoListField(listId, { color });
 }
-
-async function toggleTodoListFavorite(id) {
-    const list = todoLists.find((l) => l.id === id);
-    await saveTodoListField(id, { favorite: !list.favorite });
-}
-
-$("todo-favorites-filter").addEventListener("click", () => {
-    todoFavoritesOnly = !todoFavoritesOnly;
-    $("todo-favorites-filter").classList.toggle("active", todoFavoritesOnly);
-    renderTodoBoard();
-});
 
 // ---------- Task fields ----------
 

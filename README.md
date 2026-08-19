@@ -100,23 +100,23 @@ the default on launch, reached through the sidebar like any other page.
 - **To Do** - a Kanban board, one column per list, laid out side by side
   (horizontally scrolling once there are more than fit on screen) so
   every list is visible at once instead of clicked through one at a
-  time. A star above the board filters it down to just favorited lists.
-  A column's header holds a color swatch (opens the shared color preset
-  popover; shown as a stripe on every card in that list), an editable
-  title, an open-task count, a favorite star (always visible, grey by
-  default and gold once favorited), and a delete (only visible on
+  time. A column's header holds a color swatch (opens the shared color
+  preset popover; shown as a stripe on every card in that list), an
+  editable title, an open-task count, and a delete (only visible on
   hover). "+ Add task" sits at the bottom of each column; a trailing
-  dashed "+ New list" column adds another list. Each task is a compact
-  card: a colored stripe across the top in its list's color, the title,
-  a checkbox to complete it without opening it, a Steps sub-checklist
+  "+ New list" column adds another list. Each task is a compact card: a
+  colored stripe across the top in its list's color, the title, a
+  checkbox to complete it without opening it, a Steps sub-checklist
   progress badge when the task has any steps (e.g. "2/5 steps", turning
   green once complete), and - when set - a due date shown as a small
   urgency-colored dot plus a relative label ("Today", "Tomorrow", "in 3
   days") - red for overdue/today, amber for this week, blue for later,
   the same convention Command Center's Due Soon row uses. Checking a
-  task off drops its card into a collapsed "Completed (n)" section at
-  the column's bottom, with a "Clean" link to clear every completed
-  task in that list at once (confirms first, shows how many). Clicking
+  task off drops its card into a "Completed (n)" toggle at the column's
+  bottom (collapsed by default, click to expand), with a "Clean" link
+  to clear every completed task in that list at once (confirms first,
+  shows how many). Favoriting lists exists at the data layer but isn't
+  currently exposed in the UI. Clicking
   a card (anywhere but its checkbox) opens a detail view: title, a Due
   date field, a Steps checklist (a mini to-do list within the task,
   same checkbox-and-title pattern as Personal Projects' Checklist), and
