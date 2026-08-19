@@ -356,6 +356,15 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
+- Cap Project Manager's project table to two rows per view, with an
+  expand/collapse button to reveal the rest - same pattern as the
+  existing 5-row cap, just tighter. Personal Projects keeps its current
+  uncapped table; this only applies to Project Manager's own list.
+- Remove the description line under the Studio Logs page title
+  ("Studios and companies you're tracking - add a row, fill it in, it
+  saves as you type.").
+- Remove the description line under the Finances page title ("Money
+  tools for freelance work.").
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
