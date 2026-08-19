@@ -344,6 +344,15 @@ executable), shared across every tool:
   right-aligned opposite Status/Paid. No date field (no Deadline, no
   Created) on the card itself - explicitly ruled out in favor of
   keeping it compact.
+- Personal Projects table (`table.project-table`) - approved direction,
+  not yet built. The current alternating white/`--panel-alt` row
+  striping reads too harsh (the grey band is too dark against the
+  white one); replace it with a subtler way to tell rows apart - a
+  lighter tint step and/or thin hairline dividers between rows instead
+  of a strong alternating fill. Also add an "All" filter button next to
+  Personal Projects' existing Active/Completed toggle
+  (`.view-toggle-btn`), matching the All/Active/Completed toggle the
+  main Project Manager list already has.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
