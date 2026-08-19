@@ -165,11 +165,13 @@ the default on launch, reached through the sidebar like any other page.
   "Delete" link sits on the same row, right-aligned, and removes the
   active table (confirms first) - if it was the last one left, a fresh
   blank table takes its place so Calculator is never left empty. Each
-  table is a list of flex rows rather than a literal spreadsheet grid:
-  every row carries its own color as a stripe down the left edge (how
-  a row picks that color is being redesigned - there's currently no
-  control for it in the UI), an editable Title, and a
-  Value shown right-aligned and color-coded by sign - green for
+  table is a list of flex rows rather than a literal spreadsheet grid,
+  columns fixed-width and aligned under their own header labels: every
+  row carries its own color as a stripe down the left edge (how a row
+  picks that color is being redesigned - there's currently no control
+  for it in the UI), an editable Title in the same visible grey field
+  Studio Logs uses, and a Value shown right-aligned and color-coded by
+  sign - green for
   positive, red for negative, faint for zero/empty - so the numbers
   read at a glance without opening each row. A "+" in the header adds
   freeform text columns, and - unlike a typical spreadsheet - a new

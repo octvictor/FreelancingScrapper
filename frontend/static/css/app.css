@@ -469,11 +469,16 @@ table.gatherer-table td:nth-child(2) {
     color: var(--text-faint);
 }
 
+/* Fixed flex-basis, not just a min-width - matches .finance-row-col's
+   own fixed basis exactly, so the header cell and every data cell
+   below it land at precisely the same width instead of each sizing
+   itself independently and drifting out of alignment. */
 .finance-row-head-col {
     display: flex;
     align-items: center;
     gap: 4px;
-    min-width: 110px;
+    flex: 0 0 110px;
+    min-width: 0;
 }
 
 /* An editable column header - looks like the plain uppercase header
@@ -540,7 +545,8 @@ table.gatherer-table td:nth-child(2) {
 }
 
 .finance-row-head-value {
-    min-width: 90px;
+    flex: 0 0 90px;
+    min-width: 0;
     font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -594,6 +600,18 @@ table.gatherer-table td:nth-child(2) {
     font-size: 13.5px;
 }
 
+/* Invisible - matches the header row's "+" add-column button width
+   exactly, so a data row (which has no button of its own) still
+   consumes the same fixed width in the same slot. Without it the
+   header row's flex:1 Title label absorbs less leftover space than
+   the data rows' Title cell does (the button plus its own gap eats
+   into it), and every column after Title drifts out of alignment
+   between the header and the rows below it. */
+.finance-row-addcol-spacer {
+    flex: 0 0 20px;
+    min-width: 0;
+}
+
 /* A direct flex child of .finance-row (unlike the Title/Value inputs,
    which sit inside their own wrapping div) - width:auto plus a fixed
    flex-basis overrides the shared .cell-input's width:100%, which
@@ -604,13 +622,14 @@ table.gatherer-table td:nth-child(2) {
 .finance-row-col {
     width: auto;
     flex: 0 0 110px;
+    min-width: 0;
     font-size: 13px;
     color: var(--text-muted);
 }
 
 .finance-value-cell {
-    min-width: 90px;
-    flex-shrink: 0;
+    flex: 0 0 90px;
+    min-width: 0;
 }
 
 .finance-value-cell .cell-input {
@@ -837,27 +856,24 @@ table.task-table td:nth-child(6) {
 
 /* Qualified with the element type (not just the class) so this beats
    the generic input[type="text"]/input[type="number"] rule above on
-   specificity - without it, every inline-editable table cell app-wide
-   (Gatherer, Tracker, Calculator) silently inherited that rule's boxy
-   grey background/border/padding/radius at rest instead of staying
-   transparent until hovered, no matter what this block said. */
+   specificity, instead of leaving every inline-editable table cell
+   app-wide (Gatherer, Tracker, Calculator) to inherit that rule's
+   background/border/padding/radius by accident. The values themselves
+   match that rule on purpose - Studio Logs' visible grey field is the
+   established look every .cell-input use should have, Calculator
+   included, not something to design away from. */
 input.cell-input {
     width: 100%;
-    background: transparent;
-    border: 1px solid transparent;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 7px 8px;
     color: var(--text);
     font-size: 13px;
 }
 
-input.cell-input:hover {
-    background: var(--panel-alt);
-}
-
 input.cell-input:focus {
-    background: var(--panel-alt);
-    border-color: var(--border);
+    border-color: var(--text-muted);
     outline: none;
 }
 
@@ -865,10 +881,6 @@ input.cell-input:focus {
    otherwise it's disabled and reads as greyed-out/unclickable. */
 input.cell-input:disabled {
     cursor: not-allowed;
-}
-
-input.cell-input:disabled:hover {
-    background: transparent;
 }
 
 .cell-input.date-input {

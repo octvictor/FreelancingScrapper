@@ -171,6 +171,7 @@ function financeRowHtml(row) {
                 <input type="text" class="cell-input" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
             </div>
             ${dynamicCells}
+            <span class="finance-row-addcol-spacer"></span>
             <div class="cost-cell finance-value-cell">
                 <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
                 <input type="number" class="cell-input ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
