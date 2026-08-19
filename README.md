@@ -97,25 +97,38 @@ the default on launch, reached through the sidebar like any other page.
   separate save button. Click "+ Add row" for a new one. The Type and
   Status column headers double as filters - pick a value to narrow the
   table to just that value, blank to show everything again.
-- **To Do** - inspired by Microsoft To Do. Multiple lists in a column on
-  the left, its own to this page; a star sits to the right of every
-  list's name there - always visible, grey by default and gold once
-  favorited, toggled directly from that column without selecting the
-  list first - and a matching star above the column filters it down to
-  just favorited lists. "+ New list" adds one. Click a list's name in
-  the tasks pane to rename it; a color swatch to the title's left opens
-  the shared color preset popover, shown as a dot next to the list's name
-  in that column. "Delete list" sits to the title's right. Favoriting
-  only applies to lists - there's no importance concept for individual
-  tasks. Each list is a set of checkbox tasks - check one off and it
-  drops into a collapsed "Completed (n)" section below the active
-  ones, with a "Clean" link right in that section's header to clear
-  out every completed task in one go (confirms first, shows how many).
-  Clicking a task (anywhere but its checkbox/delete) opens a detail
-  view: title in a header row, a Steps checklist (a mini to-do list
-  within the task, same checkbox-and-title pattern as Personal
-  Projects' Checklist), and a freeform Notes text area. Everything
-  autosaves on blur/change.
+- **To Do** - a Kanban board, one column per list, laid out side by side
+  (horizontally scrolling once there are more than fit on screen) so
+  every list is visible at once instead of clicked through one at a
+  time. A star above the board filters it down to just favorited lists.
+  A column's header holds a color swatch (opens the shared color preset
+  popover; shown as a stripe on every card in that list), an editable
+  title, an open-task count, a favorite star (always visible, grey by
+  default and gold once favorited), and a delete (only visible on
+  hover). "+ Add task" sits at the bottom of each column; a trailing
+  dashed "+ New list" column adds another list. Each task is a compact
+  card: a colored stripe across the top in its list's color, the title,
+  a checkbox to complete it without opening it, a Steps sub-checklist
+  progress badge when the task has any steps (e.g. "2/5 steps", turning
+  green once complete), and - when set - a due date shown as a small
+  urgency-colored dot plus a relative label ("Today", "Tomorrow", "in 3
+  days") - red for overdue/today, amber for this week, blue for later,
+  the same convention Command Center's Due Soon row uses. Checking a
+  task off drops its card into a collapsed "Completed (n)" section at
+  the column's bottom, with a "Clean" link to clear every completed
+  task in that list at once (confirms first, shows how many). Clicking
+  a card (anywhere but its checkbox) opens a detail view: title, a Due
+  date field, a Steps checklist (a mini to-do list within the task,
+  same checkbox-and-title pattern as Personal Projects' Checklist), and
+  a freeform Notes text area. Everything autosaves on blur/change.
+  Loosely inspired by Trello's card language (colored stripe + a
+  checklist badge) but rebuilt in the app's own palette/type, not
+  Trello's chrome. A **Due Soon** toast (bottom-right corner) checks for
+  tasks due today or in the next couple of days whenever the app loads
+  and every 30 minutes while the tab stays open - in-app only, no
+  email/Slack/background job - listing them with the same urgency-dot
+  convention; dismissing it holds for the rest of the session, and
+  clicking a listed task jumps straight to it.
 - **Notes** - a Google Keep-style board of cards, titleless - a note is
   just a body of text, or a checklist, with no separate title field
   anywhere. A dashed "+" tile is always the first card; clicking it
@@ -343,42 +356,6 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- Redesign To Do as a Kanban board - approved, not yet built. Drops the
-  rail-plus-single-list-pane layout for columns, one per list, laid out
-  side by side so every list is visible at once instead of clicked
-  through one at a time. Each task becomes a compact card: a colored
-  stripe across the top in that list's own color (standing in for a
-  label), the task title, a small pill badge (right-aligned, small
-  type) showing the task's real Steps sub-checklist progress (e.g.
-  "2/5 steps", turning green once complete) when it has any steps, and
-  - if a task gets a due date, a separate near-term change below - a
-  small urgency-colored dot + relative label ("Today", "Tomorrow",
-  "in 3 days") next to the Steps badge. No invented attachments or
-  avatars, since this app's To Do model doesn't have those. A checkbox
-  in the card's footer still completes the task without opening it.
-  Loosely inspired by Trello's card language (colored stripe +
-  checklist badge) but rebuilt in the app's own palette/type, not
-  Trello's chrome. A trailing "+ New list" column adds more lists.
-  Note for whoever builds this: the list endpoint will need to start
-  returning each task's steps count/completed count (today that's only
-  fetched per-task when its detail modal opens) so the card badge has
-  real data to show.
-- Add a due date to To Do tasks - approved, not yet built. Shown on the
-  Kanban card (above) as a small urgency-colored dot + relative label
-  next to the Steps badge - red for overdue/today, amber for this week,
-  blue for later - reusing the exact convention Command Center's Due
-  Soon row already uses, rather than a raw calendar date or a new color
-  language. Needs a `due_date` column added to `todo_tasks` plus a
-  field in the task detail modal to set it.
-- Due Soon notification toast for To Do - approved, not yet built.
-  In-app only (no email/Slack/background job, per explicit direction) -
-  checked when To Do loads and periodically while the tab stays open. A
-  toast in the bottom-right corner groups every task due today or in
-  the next couple of days into one list, each row using the same
-  red/amber dot + relative-label convention as the due-date badge
-  above. Has a dismiss (&times;) and a "View To Do" link. Icon is
-  Lucide's actual "bell" glyph, matching the Lucide set used for every
-  other icon in the app, rather than a hand-drawn approximation.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as

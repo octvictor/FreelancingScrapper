@@ -26,6 +26,7 @@ class TodoTaskUpdate(BaseModel):
     completed: bool | None = None
     important: bool | None = None
     notes: str | None = None
+    due_date: str | None = None
 
 
 class TodoStepUpdate(BaseModel):
@@ -36,6 +37,11 @@ class TodoStepUpdate(BaseModel):
 @router.get("/lists")
 def list_lists():
     return {"lists": db.list_todo_lists()}
+
+
+@router.get("/due-soon")
+def due_soon():
+    return {"tasks": db.list_due_soon_todo_tasks()}
 
 
 @router.post("/lists")

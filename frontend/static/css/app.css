@@ -1873,167 +1873,147 @@ table.project-table tbody tr:hover td {
 
 /* ---------- To Do ---------- */
 
-.todo-layout {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-}
+/* ---------- To Do (Kanban board) ----------
+   One column per list, laid out side by side on a horizontally
+   scrolling board instead of a rail-plus-single-list-pane - every list
+   visible at once. Each task is a compact card (.kcard, further down)
+   with a colored stripe in its list's color standing in for a label,
+   loosely inspired by Trello's card language but rebuilt in the app's
+   own palette/type. */
 
-.todo-lists-rail {
-    flex: 0 0 180px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    border-right: 1px solid var(--border-soft);
-    padding-right: 20px;
-}
-
-.todo-lists-rail #todo-favorites-filter {
-    align-self: flex-start;
-    margin-bottom: 10px;
-}
-
-.todo-lists-rail #todo-list-add-btn {
-    align-self: flex-start;
-    margin-top: 8px;
-}
-
-/* The row itself is just a layout container - the two interactive
-   pieces (select vs favorite) are separate buttons inside it so
-   clicking the star doesn't also select the list. */
-.todo-list-item {
+.todo-toolbar {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 4px 2px 10px;
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    font-size: 13.5px;
+    margin-bottom: 14px;
 }
 
-.todo-list-item-main {
+.todo-board {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.kanban-col {
+    flex: 0 0 260px;
+    background: var(--panel-alt);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+}
+
+.kanban-col-head {
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: 0;
-    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.kanban-col-title-input {
     flex: 1;
-    padding: 6px 0;
+    min-width: 0;
     background: none;
-    border: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-.todo-list-item-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.todo-list-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.todo-list-item:hover {
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--text);
+    padding: 4px 6px;
+    margin-left: -6px;
 }
 
-.todo-list-item.active {
-    color: var(--text);
-    font-weight: 500;
-    background: var(--panel-alt);
+.kanban-col-title-input:hover,
+.kanban-col-title-input:focus {
+    background: var(--panel);
+    outline: none;
 }
 
-.todo-list-count {
+.kanban-col-title-input:focus {
+    border-color: var(--border);
+}
+
+.kanban-col-count {
     font-size: 11px;
     color: var(--text-faint);
     flex-shrink: 0;
 }
 
-.todo-list-fav-btn {
-    font-size: 13px;
+.kanban-col-delete {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    opacity: 0;
+}
+
+.kanban-col:hover .kanban-col-delete {
+    opacity: 1;
+}
+
+.kanban-col-delete:hover {
+    color: var(--danger-text);
+    background: var(--panel);
+}
+
+.kanban-col-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kanban-add-task {
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.kanban-completed-wrap {
+    margin-top: 12px;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 8px;
+}
+
+.kanban-completed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.kanban-col-new {
+    flex: 0 0 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-faint);
+    font-size: 12.5px;
+    cursor: pointer;
+    background: none;
+}
+
+.kanban-col-new:hover {
+    color: var(--text-muted);
+    border-color: var(--text-faint);
 }
 
 .todo-empty-state {
     color: var(--text-faint);
     font-size: 13px;
-    padding: 8px 10px;
-}
-
-/* Grid (not flex) so the right-hand column's width - driven by
-   whichever control row needs the most room ("Delete list", "Clean
-   list") - is shared by every row via the same track. That's what
-   keeps the task rows' right edge lined up with the title field's
-   right edge instead of drifting row to row. */
-.todo-tasks-pane {
-    flex: 1;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 16px;
-    row-gap: 10px;
-    align-items: start;
-}
-
-.todo-title-row {
-    grid-column: 1;
-    grid-row: 1;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    min-width: 0;
-}
-
-.todo-list-title-input {
-    flex: 1;
-    display: block;
-    min-width: 0;
-    background: none;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    color: var(--text);
-    padding: 6px 8px;
-    margin: 0 0 0 -8px;
-}
-
-.todo-title-row .todo-list-title-input {
-    margin-left: 0;
-}
-
-.todo-tasks-controls {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    justify-self: end;
-}
-
-#todo-task-list {
-    grid-column: 1;
-    grid-row: 2;
-}
-
-#todo-task-add-btn {
-    grid-column: 1;
-    grid-row: 3;
-    justify-self: start;
-}
-
-#todo-completed-wrap {
-    grid-column: 1;
-    grid-row: 4;
+    padding: 8px 2px;
 }
 
 .todo-completed-header {
@@ -2171,54 +2151,116 @@ table.project-table tbody tr:hover td {
     margin-top: 2px;
 }
 
-.todo-list-title-input:hover {
-    background: var(--panel-alt);
-}
-
-.todo-list-title-input:focus {
-    background: var(--panel-alt);
-    border-color: var(--border);
-    outline: none;
-}
-
-.todo-task-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--border-soft);
-    border-radius: var(--radius-sm);
+/* Compact task card - the accent stripe is that task's list color,
+   matching the Project Manager card's accent-stripe language and the
+   Kanban mockup's colored label stripe. */
+.kcard {
+    background: var(--panel);
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 2px rgba(40, 40, 40, 0.08);
+    padding: 9px 10px 8px;
     cursor: pointer;
 }
 
-.todo-task-row:last-child {
-    border-bottom: none;
+.kcard-stripe {
+    width: 32px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--stripe, var(--text-faint));
+    margin-bottom: 7px;
 }
 
-.todo-task-row:hover {
-    background: var(--panel-alt);
+.kcard-title {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 7px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.kcard.completed .kcard-title {
+    color: var(--text-faint);
+    text-decoration: line-through;
+}
+
+.kcard-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kcard-foot .todo-task-checkbox {
+    width: 15px;
+    height: 15px;
 }
 
 .todo-task-checkbox {
-    width: 17px;
-    height: 17px;
     flex-shrink: 0;
     accent-color: var(--checkbox-checked);
     cursor: pointer;
 }
 
-.todo-task-title {
+.kcard-foot-meta {
     flex: 1;
-    font-size: 13.5px;
-    color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
 }
 
-.todo-task-row.completed .todo-task-title {
+.kcard-due {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    font-weight: 500;
     color: var(--text-faint);
-    text-decoration: line-through;
+    flex-shrink: 0;
+}
+
+.kcard-due-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.kcard-due.overdue .kcard-due-dot,
+.kcard-due.today .kcard-due-dot {
+    background: var(--danger-text);
+}
+
+.kcard-due.soon .kcard-due-dot {
+    background: #b8791f;
+}
+
+.kcard-due.later .kcard-due-dot {
+    background: var(--accent-blue);
+}
+
+.kcard-steps {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    font-weight: 500;
+    color: var(--text-faint);
+    background: var(--bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-pill);
+    padding: 1.5px 6px 1.5px 5px;
+    flex-shrink: 0;
+}
+
+.kcard-steps.done {
+    color: #15803d;
+    background: rgba(34, 197, 94, 0.14);
+    border-color: transparent;
 }
 
 .todo-star-btn {
@@ -2240,12 +2282,6 @@ table.project-table tbody tr:hover td {
 
 .todo-star-btn.active {
     color: #f0c14b;
-}
-
-.todo-completed-wrap {
-    margin-top: 14px;
-    border-top: 1px solid var(--border-soft);
-    padding-top: 10px;
 }
 
 .todo-completed-toggle {
@@ -2298,6 +2334,18 @@ table.project-table tbody tr:hover td {
 
 .todo-modal-header .todo-star-btn {
     font-size: 22px;
+}
+
+.todo-modal-due-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0 0 32px;
+}
+
+.todo-modal-due-row label {
+    font-size: 12px;
+    color: var(--text-muted);
 }
 
 /* ---------- Notes (Google Keep-style cards) ---------- */
@@ -2917,3 +2965,116 @@ input.qc-input {
 }
 
 /* ---------- Note detail modal ---------- */
+
+/* ---------- Due Soon notification toast ----------
+   App-wide, not scoped to To Do - built and appended to <body> by
+   nav.js so it can appear regardless of which page is open. In-app
+   only (checked on load and periodically while the tab stays open),
+   no email/Slack/background job. */
+
+.due-soon-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    width: 300px;
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 28px rgba(40, 40, 40, 0.18);
+    padding: 14px 14px 12px;
+    z-index: 400;
+}
+
+.due-soon-toast-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.due-soon-toast-icon {
+    color: #b8791f;
+    flex-shrink: 0;
+    display: inline-flex;
+}
+
+.due-soon-toast-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    flex: 1;
+}
+
+.due-soon-toast-close {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.due-soon-toast-close:hover {
+    color: var(--text-muted);
+}
+
+.due-soon-toast-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    cursor: pointer;
+}
+
+.due-soon-toast-row + .due-soon-toast-row {
+    border-top: 1px solid var(--border-soft);
+}
+
+.due-soon-toast-when {
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+    width: 58px;
+}
+
+.due-soon-toast-when.overdue,
+.due-soon-toast-when.today {
+    color: var(--danger-text);
+}
+
+.due-soon-toast-when.soon {
+    color: #8a5a12;
+}
+
+.due-soon-toast-when.later {
+    color: var(--accent-blue);
+}
+
+.due-soon-toast-task {
+    font-size: 12.5px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.due-soon-toast-foot {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.due-soon-toast-link {
+    font-size: 12px;
+    color: var(--accent-blue);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.due-soon-toast-link:hover {
+    color: #2f6084;
+}

@@ -19,6 +19,22 @@ function colorNeedsDarkText(hex) {
     return luminance > 0.55;
 }
 
+// Shared urgency + relative-label convention for any due date in the app
+// (Command Center's Due Soon row, a To Do task's due date) - red for
+// overdue/today, amber for this week, blue for later - so a date never
+// grows its own one-off color language.
+function dueDateMeta(dateStr) {
+    const target = new Date(dateStr + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((target - today) / 86400000);
+    if (diffDays < 0) return { label: "Overdue", urgency: "overdue" };
+    if (diffDays === 0) return { label: "Today", urgency: "today" };
+    if (diffDays === 1) return { label: "Tomorrow", urgency: "soon" };
+    if (diffDays <= 6) return { label: target.toLocaleDateString(undefined, { weekday: "short" }), urgency: "soon" };
+    return { label: target.toLocaleDateString(undefined, { month: "short", day: "numeric" }), urgency: "later" };
+}
+
 // ---------- Color preset picker ----------
 // The one color picker for the whole app (To Do's list color, Notes'
 // card color, Calculator's row color, and anything added later) - two
@@ -114,6 +130,7 @@ function showPage(page) {
     });
     if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
     if (page === "notes" && typeof refreshNotes === "function") refreshNotes();
+    if (page === "todo" && typeof refreshTodoBoard === "function") refreshTodoBoard();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page
@@ -127,6 +144,86 @@ document.querySelectorAll(".sb-item").forEach((btn) => {
 });
 
 showPage("overview");
+
+// ---------- Due Soon notification toast ----------
+// App-wide (built here, not in todo.js, so it can appear regardless of
+// which page is open) and in-app only, as explicitly asked for - no
+// email/Slack/background job. Checked on load and every 30 minutes
+// while the tab stays open; dismissing it holds for the rest of the
+// session (no re-check brings it back).
+
+let dueSoonToastDismissed = false;
+const DUE_SOON_CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const DUE_SOON_BELL_SVG =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path>' +
+    '<path d="M10.268 21a2 2 0 0 0 3.464 0"></path></svg>';
+
+function dueSoonToastRowHtml(task) {
+    const meta = dueDateMeta(task.due_date);
+    return `
+        <div class="due-soon-toast-row" data-id="${task.id}" data-list-id="${task.list_id}">
+            <span class="due-soon-toast-when ${meta.urgency}">${meta.label}</span>
+            <span class="due-soon-toast-task">${escapeAttr(task.title) || "Untitled task"}</span>
+        </div>
+    `;
+}
+
+async function goToTodoTask(listId, taskId) {
+    showPage("todo");
+    if (typeof refreshTodoBoard === "function") await refreshTodoBoard();
+    if (typeof openTodoTaskModal === "function") openTodoTaskModal(listId, taskId);
+}
+
+function showDueSoonToast(tasks) {
+    document.querySelectorAll(".due-soon-toast").forEach((el) => el.remove());
+
+    const toast = document.createElement("div");
+    toast.className = "due-soon-toast";
+    toast.innerHTML = `
+        <div class="due-soon-toast-head">
+            <span class="due-soon-toast-icon">${DUE_SOON_BELL_SVG}</span>
+            <span class="due-soon-toast-title">Due soon</span>
+            <button class="due-soon-toast-close" type="button" title="Dismiss">&times;</button>
+        </div>
+        ${tasks.map(dueSoonToastRowHtml).join("")}
+        <div class="due-soon-toast-foot">
+            <button class="due-soon-toast-link" type="button">View To Do &rarr;</button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    toast.querySelector(".due-soon-toast-close").addEventListener("click", () => {
+        toast.remove();
+        dueSoonToastDismissed = true;
+    });
+    toast.querySelector(".due-soon-toast-link").addEventListener("click", () => {
+        toast.remove();
+        showPage("todo");
+    });
+    toast.querySelectorAll(".due-soon-toast-row").forEach((row) => {
+        row.addEventListener("click", () => {
+            toast.remove();
+            goToTodoTask(parseInt(row.dataset.listId, 10), parseInt(row.dataset.id, 10));
+        });
+    });
+}
+
+async function checkDueSoonTasks() {
+    if (dueSoonToastDismissed) return;
+    const resp = await fetch("/api/todo/due-soon");
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const tasks = data.tasks || [];
+    if (tasks.length === 0) {
+        document.querySelectorAll(".due-soon-toast").forEach((el) => el.remove());
+        return;
+    }
+    showDueSoonToast(tasks);
+}
+
+checkDueSoonTasks();
+setInterval(checkDueSoonTasks, DUE_SOON_CHECK_INTERVAL_MS);
 
 // ---------- Custom dropdown ----------
 // Replaces a native <select>'s popup, which browsers won't let CSS fully

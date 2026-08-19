@@ -1,290 +1,242 @@
-// To Do tool - inspired by Microsoft To Do. Multiple lists, each a set
-// of checkbox tasks. A task can carry freeform Notes and hold a Steps
-// checklist (reusing the same .checklist-item markup/pattern as
-// Personal Projects' checklist, namespaced separately so its buttons
-// don't collide with that one). Favoriting only applies to lists, not
-// individual tasks - there's no importance concept inside a list at
-// all. $()/confirmDialog come from nav.js, escapeAttr from gatherer.js.
+// To Do tool - a Kanban board, one column per list, laid out side by
+// side so every list is visible at once instead of clicked through one
+// at a time (approved over the previous rail-plus-single-list-pane
+// layout). Each task is a compact card carrying its list's color as a
+// stripe, a Steps sub-checklist progress badge, and - if set - a due
+// date shown via the shared dueDateMeta() urgency convention (nav.js).
+// A task can carry freeform Notes and a Steps checklist (reusing the
+// same .checklist-item markup/pattern as Personal Projects' checklist,
+// namespaced separately so its buttons don't collide with that one).
+// Favoriting only applies to lists, not individual tasks. $()/
+// confirmDialog/dueDateMeta come from nav.js, escapeAttr from
+// gatherer.js, openColorPresetPopover from nav.js.
 
 let todoLists = [];
-let activeListId = null;
-let activeTodoTasks = [];
+let todoTasksByList = {};
 let activeTodoTaskId = null;
-let todoCompletedExpanded = false;
+let activeTodoTaskListId = null;
 let todoFavoritesOnly = false;
+let todoCompletedExpanded = {};
 
-// ---------- Lists rail ----------
-// Each row is a container with two independent controls: the main
-// area (dot + title) selects the list, and a star - always visible,
-// grey by default, gold once favorited - toggles favorite status
-// directly from the rail without needing to select the list first. A
-// second star above the rail filters the list down to favorites only.
+// ---------- Board ----------
 
-function todoListItemHtml(list) {
-    const isActive = list.id === activeListId;
-    const dotStyle = list.color
-        ? `background:${list.color}; border-color:transparent;`
-        : "background:transparent;";
+function todoCardHtml(task, listColor) {
+    const isCompleted = !!task.completed;
+    const dueBadge = task.due_date
+        ? (() => {
+              const meta = dueDateMeta(task.due_date);
+              return `<span class="kcard-due ${meta.urgency}"><span class="kcard-due-dot"></span>${meta.label}</span>`;
+          })()
+        : "";
+    const stepsBadge = task.step_count > 0
+        ? `<span class="kcard-steps ${task.steps_done === task.step_count ? "done" : ""}">${task.steps_done}/${task.step_count} steps</span>`
+        : "";
     return `
-        <div class="todo-list-item ${isActive ? "active" : ""}" data-id="${list.id}">
-            <button class="todo-list-item-main" data-role="select" type="button">
-                <span class="todo-list-dot" style="${dotStyle}"></span>
-                <span class="todo-list-item-title">${escapeAttr(list.title) || "Untitled list"}</span>
-            </button>
-            ${list.open_count > 0 ? `<span class="todo-list-count">${list.open_count}</span>` : ""}
-            <button class="todo-list-fav-btn todo-star-btn ${list.favorite ? "active" : ""}" data-role="favorite" type="button" title="Mark list favorite">&#9733;</button>
+        <div class="kcard ${isCompleted ? "completed" : ""}" data-id="${task.id}" style="--stripe: ${isCompleted ? "var(--border)" : (listColor || "var(--text-faint)")};">
+            <div class="kcard-stripe"></div>
+            <div class="kcard-title">${escapeAttr(task.title) || "Untitled task"}</div>
+            <div class="kcard-foot">
+                <input type="checkbox" class="todo-task-checkbox" ${isCompleted ? "checked" : ""}>
+                <span class="kcard-foot-meta">${dueBadge}${stepsBadge}</span>
+            </div>
         </div>
     `;
 }
 
-function renderTodoLists() {
-    const container = $("todo-lists");
+function todoColumnHtml(list) {
+    const tasks = todoTasksByList[list.id] || [];
+    const active = tasks.filter((t) => !t.completed);
+    const completed = tasks.filter((t) => t.completed);
+    const expanded = !!todoCompletedExpanded[list.id];
+    const dotStyle = list.color ? `background:${list.color}; border-color:transparent;` : "background:transparent;";
+
+    return `
+        <div class="kanban-col" data-id="${list.id}">
+            <div class="kanban-col-head">
+                <button class="swatch-btn ${list.color ? "" : "swatch-btn-empty"}" data-role="color" type="button" title="List color" style="${list.color ? `background:${list.color};` : ""}">${list.color ? "" : "&#9681;"}</button>
+                <input type="text" class="kanban-col-title-input" data-role="title" value="${escapeAttr(list.title)}" placeholder="List name">
+                <span class="kanban-col-count">${active.length}</span>
+                <button class="todo-star-btn ${list.favorite ? "active" : ""}" data-role="favorite" type="button" title="Mark list favorite">&#9733;</button>
+                <button class="kanban-col-delete" data-role="delete" type="button" title="Delete list">&times;</button>
+            </div>
+            <div class="kanban-col-tasks" data-role="tasks">
+                ${active.length ? active.map((t) => todoCardHtml(t, list.color)).join("") : `<p class="todo-empty-state">No tasks yet.</p>`}
+            </div>
+            <button class="kanban-add-task" data-role="add-task" type="button">+ Add task</button>
+            <div class="kanban-completed-wrap" data-role="completed-wrap" style="${completed.length ? "" : "display:none;"}">
+                <button class="todo-completed-toggle ${expanded ? "expanded" : ""}" data-role="completed-toggle" type="button">
+                    <span class="todo-completed-chevron">&#9662;</span>
+                    <span data-role="completed-label">Completed (${completed.length})</span>
+                </button>
+                <div class="kanban-completed-list" data-role="completed-list" style="${expanded ? "" : "display:none;"}">
+                    ${completed.map((t) => todoCardHtml(t, list.color)).join("")}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderTodoBoard() {
+    const container = $("todo-board");
     const visibleLists = todoFavoritesOnly ? todoLists.filter((l) => l.favorite) : todoLists;
-    if (visibleLists.length === 0) {
-        container.innerHTML = `<p class="todo-empty-state">${todoFavoritesOnly ? "No favorite lists." : "No lists yet."}</p>`;
+
+    if (visibleLists.length === 0 && !todoFavoritesOnly) {
+        container.innerHTML = `<button class="kanban-col-new" id="todo-list-add-btn" type="button">+ New list</button>`;
+        wireTodoAddListBtn();
         return;
     }
-    container.innerHTML = visibleLists.map(todoListItemHtml).join("");
-    container.querySelectorAll(".todo-list-item").forEach((row) => {
-        const id = parseInt(row.dataset.id, 10);
-        row.querySelector("[data-role='select']").addEventListener("click", () => selectTodoList(id));
-        row.querySelector("[data-role='favorite']").addEventListener("click", () => toggleTodoListFavorite(id));
-    });
-}
 
-$("todo-favorites-filter").addEventListener("click", () => {
-    todoFavoritesOnly = !todoFavoritesOnly;
-    $("todo-favorites-filter").classList.toggle("active", todoFavoritesOnly);
-    renderTodoLists();
-});
-
-async function toggleTodoListFavorite(id) {
-    const list = todoLists.find((l) => l.id === id);
-    const willBeFavorite = !list.favorite;
-    const resp = await fetch(`/api/todo/lists/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ favorite: willBeFavorite }),
-    });
-    if (!resp.ok) return;
-    const updated = await resp.json();
-    const idx = todoLists.findIndex((l) => l.id === updated.id);
-    if (idx !== -1) todoLists[idx] = updated;
-    renderTodoLists();
-}
-
-async function selectTodoList(id) {
-    activeListId = id;
-    todoCompletedExpanded = false;
-    const list = todoLists.find((l) => l.id === id);
-    $("todo-list-title").value = list ? list.title || "" : "";
-    updateTodoColorBtn(list && list.color);
-    $("todo-tasks-pane").style.display = "";
-    renderTodoLists();
-    await loadTodoTasks();
-}
-
-// ---------- List color ----------
-// Opens the shared color preset popover (nav.js) rather than keeping its
-// own popover - setTodoListColor is just the save callback it's handed.
-
-function updateTodoColorBtn(color) {
-    const btn = $("todo-list-color-btn");
-    btn.style.background = color || "transparent";
-    btn.classList.toggle("swatch-btn-empty", !color);
-    btn.innerHTML = color ? "" : "&#9681;";
-}
-
-async function setTodoListColor(color) {
-    if (activeListId === null) return;
-    const resp = await fetch(`/api/todo/lists/${activeListId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ color }),
-    });
-    if (!resp.ok) return;
-    const updated = await resp.json();
-    const idx = todoLists.findIndex((l) => l.id === updated.id);
-    if (idx !== -1) todoLists[idx] = updated;
-    updateTodoColorBtn(updated.color);
-    renderTodoLists();
-}
-
-$("todo-list-color-btn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (activeListId === null) return;
-    const current = todoLists.find((l) => l.id === activeListId)?.color || null;
-    openColorPresetPopover(e.currentTarget, current, {
-        onChange: setTodoListColor,
-        onClear: () => setTodoListColor(null),
-    });
-});
-
-async function refreshTodoLists() {
-    const resp = await fetch("/api/todo/lists");
-    const data = await resp.json();
-    todoLists = data.lists;
-    renderTodoLists();
-}
-
-$("todo-list-add-btn").addEventListener("click", async () => {
-    const resp = await fetch("/api/todo/lists", { method: "POST" });
-    const list = await resp.json();
-    todoLists.push(list);
-    await selectTodoList(list.id);
-    $("todo-list-title").focus();
-});
-
-$("todo-list-title").addEventListener("blur", async (e) => {
-    if (activeListId === null) return;
-    const resp = await fetch(`/api/todo/lists/${activeListId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: e.target.value.trim() }),
-    });
-    if (!resp.ok) return;
-    const updated = await resp.json();
-    const idx = todoLists.findIndex((l) => l.id === updated.id);
-    if (idx !== -1) todoLists[idx] = updated;
-    renderTodoLists();
-});
-$("todo-list-title").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") e.target.blur();
-});
-
-$("todo-list-delete-btn").addEventListener("click", async () => {
-    if (activeListId === null) return;
-    const ok = await confirmDialog("This deletes all its tasks too. This can't be undone.", { title: "Delete this list?" });
-    if (!ok) return;
-    await fetch(`/api/todo/lists/${activeListId}`, { method: "DELETE" });
-    todoLists = todoLists.filter((l) => l.id !== activeListId);
-    if (todoLists.length > 0) {
-        await selectTodoList(todoLists[0].id);
-    } else {
-        activeListId = null;
-        activeTodoTasks = [];
-        $("todo-tasks-pane").style.display = "none";
-        renderTodoLists();
+    if (visibleLists.length === 0) {
+        container.innerHTML = `<p class="todo-empty-state">No favorite lists.</p>`;
+        return;
     }
-});
 
-// ---------- Task list ----------
+    container.innerHTML = visibleLists.map(todoColumnHtml).join("") +
+        `<button class="kanban-col-new" id="todo-list-add-btn" type="button">+ New list</button>`;
 
-async function loadTodoTasks() {
-    if (activeListId === null) return;
-    const resp = await fetch(`/api/todo/lists/${activeListId}/tasks`);
-    const data = await resp.json();
-    activeTodoTasks = data.tasks;
-    renderTodoTasks();
+    container.querySelectorAll(".kanban-col").forEach(wireTodoColumn);
+    wireTodoAddListBtn();
 }
 
-function todoTaskRowHtml(task) {
-    const isCompleted = !!task.completed;
-    return `
-        <div class="todo-task-row ${isCompleted ? "completed" : ""}" data-id="${task.id}">
-            <input type="checkbox" class="todo-task-checkbox" ${isCompleted ? "checked" : ""}>
-            <span class="todo-task-title">${escapeAttr(task.title) || "Untitled task"}</span>
-            <button class="row-delete-btn" data-role="delete" title="Delete task">&times;</button>
-        </div>
-    `;
-}
-
-function wireTodoTaskRows(container) {
-    container.querySelectorAll(".todo-task-row").forEach((row) => {
-        const taskId = parseInt(row.dataset.id, 10);
-
-        row.addEventListener("click", (e) => {
-            if (e.target.closest(".todo-task-checkbox, .row-delete-btn")) return;
-            openTodoTaskModal(taskId);
-        });
-
-        const checkbox = row.querySelector(".todo-task-checkbox");
-        checkbox.addEventListener("change", () => saveTodoTaskField(taskId, { completed: checkbox.checked }));
-
-        row.querySelector("[data-role='delete']").addEventListener("click", async () => {
-            if (!(await confirmDialog("This can't be undone.", { title: "Delete this task?" }))) return;
-            await fetch(`/api/todo/lists/${activeListId}/tasks/${taskId}`, { method: "DELETE" });
-            activeTodoTasks = activeTodoTasks.filter((t) => t.id !== taskId);
-            renderTodoTasks();
-            refreshTodoLists();
-        });
+function wireTodoAddListBtn() {
+    $("todo-list-add-btn").addEventListener("click", async () => {
+        const resp = await fetch("/api/todo/lists", { method: "POST" });
+        const list = await resp.json();
+        todoLists.push(list);
+        todoTasksByList[list.id] = [];
+        renderTodoBoard();
+        const titleInput = document.querySelector(`.kanban-col[data-id="${list.id}"] [data-role="title"]`);
+        if (titleInput) titleInput.focus();
     });
 }
 
-function renderTodoTasks() {
-    const active = activeTodoTasks.filter((t) => !t.completed);
-    const completed = activeTodoTasks.filter((t) => t.completed);
+function wireTodoColumn(col) {
+    const listId = parseInt(col.dataset.id, 10);
 
-    $("todo-task-list").innerHTML = active.length
-        ? active.map(todoTaskRowHtml).join("")
-        : `<p class="todo-empty-state">No tasks yet.</p>`;
+    col.querySelector("[data-role='color']").addEventListener("click", (e) => {
+        e.stopPropagation();
+        const current = todoLists.find((l) => l.id === listId)?.color || null;
+        openColorPresetPopover(e.currentTarget, current, {
+            onChange: (color) => setTodoListColor(listId, color),
+            onClear: () => setTodoListColor(listId, null),
+        });
+    });
 
-    // The whole Completed section (Clean included, now that it lives in
-    // its header) hides itself when there's nothing completed to show -
-    // no separate disabled-state needed on the Clean button.
-    $("todo-completed-wrap").style.display = completed.length > 0 ? "" : "none";
-    $("todo-completed-label").textContent = `Completed (${completed.length})`;
-    $("todo-completed-list").innerHTML = completed.map(todoTaskRowHtml).join("");
-    $("todo-completed-list").style.display = todoCompletedExpanded ? "" : "none";
-    $("todo-completed-toggle").classList.toggle("expanded", todoCompletedExpanded);
+    const titleInput = col.querySelector("[data-role='title']");
+    titleInput.addEventListener("blur", () => saveTodoListField(listId, { title: titleInput.value.trim() }));
+    titleInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") e.target.blur();
+    });
 
-    wireTodoTaskRows($("todo-task-list"));
-    wireTodoTaskRows($("todo-completed-list"));
+    col.querySelector("[data-role='favorite']").addEventListener("click", () => toggleTodoListFavorite(listId));
+
+    col.querySelector("[data-role='delete']").addEventListener("click", async () => {
+        const ok = await confirmDialog("This deletes all its tasks too. This can't be undone.", { title: "Delete this list?" });
+        if (!ok) return;
+        await fetch(`/api/todo/lists/${listId}`, { method: "DELETE" });
+        todoLists = todoLists.filter((l) => l.id !== listId);
+        delete todoTasksByList[listId];
+        renderTodoBoard();
+    });
+
+    col.querySelector("[data-role='add-task']").addEventListener("click", async () => {
+        const resp = await fetch(`/api/todo/lists/${listId}/tasks`, { method: "POST" });
+        const task = await resp.json();
+        if (!todoTasksByList[listId]) todoTasksByList[listId] = [];
+        todoTasksByList[listId].unshift(task);
+        renderTodoBoard();
+        openTodoTaskModal(listId, task.id);
+    });
+
+    col.querySelector("[data-role='completed-toggle']").addEventListener("click", () => {
+        todoCompletedExpanded[listId] = !todoCompletedExpanded[listId];
+        renderTodoBoard();
+    });
+
+    wireTodoCards(col.querySelector("[data-role='tasks']"), listId);
+    wireTodoCards(col.querySelector("[data-role='completed-list']"), listId);
 }
 
-$("todo-clean-list-btn").addEventListener("click", async () => {
-    if (activeListId === null) return;
-    const completedCount = activeTodoTasks.filter((t) => t.completed).length;
-    if (completedCount === 0) return;
-    const ok = await confirmDialog(
-        `This deletes ${completedCount} completed task${completedCount === 1 ? "" : "s"}. This can't be undone.`,
-        { title: "Clean this list?", confirmText: "Clean" }
-    );
-    if (!ok) return;
-    await fetch(`/api/todo/lists/${activeListId}/tasks/completed`, { method: "DELETE" });
-    activeTodoTasks = activeTodoTasks.filter((t) => !t.completed);
-    renderTodoTasks();
-    refreshTodoLists();
-});
+function wireTodoCards(container, listId) {
+    if (!container) return;
+    container.querySelectorAll(".kcard").forEach((card) => {
+        const taskId = parseInt(card.dataset.id, 10);
 
-async function saveTodoTaskField(taskId, updates) {
-    const resp = await fetch(`/api/todo/lists/${activeListId}/tasks/${taskId}`, {
+        card.addEventListener("click", (e) => {
+            if (e.target.closest(".todo-task-checkbox")) return;
+            openTodoTaskModal(listId, taskId);
+        });
+
+        const checkbox = card.querySelector(".todo-task-checkbox");
+        checkbox.addEventListener("change", () => saveTodoTaskField(listId, taskId, { completed: checkbox.checked }));
+    });
+}
+
+// ---------- List fields ----------
+
+async function saveTodoListField(listId, updates) {
+    const resp = await fetch(`/api/todo/lists/${listId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
     });
     if (!resp.ok) return;
     const updated = await resp.json();
-    const idx = activeTodoTasks.findIndex((t) => t.id === updated.id);
-    if (idx !== -1) activeTodoTasks[idx] = updated;
-    renderTodoTasks();
-    if (updates.completed !== undefined) refreshTodoLists();
+    const idx = todoLists.findIndex((l) => l.id === updated.id);
+    if (idx !== -1) todoLists[idx] = updated;
+    renderTodoBoard();
 }
 
-$("todo-completed-toggle").addEventListener("click", () => {
-    todoCompletedExpanded = !todoCompletedExpanded;
-    renderTodoTasks();
+function setTodoListColor(listId, color) {
+    saveTodoListField(listId, { color });
+}
+
+async function toggleTodoListFavorite(id) {
+    const list = todoLists.find((l) => l.id === id);
+    await saveTodoListField(id, { favorite: !list.favorite });
+}
+
+$("todo-favorites-filter").addEventListener("click", () => {
+    todoFavoritesOnly = !todoFavoritesOnly;
+    $("todo-favorites-filter").classList.toggle("active", todoFavoritesOnly);
+    renderTodoBoard();
 });
 
-$("todo-task-add-btn").addEventListener("click", async () => {
-    if (activeListId === null) return;
-    const resp = await fetch(`/api/todo/lists/${activeListId}/tasks`, { method: "POST" });
-    const task = await resp.json();
-    activeTodoTasks.unshift(task);
-    renderTodoTasks();
-    refreshTodoLists();
-    openTodoTaskModal(task.id);
-});
+// ---------- Task fields ----------
+
+async function saveTodoTaskField(listId, taskId, updates) {
+    const resp = await fetch(`/api/todo/lists/${listId}/tasks/${taskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+    });
+    if (!resp.ok) return;
+    const updated = await resp.json();
+    const tasks = todoTasksByList[listId] || [];
+    const idx = tasks.findIndex((t) => t.id === updated.id);
+    if (idx !== -1) tasks[idx] = { ...tasks[idx], ...updated };
+    renderTodoBoard();
+    if (updates.completed !== undefined) refreshTodoListCounts();
+}
+
+async function refreshTodoListCounts() {
+    const resp = await fetch("/api/todo/lists");
+    const data = await resp.json();
+    todoLists = data.lists;
+    renderTodoBoard();
+}
 
 // ---------- Task detail modal ----------
 
-async function openTodoTaskModal(id) {
-    const resp = await fetch(`/api/todo/lists/${activeListId}/tasks/${id}`);
+async function openTodoTaskModal(listId, id) {
+    const resp = await fetch(`/api/todo/lists/${listId}/tasks/${id}`);
     const task = await resp.json();
     activeTodoTaskId = id;
+    activeTodoTaskListId = listId;
 
     $("todo-modal-completed").checked = !!task.completed;
     $("todo-modal-title").value = task.title || "";
+    $("todo-modal-due-date").value = task.due_date || "";
     $("todo-modal-notes").value = task.notes || "";
     renderTodoSteps(task.steps || []);
 
@@ -295,21 +247,12 @@ async function openTodoTaskModal(id) {
 function closeTodoTaskModal() {
     $("todo-modal-backdrop").style.display = "none";
     activeTodoTaskId = null;
+    activeTodoTaskListId = null;
 }
 
 async function saveActiveTodoTask(updates) {
     if (activeTodoTaskId === null) return;
-    const resp = await fetch(`/api/todo/lists/${activeListId}/tasks/${activeTodoTaskId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-    });
-    if (!resp.ok) return;
-    const updated = await resp.json();
-    const idx = activeTodoTasks.findIndex((t) => t.id === updated.id);
-    if (idx !== -1) activeTodoTasks[idx] = updated;
-    renderTodoTasks();
-    if (updates.completed !== undefined) refreshTodoLists();
+    await saveTodoTaskField(activeTodoTaskListId, activeTodoTaskId, updates);
 }
 
 $("todo-modal-close").addEventListener("click", closeTodoTaskModal);
@@ -327,17 +270,20 @@ $("todo-modal-title").addEventListener("keydown", (e) => {
 
 $("todo-modal-completed").addEventListener("change", (e) => saveActiveTodoTask({ completed: e.target.checked }));
 
+$("todo-modal-due-date").addEventListener("change", (e) => saveActiveTodoTask({ due_date: e.target.value || null }));
+
 $("todo-modal-notes").addEventListener("blur", (e) => saveActiveTodoTask({ notes: e.target.value.trim() || null }));
 
 $("todo-modal-delete-btn").addEventListener("click", async () => {
     if (activeTodoTaskId === null) return;
     const ok = await confirmDialog("This can't be undone.", { title: "Delete this task?" });
     if (!ok) return;
-    await fetch(`/api/todo/lists/${activeListId}/tasks/${activeTodoTaskId}`, { method: "DELETE" });
-    activeTodoTasks = activeTodoTasks.filter((t) => t.id !== activeTodoTaskId);
+    await fetch(`/api/todo/lists/${activeTodoTaskListId}/tasks/${activeTodoTaskId}`, { method: "DELETE" });
+    const tasks = todoTasksByList[activeTodoTaskListId] || [];
+    todoTasksByList[activeTodoTaskListId] = tasks.filter((t) => t.id !== activeTodoTaskId);
     closeTodoTaskModal();
-    renderTodoTasks();
-    refreshTodoLists();
+    renderTodoBoard();
+    refreshTodoListCounts();
 });
 
 // ---------- Steps checklist (within the task modal) ----------
@@ -371,8 +317,9 @@ function wireTodoStepRow(row) {
 
     row.querySelector("[data-role='delete']").addEventListener("click", async () => {
         if (activeTodoTaskId === null) return;
-        await fetch(`/api/todo/lists/${activeListId}/tasks/${activeTodoTaskId}/steps/${stepId}`, { method: "DELETE" });
+        await fetch(`/api/todo/lists/${activeTodoTaskListId}/tasks/${activeTodoTaskId}/steps/${stepId}`, { method: "DELETE" });
         row.remove();
+        refreshActiveTodoTaskStepsBadge();
     });
 
     return textInput;
@@ -385,30 +332,56 @@ function renderTodoSteps(steps) {
 
 async function saveTodoStep(stepId, updates) {
     if (activeTodoTaskId === null) return;
-    await fetch(`/api/todo/lists/${activeListId}/tasks/${activeTodoTaskId}/steps/${stepId}`, {
+    await fetch(`/api/todo/lists/${activeTodoTaskListId}/tasks/${activeTodoTaskId}/steps/${stepId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
     });
+    refreshActiveTodoTaskStepsBadge();
+}
+
+// Keeps the card behind the modal in step with Steps add/remove/check
+// edits, without waiting for the modal to close - same live-sync
+// pattern used for Project Manager's Logs/SUM stat.
+async function refreshActiveTodoTaskStepsBadge() {
+    if (activeTodoTaskId === null) return;
+    const resp = await fetch(`/api/todo/lists/${activeTodoTaskListId}/tasks/${activeTodoTaskId}`);
+    if (!resp.ok) return;
+    const task = await resp.json();
+    const tasks = todoTasksByList[activeTodoTaskListId] || [];
+    const idx = tasks.findIndex((t) => t.id === activeTodoTaskId);
+    if (idx !== -1) tasks[idx] = { ...tasks[idx], step_count: task.steps.length, steps_done: task.steps.filter((s) => s.checked).length };
+    renderTodoBoard();
 }
 
 $("todo-modal-step-add-btn").addEventListener("click", async () => {
     if (activeTodoTaskId === null) return;
-    const resp = await fetch(`/api/todo/lists/${activeListId}/tasks/${activeTodoTaskId}/steps`, { method: "POST" });
+    const resp = await fetch(`/api/todo/lists/${activeTodoTaskListId}/tasks/${activeTodoTaskId}/steps`, { method: "POST" });
     const step = await resp.json();
     $("todo-modal-steps-list").insertAdjacentHTML("beforeend", todoStepHtml(step));
     const row = document.querySelector(`#todo-modal-steps-list .checklist-item[data-id="${step.id}"]`);
     wireTodoStepRow(row).focus();
+    refreshActiveTodoTaskStepsBadge();
 });
 
-(async function initTodo() {
+// ---------- Init / refresh ----------
+// refreshTodoBoard is callable again (not just at load) so nav.js can
+// re-fetch on every navigation to this page, same staleness-bug fix
+// pattern as Notes/Overview.
+
+async function refreshTodoBoard() {
     const resp = await fetch("/api/todo/lists");
     const data = await resp.json();
     todoLists = data.lists;
-    if (todoLists.length > 0) {
-        await selectTodoList(todoLists[0].id);
-    } else {
-        $("todo-tasks-pane").style.display = "none";
-        renderTodoLists();
-    }
-})();
+    todoTasksByList = {};
+    await Promise.all(
+        todoLists.map(async (list) => {
+            const taskResp = await fetch(`/api/todo/lists/${list.id}/tasks`);
+            const taskData = await taskResp.json();
+            todoTasksByList[list.id] = taskData.tasks;
+        })
+    );
+    renderTodoBoard();
+}
+
+refreshTodoBoard();

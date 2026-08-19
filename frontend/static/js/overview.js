@@ -3,8 +3,8 @@
 // into Notes, Today's Focus + Due Soon, Active Projects + Recent Notes,
 // and a small visual strip of the newest notes ("Full Board" - approved
 // over two leaner alternatives mocked up alongside it). $()/escapeAttr/
-// navigateTo come from nav.js/gatherer.js; openProjectModal, selectTodoList
-// + openTodoTaskModal, and openNoteModal (defined in tracker.js/todo.js/
+// navigateTo come from nav.js/gatherer.js; openProjectModal,
+// openTodoTaskModal, and openNoteModal (defined in tracker.js/todo.js/
 // notes.js) are reused as-is to open the right detail view after a click,
 // same as a search jump - nothing about those tools is touched here.
 // colorNeedsDarkText (nav.js) picks readable text for a note's own color,
@@ -24,18 +24,6 @@ function ccGreeting() {
     if (hour < 12) return "Good morning";
     if (hour < 18) return "Good afternoon";
     return "Good evening";
-}
-
-function ccDueMeta(dateStr) {
-    const target = new Date(dateStr + "T00:00:00");
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diffDays = Math.round((target - today) / 86400000);
-    if (diffDays < 0) return { label: "Overdue", urgency: "overdue" };
-    if (diffDays === 0) return { label: "Today", urgency: "today" };
-    if (diffDays === 1) return { label: "Tomorrow", urgency: "soon" };
-    if (diffDays <= 6) return { label: target.toLocaleDateString(undefined, { weekday: "short" }), urgency: "soon" };
-    return { label: target.toLocaleDateString(undefined, { month: "short", day: "numeric" }), urgency: "later" };
 }
 
 function ccRelativeTime(isoStr) {
@@ -136,7 +124,7 @@ async function refreshOverview() {
     const dueSoon = data.due_soon || [];
     $("cc-due-soon").innerHTML = dueSoon.length
         ? dueSoon.map((p) => {
-            const meta = ccDueMeta(p.deadline);
+            const meta = dueDateMeta(p.deadline);
             return ccRowHtml("cc-project", p.id, escapeAttr(p.title) || "Untitled project", meta.label, `cc-dot-${meta.urgency}`);
         }).join("")
         : `<p class="cc-empty">No upcoming deadlines.</p>`;
@@ -179,8 +167,7 @@ $("cc-today-focus").addEventListener("click", async (e) => {
     }
 
     navigateTo("todo");
-    await selectTodoList(Number(listId));
-    openTodoTaskModal(Number(taskId));
+    openTodoTaskModal(Number(listId), Number(taskId));
 });
 
 // ---------- Due Soon / Active Projects / Recent Notes / Notes strip: click to open ----------
@@ -290,8 +277,7 @@ $("overview-search-results").addEventListener("click", async (e) => {
         navigateTo("gatherer");
     } else if (type === "task") {
         navigateTo("todo");
-        await selectTodoList(Number(listId));
-        openTodoTaskModal(numId);
+        openTodoTaskModal(Number(listId), numId);
     } else if (type === "note") {
         navigateTo("notes");
         openNoteModal(numId);

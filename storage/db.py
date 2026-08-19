@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS todo_tasks (
     completed INTEGER NOT NULL DEFAULT 0,
     important INTEGER NOT NULL DEFAULT 0,
     notes TEXT,
+    due_date TEXT,
     position INTEGER,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -221,6 +222,11 @@ def init_db() -> None:
             conn.execute("ALTER TABLE todo_lists ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
         if "color" not in todo_list_columns:
             conn.execute("ALTER TABLE todo_lists ADD COLUMN color TEXT")
+
+        # `todo_tasks` shipped before `due_date` existed - same story.
+        todo_task_columns = {row["name"] for row in conn.execute("PRAGMA table_info(todo_tasks)")}
+        if "due_date" not in todo_task_columns:
+            conn.execute("ALTER TABLE todo_tasks ADD COLUMN due_date TEXT")
 
         # `notes` shipped before `type` existed - same story.
         note_columns = {row["name"] for row in conn.execute("PRAGMA table_info(notes)")}
@@ -637,10 +643,30 @@ def delete_todo_list(list_id: int) -> None:
         conn.execute("DELETE FROM todo_lists WHERE id=?", (list_id,))
 
 
-def list_todo_tasks(list_id: int) -> list[dict]:
+def list_due_soon_todo_tasks(days_ahead: int = 2) -> list[dict]:
+    """Every incomplete task with a due date today, overdue, or within
+    days_ahead days - across all lists. Backs the Due Soon notification
+    toast, which is app-wide rather than scoped to one list."""
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT * FROM todo_tasks WHERE list_id=? ORDER BY position ASC, id DESC",
+            "SELECT id, title, due_date, list_id FROM todo_tasks "
+            "WHERE completed = 0 AND due_date IS NOT NULL "
+            "AND due_date <= date('now', ? || ' days') "
+            "ORDER BY due_date ASC",
+            (str(days_ahead),),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def list_todo_tasks(list_id: int) -> list[dict]:
+    """step_count/steps_done back the Kanban card's Steps badge, without a
+    client round trip through each task's own steps list."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT t.*, "
+            "(SELECT COUNT(*) FROM todo_steps WHERE task_id = t.id) AS step_count, "
+            "(SELECT COUNT(*) FROM todo_steps WHERE task_id = t.id AND checked = 1) AS steps_done "
+            "FROM todo_tasks t WHERE t.list_id=? ORDER BY t.position ASC, t.id DESC",
             (list_id,),
         ).fetchall()
         return [dict(row) for row in rows]
@@ -681,7 +707,7 @@ def get_todo_task(task_id: int) -> dict | None:
 
 
 def update_todo_task(task_id: int, **fields) -> dict | None:
-    allowed = {"title", "completed", "important", "notes"}
+    allowed = {"title", "completed", "important", "notes", "due_date"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
         return get_todo_task(task_id)
