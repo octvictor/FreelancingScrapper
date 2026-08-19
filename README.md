@@ -348,18 +348,37 @@ executable), shared across every tool:
   side by side so every list is visible at once instead of clicked
   through one at a time. Each task becomes a compact card: a colored
   stripe across the top in that list's own color (standing in for a
-  label), the task title, and a small pill badge showing the task's
-  real Steps sub-checklist progress (e.g. "2/5 steps", turning green
-  once complete) when it has any steps - no invented due-dates,
-  attachments, or avatars, since this app's To Do model doesn't have
-  those. A checkbox in the card's footer still completes the task
-  without opening it. Loosely inspired by Trello's card language
-  (colored stripe + checklist badge) but rebuilt in the app's own
-  palette/type, not Trello's chrome. A trailing "+ New list" column
-  adds more lists. Note for whoever builds this: the list endpoint
-  will need to start returning each task's steps count/completed count
-  (today that's only fetched per-task when its detail modal opens) so
-  the card badge has real data to show.
+  label), the task title, a small pill badge (right-aligned, small
+  type) showing the task's real Steps sub-checklist progress (e.g.
+  "2/5 steps", turning green once complete) when it has any steps, and
+  - if a task gets a due date, a separate near-term change below - a
+  small urgency-colored dot + relative label ("Today", "Tomorrow",
+  "in 3 days") next to the Steps badge. No invented attachments or
+  avatars, since this app's To Do model doesn't have those. A checkbox
+  in the card's footer still completes the task without opening it.
+  Loosely inspired by Trello's card language (colored stripe +
+  checklist badge) but rebuilt in the app's own palette/type, not
+  Trello's chrome. A trailing "+ New list" column adds more lists.
+  Note for whoever builds this: the list endpoint will need to start
+  returning each task's steps count/completed count (today that's only
+  fetched per-task when its detail modal opens) so the card badge has
+  real data to show.
+- Add a due date to To Do tasks - approved, not yet built. Shown on the
+  Kanban card (above) as a small urgency-colored dot + relative label
+  next to the Steps badge - red for overdue/today, amber for this week,
+  blue for later - reusing the exact convention Command Center's Due
+  Soon row already uses, rather than a raw calendar date or a new color
+  language. Needs a `due_date` column added to `todo_tasks` plus a
+  field in the task detail modal to set it.
+- Due Soon notification toast for To Do - approved, not yet built.
+  In-app only (no email/Slack/background job, per explicit direction) -
+  checked when To Do loads and periodically while the tab stays open. A
+  toast in the bottom-right corner groups every task due today or in
+  the next couple of days into one list, each row using the same
+  red/amber dot + relative-label convention as the due-date badge
+  above. Has a dismiss (&times;) and a "View To Do" link. Icon is
+  Lucide's actual "bell" glyph, matching the Lucide set used for every
+  other icon in the app, rather than a hand-drawn approximation.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
