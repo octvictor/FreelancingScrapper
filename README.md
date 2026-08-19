@@ -365,6 +365,12 @@ executable), shared across every tool:
   saves as you type.").
 - Remove the description line under the Finances page title ("Money
   tools for freelance work.").
+- Give Finances its own sidebar category instead of sitting as a page
+  inside "Personal". A new **Finances** group (same pattern as the
+  existing Workspace/Personal groups), holding a single item renamed
+  **Calculator** - the page itself, unchanged otherwise, just under a
+  new heading instead of "Finances" in the sidebar and as its own page
+  title.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
