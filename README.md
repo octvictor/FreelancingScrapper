@@ -158,31 +158,34 @@ the default on launch, reached through the sidebar like any other page.
 - **Finances** - a page for money tools, starting
   with **Calculator**, a section labeled by its own heading inside the
   page (more Finances features can join it later). Calculator is
-  browser-tab-style, holding any number of independent spreadsheet-
-  style ledgers ("tables"). A tab bar lists every table as a plain
-  button showing its title - clicking one switches to it, and that's
-  all a tab does; there's nothing to type into or delete on the tab
-  itself. Renaming happens once, in an editable title field inside the
-  active table's panel - the tab it belongs to just displays whatever
-  that field currently holds. A "Delete" link sits on the same row as
-  that field, right-aligned, and removes the active table (confirms
-  first) - if it was the last one left, a fresh blank table takes its
-  place so Calculator is never left empty. Each table is the same
-  inline-editable "+ Add row" look as Studio Logs: every row has a
-  Title, a small round color swatch to its left (opening the same
-  shared color preset popover as To Do/Notes' colors - like To Do, only the
-  swatch itself shows the color, the row's own background never gets
-  tinted)
-  and a currency-formatted Value; a "+" button in the header adds
-  further freeform text columns shared across every row (also inline-
-  renamable), each with its own delete button - Title and Value are
-  permanent and never get one. One currency (USD/EUR/GBP/BRL) applies
-  per table via a picker above it, matching Tracker's Day rate currency
-  picker, so a running Sum at the bottom is always one coherent total -
-  a negative Value just subtracts from it, being plain addition under
-  the hood, and the Sum still counts every row even the ones collapsed
-  behind "Show more" (rows past the 7th on a table cap there, same
-  pattern as Project Manager's list).
+  browser-tab-style, holding any number of independent ledgers
+  ("tables"). A tab bar lists every table as a plain button showing its
+  title - clicking one switches to it, and that's all a tab does;
+  there's nothing to type into or delete on the tab itself. Renaming
+  happens once, in an editable title field inside the active table's
+  panel, next to a small currency pill (USD/EUR/GBP/BRL) - the tab it
+  belongs to just displays whatever the title field currently holds. A
+  "Delete" link sits on the same row, right-aligned, and removes the
+  active table (confirms first) - if it was the last one left, a fresh
+  blank table takes its place so Calculator is never left empty. Each
+  table is a list of flex rows rather than a literal spreadsheet grid:
+  every row carries its own color as a stripe down the left edge (the
+  color set via a small round swatch, opening the same shared color
+  preset popover as To Do/Notes' colors), an editable Title, and a
+  Value shown right-aligned and color-coded by sign - green for
+  positive, red for negative, faint for zero/empty - so the numbers
+  read at a glance without opening each row. A "+" in the header adds
+  freeform text columns, and - unlike a typical spreadsheet - a new
+  column lands between Title and Value rather than after Value, so
+  Value stays the fixed rightmost figure; each column is inline-
+  renamable and has its own delete, while Title and Value are permanent
+  and never get one. One currency applies per table (the pill next to
+  the title), matching Tracker's Day rate currency picker, so a running
+  Sum at the bottom - shown as a full-width total bar - is always one
+  coherent total: a negative Value just subtracts from it, being plain
+  addition under the hood, and the Sum still counts every row even the
+  ones collapsed behind "Show more" (rows past the 7th on a table cap
+  there, same pattern as Project Manager's list).
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.

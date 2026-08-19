@@ -422,34 +422,70 @@ table.gatherer-table td:nth-child(2) {
     min-width: 320px;
 }
 
-/* Finances shares .gatherer-table's base look but its 2nd column
-   (Value, a short currency amount) shouldn't inherit the 320px
-   min-width meant for Gatherer's URL column - a small fixed width
-   reads better for a number. */
-table.finance-table th:nth-child(2),
-table.finance-table td:nth-child(2) {
-    min-width: 130px;
-    width: 150px;
+.finance-panel-head-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
 }
 
-.finance-toolbar {
+/* The currency <select> is enhanced into a custom-dropdown trigger
+   (nav.js's enhanceSelect) that inherits this class - styled as a
+   small pill next to the table title instead of a labeled toolbar
+   row above the rows. */
+.custom-select-trigger.finance-currency-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text-faint);
+    background: var(--panel-alt);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-pill);
+    padding: 3px 9px 3px 10px;
+    flex-shrink: 0;
+}
+
+.custom-select-trigger.finance-currency-select:hover {
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+.finance-row-head {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: 12px;
+    padding: 0 4px 8px 15px;
+}
+
+.finance-row-head-title {
+    flex: 1;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+}
+
+.finance-row-head-col {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 110px;
 }
 
 /* An editable column header - looks like the plain uppercase header
-   text everywhere else in the table until you click into it, unlike
-   the Title/Value headers which stay static text. Right padding makes
-   room for the delete button, which sits inside the field as an
-   overlay rather than beside it - so the input's own box is exactly
-   as wide as the th/td below it and every column lines up. */
+   text everywhere else until clicked into, unlike the fixed Title/
+   Value labels on either side of it. */
 .finance-col-header-input {
     background: none;
     border: none;
-    padding: 0 28px 0 0;
-    width: 100%;
+    padding: 0;
+    width: auto;
+    flex: 1;
+    min-width: 0;
     text-transform: uppercase;
     font-size: 10.5px;
     font-weight: 500;
@@ -463,10 +499,25 @@ table.finance-table td:nth-child(2) {
     outline: none;
 }
 
-.finance-add-col-th {
-    width: 1%;
+.finance-col-delete-btn {
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-faint);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px;
+    flex-shrink: 0;
 }
 
+.finance-col-delete-btn:hover {
+    color: var(--danger-text);
+}
+
+/* Sits right before Value in the header row - a new custom column
+   lands between Title and Value, not after Value, so Value stays the
+   fixed rightmost figure. */
 .finance-add-col-btn {
     display: inline-flex;
     align-items: center;
@@ -480,6 +531,7 @@ table.finance-table td:nth-child(2) {
     font-size: 13px;
     line-height: 1;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .finance-add-col-btn:hover {
@@ -487,40 +539,42 @@ table.finance-table td:nth-child(2) {
     border-color: var(--border);
 }
 
-/* Delete affordance only on user-added columns - Title/Value are
-   fixed and rendered as plain <th> text, so they never get this. It
-   overlays inside the field (positioned against this wrapper) rather
-   than sitting beside it, which is what keeps the input's own width
-   matching the data cells below - almost. th cells carry 4px more
-   horizontal padding than td cells everywhere in the app (headers get
-   extra room to breathe on their own), which is invisible for Title/
-   Value's plain text but shows up as a real gap once a header holds an
-   actual input box like this one. The negative margin here eats that
-   gap so the wrapper - and the delete button pinned to its edge -
-   lines up with the data cell's own edge exactly. */
-.finance-col-header {
-    position: relative;
-    margin: 0 -4px;
-}
-
-.finance-col-delete-btn {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    border-radius: var(--radius-sm);
+.finance-row-head-value {
+    min-width: 90px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--text-faint);
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 4px 6px;
+    text-align: right;
 }
 
-.finance-col-delete-btn:hover {
-    color: var(--danger-text);
-    background: rgba(229, 115, 115, 0.1);
+/* Matches the row-delete button's own footprint, so the Value label
+   lines up with the value cells below it rather than each row's
+   trailing delete (x). */
+.finance-row-head-spacer {
+    width: 22px;
+    flex-shrink: 0;
+}
+
+.finance-rows {
+    margin-top: 4px;
+}
+
+/* Each entry is a flex row (not a table row) carrying its color as a
+   stripe down the left edge - the same card language as the To Do
+   Kanban board's card stripe, reused here for a row instead of a
+   card. */
+.finance-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 4px 11px 12px;
+    border-bottom: 1px solid var(--border-soft);
+    border-left: 3px solid var(--stripe, var(--border-soft));
+}
+
+.finance-row:last-child {
+    border-bottom: none;
 }
 
 /* A per-row color swatch to the left of the Title field - reuses the
@@ -532,10 +586,92 @@ table.finance-table td:nth-child(2) {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 
 .finance-title-cell .swatch-btn {
     box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.2);
+}
+
+/* A direct flex child of .finance-row (unlike the Title/Value inputs,
+   which sit inside their own wrapping div) - width:auto plus a fixed
+   flex-basis overrides the shared .cell-input's width:100%, which
+   would otherwise become this item's flex-basis and starve the Title
+   cell next to it down to nothing. */
+.finance-row-col {
+    width: auto;
+    flex: 0 0 110px;
+}
+
+.finance-value-cell {
+    min-width: 90px;
+    flex-shrink: 0;
+}
+
+.finance-value-cell .cell-input {
+    text-align: right;
+    font-size: 14.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.finance-value-cell .cell-input.value-positive {
+    color: #15803d;
+}
+
+.finance-value-cell .cell-input.value-negative {
+    color: var(--danger-text);
+}
+
+.finance-value-cell .cell-input.value-zero {
+    color: var(--text-faint);
+    font-weight: 500;
+}
+
+.finance-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.finance-add-row-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 6px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.finance-add-row-link:hover {
+    color: var(--text);
+    background: rgba(40, 40, 40, 0.05);
+}
+
+.finance-total-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--panel-alt);
+    border-radius: var(--radius-md);
+}
+
+.finance-total-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+}
+
+.finance-total-value {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Tab bar (browser-tab-style, one per Calculator table) ---------- */
@@ -640,12 +776,6 @@ table.finance-table td:nth-child(2) {
     background: var(--panel-alt);
     border-color: var(--border);
     outline: none;
-}
-
-.finance-footer-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 /* Task gets the same treatment inside the (narrower) project modal. */

@@ -207,35 +207,29 @@
 
                 <div class="panel finance-panel">
                     <div class="finance-panel-head">
-                        <input type="text" id="finance-table-title-input" class="finance-table-title-input" placeholder="Untitled">
+                        <div class="finance-panel-head-left">
+                            <input type="text" id="finance-table-title-input" class="finance-table-title-input" placeholder="Untitled">
+                            <select class="finance-currency-select" id="finance-currency-select">
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                                <option value="BRL">BRL</option>
+                            </select>
+                        </div>
                         <button class="btn-danger-text" id="finance-delete-table-btn" type="button">Delete</button>
                     </div>
-                    <div class="finance-toolbar">
-                        <span class="muted" style="font-size:12.5px;">Currency</span>
-                        <select class="cell-select" id="finance-currency-select">
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                            <option value="GBP">GBP</option>
-                            <option value="BRL">BRL</option>
-                        </select>
+
+                    <div class="finance-row-head" id="finance-row-head"></div>
+                    <div class="finance-rows" id="finance-body"></div>
+
+                    <div class="finance-row-actions">
+                        <button class="finance-add-row-link" id="finance-add-row-btn" type="button">+ Add row</button>
+                        <button class="btn btn-text" id="finance-expand-btn" type="button" style="display:none; width:auto;">Show more</button>
                     </div>
-                    <div class="gatherer-table-wrap">
-                        <table class="gatherer-table finance-table">
-                            <thead>
-                                <tr id="finance-table-head"></tr>
-                            </thead>
-                            <tbody id="finance-body"></tbody>
-                        </table>
-                    </div>
-                    <div class="log-footer">
-                        <div class="finance-footer-left">
-                            <button class="btn" id="finance-add-row-btn" type="button">+ Add row</button>
-                            <button class="btn btn-text" id="finance-expand-btn" type="button" style="display:none;">Show more</button>
-                        </div>
-                        <div class="log-sum">
-                            <span class="log-sum-label">Sum</span>
-                            <span class="log-sum-value" id="finance-sum-value">$0.00</span>
-                        </div>
+
+                    <div class="finance-total-bar">
+                        <span class="finance-total-label">Sum</span>
+                        <span class="finance-total-value" id="finance-sum-value">$0.00</span>
                     </div>
                 </div>
             </section>

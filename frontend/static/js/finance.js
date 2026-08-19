@@ -1,13 +1,15 @@
-// Calculator (Finances) tool - browser-tab-style tables, each a
-// Studio-Database-style inline-editable ledger (Title, currency Value,
-// an optional per-row color, plus any number of user-added freeform
-// text columns) with a running SUM of the Value column. One currency
-// applies to each whole table (picked at the top, same USD/EUR/GBP/BRL
-// set as Tracker's Day rate) rather than per-row, so the SUM is always
-// a single coherent total. Rows beyond FINANCE_ROW_LIMIT collapse
-// behind a "Show more" button, same pattern as Project Manager's list.
-// $()/confirmDialog/enhanceSelect/refreshCustomSelect come from
-// nav.js, escapeAttr from gatherer.js.
+// Calculator (Finances) tool - browser-tab-style tables, each an
+// inline-editable ledger of flex rows (Title, currency Value, an
+// optional per-row color shown as a stripe, plus any number of
+// user-added freeform text columns, which render between Title and
+// Value rather than after Value) with a running SUM of the Value
+// column. One currency applies to each whole table (picked as a pill
+// next to the title, same USD/EUR/GBP/BRL set as Tracker's Day rate)
+// rather than per-row, so the SUM is always a single coherent total.
+// Rows beyond FINANCE_ROW_LIMIT collapse behind a "Show more" button,
+// same pattern as Project Manager's list. $()/confirmDialog/
+// enhanceSelect/refreshCustomSelect come from nav.js, escapeAttr from
+// gatherer.js.
 
 let financeTables = [];
 let activeTableId = null;
@@ -129,55 +131,54 @@ async function addFinanceTable() {
 
 function renderFinanceHead() {
     const dynamicHeaders = financeColumns.map((col) => `
-        <th>
-            <div class="finance-col-header">
-                <input type="text" class="cell-input finance-col-header-input" data-column-id="${col.id}" value="${escapeAttr(col.name)}" placeholder="Column">
-                <button class="finance-col-delete-btn" data-role="delete-column" data-column-id="${col.id}" type="button" title="Delete column">&times;</button>
-            </div>
-        </th>
+        <span class="finance-row-head-col">
+            <input type="text" class="finance-col-header-input" data-column-id="${col.id}" value="${escapeAttr(col.name)}" placeholder="Column">
+            <button class="finance-col-delete-btn" data-role="delete-column" data-column-id="${col.id}" type="button" title="Delete column">&times;</button>
+        </span>
     `).join("");
-    $("finance-table-head").innerHTML = `
-        <th>Title</th>
-        <th>Value</th>
+    $("finance-row-head").innerHTML = `
+        <span class="finance-row-head-title">Title</span>
         ${dynamicHeaders}
-        <th class="finance-add-col-th"><button class="finance-add-col-btn" id="finance-add-column-btn" type="button" title="Add column">+</button></th>
-        <th></th>
+        <button class="finance-add-col-btn" id="finance-add-column-btn" type="button" title="Add column">+</button>
+        <span class="finance-row-head-value">Value</span>
+        <span class="finance-row-head-spacer"></span>
     `;
-    $("finance-table-head").querySelectorAll(".finance-col-header-input").forEach((input) => {
+    $("finance-row-head").querySelectorAll(".finance-col-header-input").forEach((input) => {
         input.addEventListener("blur", () => saveFinanceColumnName(parseInt(input.dataset.columnId, 10), input.value.trim()));
         input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") input.blur();
         });
     });
-    $("finance-table-head").querySelectorAll("[data-role='delete-column']").forEach((btn) => {
+    $("finance-row-head").querySelectorAll("[data-role='delete-column']").forEach((btn) => {
         btn.addEventListener("click", () => deleteFinanceColumn(parseInt(btn.dataset.columnId, 10)));
     });
     $("finance-add-column-btn").addEventListener("click", addFinanceColumn);
 }
 
+function financeValueClass(value) {
+    const num = parseFloat(value);
+    if (isNaN(num) || num === 0) return "value-zero";
+    return num > 0 ? "value-positive" : "value-negative";
+}
+
 function financeRowHtml(row) {
     const dynamicCells = financeColumns.map((col) => `
-        <td><input type="text" class="cell-input" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-"></td>
+        <input type="text" class="cell-input finance-row-col" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-">
     `).join("");
     const colorGlyph = row.color ? "" : "&#9681;";
     return `
-        <tr data-id="${row.id}">
-            <td>
-                <div class="finance-title-cell">
-                    <button class="swatch-btn ${row.color ? "" : "swatch-btn-empty"}" data-role="row-color" type="button" title="Row color" style="background:${row.color || "transparent"};">${colorGlyph}</button>
-                    <input type="text" class="cell-input" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
-                </div>
-            </td>
-            <td>
-                <div class="cost-cell">
-                    <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
-                    <input type="number" class="cell-input" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
-                </div>
-            </td>
+        <div class="finance-row" data-id="${row.id}" style="--stripe:${row.color || "var(--border-soft)"};">
+            <div class="finance-title-cell">
+                <button class="swatch-btn ${row.color ? "" : "swatch-btn-empty"}" data-role="row-color" type="button" title="Row color" style="background:${row.color || "transparent"};">${colorGlyph}</button>
+                <input type="text" class="cell-input" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
+            </div>
             ${dynamicCells}
-            <td></td>
-            <td><button class="row-delete-btn" data-role="delete" title="Delete row">&times;</button></td>
-        </tr>
+            <div class="cost-cell finance-value-cell">
+                <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
+                <input type="number" class="cell-input ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
+            </div>
+            <button class="row-delete-btn" data-role="delete" title="Delete row">&times;</button>
+        </div>
     `;
 }
 
@@ -186,7 +187,7 @@ function renderFinanceTable() {
     const visible = financeExpanded ? financeRows : financeRows.slice(0, FINANCE_ROW_LIMIT);
     $("finance-body").innerHTML = visible.length
         ? visible.map(financeRowHtml).join("")
-        : `<tr><td colspan="${4 + financeColumns.length}" class="muted" style="padding: 14px 10px;">No rows yet.</td></tr>`;
+        : `<p class="muted" style="padding: 14px 10px;">No rows yet.</p>`;
 
     const expandBtn = $("finance-expand-btn");
     const hiddenCount = financeRows.length - visible.length;
@@ -202,17 +203,21 @@ function renderFinanceTable() {
 }
 
 function wireFinanceRowEvents() {
-    document.querySelectorAll("#finance-body tr[data-id]").forEach((tr) => {
-        const id = parseInt(tr.dataset.id, 10);
+    document.querySelectorAll("#finance-body .finance-row[data-id]").forEach((rowEl) => {
+        const id = parseInt(rowEl.dataset.id, 10);
 
-        const titleInput = tr.querySelector(".cell-input[data-field='title']");
+        const titleInput = rowEl.querySelector(".cell-input[data-field='title']");
         titleInput.addEventListener("blur", () => saveFinanceRow(id, { title: titleInput.value.trim() }));
         titleInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") titleInput.blur();
         });
 
-        const valueInput = tr.querySelector(".cell-input[data-field='value']");
-        valueInput.addEventListener("input", renderFinanceSum);
+        const valueInput = rowEl.querySelector(".cell-input[data-field='value']");
+        valueInput.addEventListener("input", () => {
+            valueInput.classList.remove("value-positive", "value-negative", "value-zero");
+            valueInput.classList.add(financeValueClass(valueInput.value));
+            renderFinanceSum();
+        });
         valueInput.addEventListener("blur", () => {
             const raw = valueInput.value.trim();
             saveFinanceRow(id, { value: raw === "" ? null : parseFloat(raw) });
@@ -221,7 +226,7 @@ function wireFinanceRowEvents() {
             if (e.key === "Enter") valueInput.blur();
         });
 
-        tr.querySelectorAll("[data-role='cell']").forEach((cellInput) => {
+        rowEl.querySelectorAll("[data-role='cell']").forEach((cellInput) => {
             const columnId = parseInt(cellInput.dataset.columnId, 10);
             cellInput.addEventListener("blur", () => saveFinanceCell(id, columnId, cellInput.value.trim() || null));
             cellInput.addEventListener("keydown", (e) => {
@@ -229,7 +234,7 @@ function wireFinanceRowEvents() {
             });
         });
 
-        tr.querySelector("[data-role='row-color']").addEventListener("click", (e) => {
+        rowEl.querySelector("[data-role='row-color']").addEventListener("click", (e) => {
             e.stopPropagation();
             const rowData = financeRows.find((r) => r.id === id);
             openColorPresetPopover(e.currentTarget, rowData?.color || null, {
@@ -238,7 +243,7 @@ function wireFinanceRowEvents() {
             });
         });
 
-        tr.querySelector("[data-role='delete']").addEventListener("click", async () => {
+        rowEl.querySelector("[data-role='delete']").addEventListener("click", async () => {
             if (!(await confirmDialog("This can't be undone.", { title: "Delete this row?" }))) return;
             await fetch(`/api/finance/rows/${id}`, { method: "DELETE" });
             financeRows = financeRows.filter((r) => r.id !== id);
@@ -327,7 +332,7 @@ async function deleteFinanceColumn(columnId) {
 function renderFinanceSum() {
     let total = 0;
     financeRows.forEach((row) => {
-        const liveInput = document.querySelector(`#finance-body tr[data-id="${row.id}"] .cell-input[data-field='value']`);
+        const liveInput = document.querySelector(`#finance-body .finance-row[data-id="${row.id}"] .cell-input[data-field='value']`);
         const value = parseFloat(liveInput ? liveInput.value : row.value);
         if (!isNaN(value)) total += value;
     });
@@ -363,7 +368,7 @@ $("finance-add-row-btn").addEventListener("click", async () => {
     // visible right away - it's the thing you just asked to add.
     if (financeRows.length > FINANCE_ROW_LIMIT) financeExpanded = true;
     renderFinanceTable();
-    document.querySelector(`#finance-body tr[data-id="${row.id}"] .cell-input[data-field="title"]`)?.focus();
+    document.querySelector(`#finance-body .finance-row[data-id="${row.id}"] .cell-input[data-field="title"]`)?.focus();
 });
 
 $("finance-expand-btn").addEventListener("click", () => {
