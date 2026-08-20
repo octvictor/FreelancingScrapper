@@ -893,21 +893,20 @@ input.finance-card-value.value-zero {
     border-color: var(--border);
 }
 
-/* The 24px left margin lines the title's text up with a row's own
-   Title text below it. Both inputs carry a 1px transparent border, so
-   counted from the panel's own edge: the table title lands at
-   20 (panel padding) + margin + 1 (its border) + 8 (its own padding)
-   = margin + 29, and a row's Title lands at 20 (panel padding) + 14
-   (card padding) + 8 (dot hit-area footprint) + 10 (gap to the title)
-   + 1 (its border) + 0 (no padding of its own) = 53 - so margin needs
-   to be 24, not the 21 an earlier pass landed on by missing one of the
-   two borders in that arithmetic. */
+/* The left margin lines the title field's own left edge up with a
+   row's Title pill below it (measured directly - the row redesign that
+   put Title in its own #fafafa pill changed the offset chain enough
+   that recomputing by hand kept drifting; this was checked against the
+   actual rendered boxes instead: the row pill's left edge sits 16px
+   left of where this field's box landed at the previous margin, so it
+   moved from 24px to 8px). Re-measure if either side's own padding/
+   structure changes again rather than trusting the arithmetic. */
 .finance-panel-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin: -6px 0 14px 24px;
+    margin: -6px 0 14px 8px;
 }
 
 .finance-panel-head .btn-danger-text {
