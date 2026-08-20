@@ -131,6 +131,7 @@ function showPage(page) {
     if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
     if (page === "notes" && typeof refreshNotes === "function") refreshNotes();
     if (page === "todo" && typeof refreshTodoBoard === "function") refreshTodoBoard();
+    if (page === "tracker" && typeof onProjectPageShown === "function") onProjectPageShown();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page

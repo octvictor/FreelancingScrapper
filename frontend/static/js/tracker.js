@@ -10,8 +10,12 @@ let activeCurrency = "USD";
 let activeView = "Active";
 let activeDayRate = null;
 
-// Each view (All/Active/Completed) shows at most this many rows until its
-// own "Show more" is clicked - keeps a long list from dwarfing the page.
+// Each view (All/Active/Completed) shows at most this many grid *rows*
+// (not cards) until its own "Show more" is clicked - keeps a long list
+// from dwarfing the page. The grid wraps a variable number of cards per
+// row depending on window width, so the cap is applied by measuring
+// actual rendered card positions (see applyProjectRowCap) rather than
+// slicing the array to a fixed card count.
 const PROJECT_ROW_LIMIT = 2;
 let expandedViews = { All: false, Active: false, Completed: false };
 
@@ -122,14 +126,13 @@ function renderProjectTable() {
     cleanupCustomSelectsIn($("project-table-body"));
     const all = activeView === "All" ? trackerProjects : trackerProjects.filter((p) => p.status === activeView);
     const expanded = expandedViews[activeView];
-    const visible = expanded ? all : all.slice(0, PROJECT_ROW_LIMIT);
-    $("project-table-body").innerHTML = visible.length
-        ? visible.map(projectCardHtml).join("")
+    $("project-table-body").innerHTML = all.length
+        ? all.map(projectCardHtml).join("")
         : `<p class="muted project-card-empty">No projects yet.</p>`;
 
     const expandBtn = $("project-expand-btn");
-    const hiddenCount = all.length - visible.length;
-    if (all.length > PROJECT_ROW_LIMIT) {
+    const hiddenCount = applyProjectRowCap(PROJECT_ROW_LIMIT, expanded);
+    if (hiddenCount > 0) {
         expandBtn.style.display = "";
         expandBtn.textContent = expanded ? "Show less" : `Show ${hiddenCount} more`;
     } else {
@@ -147,6 +150,62 @@ function renderProjectTable() {
         wireRowDrag(card, persistRowOrder);
     });
 }
+
+// The grid (repeat(auto-fill, minmax(300px, 1fr))) wraps a different
+// number of cards per row depending on window width, so "cap at N rows"
+// can't be done by slicing the array to a fixed card count - it has to
+// measure where each card actually lands. Resets every card to visible
+// first so the measurement always reflects the grid's natural layout
+// (not a previous call's hiding), groups cards by their rendered
+// offsetTop to find row boundaries, then hides everything from the
+// (rowLimit + 1)th row on unless expanded. Returns the count that is
+// hidden (or would be, if expanded) so the caller can size its "Show N
+// more" button consistently either way. Returns 0 harmlessly if the
+// page is currently display:none (e.g. the very first render, before
+// Project Manager has ever been opened) - a hidden container gives
+// every card the same offsetTop, so no row boundary is found and
+// nothing is hidden; onProjectPageShown() re-runs this once the page
+// becomes visible to correct that.
+function applyProjectRowCap(rowLimit, expanded) {
+    const cards = Array.from(document.querySelectorAll("#project-table-body .project-card"));
+    if (!cards.length) return 0;
+
+    cards.forEach((card) => {
+        card.style.display = "";
+    });
+
+    const rowTops = [];
+    cards.forEach((card) => {
+        const top = card.offsetTop;
+        if (!rowTops.includes(top)) rowTops.push(top);
+    });
+
+    if (rowTops.length <= rowLimit) return 0;
+
+    const cutoff = rowTops[rowLimit];
+    const overflowCards = cards.filter((card) => card.offsetTop >= cutoff);
+    if (!expanded) {
+        overflowCards.forEach((card) => {
+            card.style.display = "none";
+        });
+    }
+    return overflowCards.length;
+}
+
+// Called by nav.js when Project Manager becomes the visible page, and
+// on window resize while it's visible - both change how many cards fit
+// per row, which changes where the 2-row cutoff falls.
+function onProjectPageShown() {
+    renderProjectTable();
+}
+
+let projectRowCapResizeTimer = null;
+window.addEventListener("resize", () => {
+    const page = $("page-tracker");
+    if (!page || page.style.display === "none") return;
+    clearTimeout(projectRowCapResizeTimer);
+    projectRowCapResizeTimer = setTimeout(renderProjectTable, 150);
+});
 
 // ---------- Drag-to-reorder ----------
 // Native HTML5 drag-and-drop, but only armed from the grip handle (not

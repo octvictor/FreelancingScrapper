@@ -61,9 +61,14 @@ the default on launch, reached through the sidebar like any other page.
   no longer directly editable from the card (that pill-and-select look
   was dropped on purpose) - both live in the modal now, alongside
   everything else. An All/Active/Completed toggle above the grid
-  filters which cards show; each view caps at 2 cards with its own
-  "Show more/less" button at the bottom so a long list doesn't dwarf
-  the page. A "+ New project" button below the grid creates one. A
+  filters which cards show; each view caps at 2 *rows* of cards, not a
+  fixed card count - the grid wraps a different number of cards per row
+  depending on window width (`repeat(auto-fill, minmax(300px, 1fr))`),
+  so the cap is measured from where cards actually land after each
+  render/resize rather than sliced off the list at a hardcoded index. A
+  "Show more/less" button at the bottom reveals the rest so a long list
+  doesn't dwarf the page. A "+ New project" button below the grid
+  creates one. A
   small drag handle sits at the top-right of a card (next to the
   Client/Logs meta) on hover, for reordering - the order persists.
   Clicking a card anywhere else opens a popup: a description, project
