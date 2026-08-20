@@ -641,10 +641,14 @@ table.gatherer-table td:nth-child(2) {
     display: inline-block;
 }
 
+/* A few px of right padding as buffer room, same reasoning as
+   .finance-table-title-sizer - a plain <span> and an <input> don't
+   always agree on exactly how wide the same text needs to be. */
 .finance-card-title-sizer {
     visibility: hidden;
     white-space: pre;
     font: inherit;
+    padding-right: 3px;
 }
 
 /* Read-only at rest - a double-click (wired in finance.js) unlocks it
@@ -946,13 +950,18 @@ input.finance-card-value.value-zero {
     overflow: hidden;
 }
 
+/* Right padding is a few px wider than the input's own - a plain
+   <span> and an <input> don't always measure the same bold/tight-
+   tracked text identically (the sizer was clipping a trailing
+   descender like "j"), so this extra slack is invisible buffer room,
+   not a look you're meant to notice. */
 .finance-table-title-sizer {
     visibility: hidden;
     white-space: pre;
     font-size: 16px;
     font-weight: 700;
     letter-spacing: -0.01em;
-    padding: 6px 8px;
+    padding: 8px 18px 8px 14px;
 }
 
 /* Editable title for the active table, shown inside its panel above
@@ -973,7 +982,7 @@ input.finance-table-title-input {
     font-size: 16px;
     font-weight: 700;
     letter-spacing: -0.01em;
-    padding: 6px 8px;
+    padding: 8px 14px;
 }
 
 /* Stronger than the original 0.06 - at that opacity the field's edge
