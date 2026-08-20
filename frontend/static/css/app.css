@@ -953,8 +953,12 @@ input.finance-table-title-input {
     max-width: 320px;
 }
 
+/* Stronger than the original 0.06 - at that opacity the field's edge
+   (especially the rounded corner) was too close to the panel's own
+   #e6e5e1 to read as a clear boundary, which made an already-correct
+   left-alignment with the row's own Title pill hard to confirm by eye. */
 input.finance-table-title-input:read-only {
-    background: rgba(40, 40, 40, 0.06);
+    background: rgba(40, 40, 40, 0.14);
     cursor: default;
 }
 
