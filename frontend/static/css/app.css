@@ -271,7 +271,7 @@ button, input, select, textarea {
     min-width: 0;
     background: var(--panel);
     border-left: 1px solid var(--border);
-    padding: 34px 58px 40px;
+    padding: 34px 20% 40px;
 }
 
 .page-title {
