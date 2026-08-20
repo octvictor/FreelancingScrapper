@@ -17,6 +17,18 @@ function autoGrowChecklistText(el) {
     el.style.height = el.scrollHeight + "px";
 }
 
+// Calculator's row Title field (finance.js) sits in a compact pill that
+// hugs its own text rather than filling the row - a plain <input> can't
+// size itself to its value, so a hidden sibling <span class="...-sizer">
+// mirrors whatever text should determine the width (the typed value, or
+// the placeholder when empty) and the input is absolutely positioned to
+// exactly cover that span's box (see .finance-card-title-measure in
+// app.css). This just keeps the two in sync on every keystroke.
+function autoSizeTitleField(input) {
+    const sizer = input.previousElementSibling;
+    if (sizer) sizer.textContent = input.value || input.placeholder;
+}
+
 // Some colors are light enough that white text on top of them (e.g.
 // Notes tinting a whole card with one) would be unreadable - this
 // decides whether a given color needs dark text instead, via the

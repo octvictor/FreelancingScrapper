@@ -167,28 +167,33 @@ const FINANCE_DELETE_ICON_SVG =
 
 function financeRowHtml(row) {
     const isOff = !row.active;
-    // A chosen color fills the whole card (not just the dot) - text and
-    // icon colors flip via finance-card-light/-dark (colorNeedsDarkText,
-    // from nav.js) so they always stay readable against it, same
-    // contrast-pairing convention Notes uses for its own card color.
+    // Per the user's wireframe: the row's color only tints the card
+    // background now - Title and Value/currency each sit in their own
+    // fixed #fafafa field, so neither needs a light/dark contrast flip
+    // (colorNeedsDarkText) the way the card-background approach did.
+    // The Title field's width is driven by financeRowTitleSizerHtml's
+    // hidden mirror span (autoSizeTitleField, nav.js) rather than
+    // filling the row, so it reads as a compact pill, not a lane.
     const bg = row.color || "var(--panel)";
-    const lightClass = row.color ? (colorNeedsDarkText(row.color) ? "finance-card-light" : "finance-card-dark") : "";
     return `
-        <div class="finance-card${isOff ? " is-off" : ""} ${lightClass}" data-id="${row.id}" style="background:${bg}; --stripe:${row.color || "var(--border)"};">
-            <button class="finance-card-dot-btn" data-role="color" type="button" title="Row color">
-                <span class="finance-card-dot"></span>
-            </button>
-            <div class="finance-card-body">
-                <div class="finance-card-title-row">
+        <div class="finance-card${isOff ? " is-off" : ""}" data-id="${row.id}" style="background:${bg}; --stripe:${row.color || "var(--border)"};">
+            <div class="finance-card-title-field">
+                <button class="finance-card-dot-btn" data-role="color" type="button" title="Row color">
+                    <span class="finance-card-dot"></span>
+                </button>
+                <div class="finance-card-title-measure">
+                    <span class="finance-card-title-sizer" aria-hidden="true"></span>
                     <input type="text" class="finance-card-title" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title" readonly>
-                    <button class="finance-card-toggle" data-role="toggle" type="button" title="${isOff ? "Turn row back on" : "Turn row off"}">${FINANCE_TOGGLE_ICON_SVG}</button>
                 </div>
             </div>
-            <div class="cost-cell finance-value-cell">
-                <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
-                <input type="number" class="finance-card-value ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
+            <div class="finance-card-right">
+                <button class="finance-card-toggle" data-role="toggle" type="button" title="${isOff ? "Turn row back on" : "Turn row off"}">${FINANCE_TOGGLE_ICON_SVG}</button>
+                <button class="finance-card-delete" data-role="delete" title="Delete row">${FINANCE_DELETE_ICON_SVG}</button>
+                <div class="finance-card-value-field">
+                    <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
+                    <input type="number" class="finance-card-value ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
+                </div>
             </div>
-            <button class="finance-card-delete" data-role="delete" title="Delete row">${FINANCE_DELETE_ICON_SVG}</button>
         </div>
     `;
 }
@@ -218,6 +223,8 @@ function wireFinanceRowEvents() {
         const id = parseInt(rowEl.dataset.id, 10);
 
         const titleInput = rowEl.querySelector("[data-field='title']");
+        autoSizeTitleField(titleInput);
+        titleInput.addEventListener("input", () => autoSizeTitleField(titleInput));
         titleInput.addEventListener("dblclick", () => {
             titleInput.readOnly = false;
             titleInput.focus();

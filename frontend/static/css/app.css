@@ -516,14 +516,15 @@ table.gatherer-table td:nth-child(2) {
     border-color: var(--border);
 }
 
-/* Left/right padding match the card's own padding below (14px/34px) so
-   the Title/Value labels land directly above the card content instead
-   of the fixed 4px/15px inset the old boxed-row layout used. */
+/* Left/right padding match the card's own padding below (8px) so the
+   Title/Value labels roughly sit above the card content, though with
+   the row's own Title/Value now auto-sized pills rather than fixed
+   columns, this is an approximate landmark, not a precise one. */
 .finance-row-head {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 34px 8px 14px;
+    padding: 0 8px 8px 8px;
 }
 
 .finance-row-head-title {
@@ -555,15 +556,39 @@ table.gatherer-table td:nth-child(2) {
     gap: 8px;
 }
 
+/* Rebuilt per the user's wireframe: the row's color now only tints
+   this card's own background - Title and Value/currency each live in
+   their own fixed #fafafa field (.finance-card-title-field /
+   .finance-card-value-field below) instead of sitting directly on
+   that color, so nothing on the card needs a light/dark contrast flip
+   any more (colorNeedsDarkText, previously used here, is gone from
+   finance.js - every text color below is a fixed value straight from
+   the wireframe, not a variable one). */
 .finance-card {
-    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 12px;
     background: var(--panel);
     border-radius: var(--radius-md);
     box-shadow: 0 1px 2px rgba(40, 40, 40, 0.08);
-    padding: 12px 34px 12px 14px;
+    padding: 8px;
+}
+
+/* The Title pill - dot + text - sized to its own content (flex:0 0
+   auto, not flex:1) so it reads as a compact tag at the row's left
+   edge instead of a lane spanning toward the value. */
+.finance-card-title-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 60%;
+    background: #fafafa;
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    box-shadow: 0 1px 2px rgba(40, 40, 40, 0.08);
 }
 
 /* Replaces the old full-height left stripe - the color shows as a
@@ -588,15 +613,14 @@ table.gatherer-table td:nth-child(2) {
     cursor: pointer;
 }
 
-/* The ring keeps the dot visible now that a chosen color also fills
-   the whole card behind it (see financeRowHtml in finance.js) - without
-   it, a dot the same color as its own background would disappear. */
+/* The ring keeps the dot visible against the Title field's own fixed
+   #fafafa background if the chosen color happens to be close to white. */
 .finance-card-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--stripe, var(--border));
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 0 2px rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
     transition: width 0.12s ease, height 0.12s ease;
 }
 
@@ -606,40 +630,38 @@ table.gatherer-table td:nth-child(2) {
     height: 14px;
 }
 
-.finance-card-body {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+/* A plain <input> can't size itself to its own value - .finance-card-
+   title-sizer is a hidden same-font mirror of whatever text should
+   determine the width (autoSizeTitleField in nav.js keeps it synced on
+   every keystroke), and the input is absolutely positioned to exactly
+   cover that span's box, so the Title "expands to the right" with the
+   text precisely rather than approximately. */
+.finance-card-title-measure {
+    position: relative;
+    display: inline-block;
 }
 
-/* Title sits next to the toggle-off control instead of alone, so it
-   no longer fills the row on its own - flex:1 (not width:100%) leaves
-   room for .finance-card-toggle beside it. */
-.finance-card-title-row {
-    display: flex;
-    align-items: center;
-    gap: 2px;
+.finance-card-title-sizer {
+    visibility: hidden;
+    white-space: pre;
+    font: inherit;
 }
 
-/* Reads as plain text at rest - read-only until a double-click (wired
-   in finance.js) unlocks it, at which point it picks up a background
-   so it's clear you're now editing; no outline in either state. */
+/* Read-only at rest - a double-click (wired in finance.js) unlocks it
+   for typing; no outline in either state. */
 input.finance-card-title {
-    flex: 1;
-    min-width: 0;
-    width: auto;
+    position: absolute;
+    inset: 0;
+    width: 100%;
     background: none;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    border: none;
     padding: 0;
     font-size: 13.5px;
-    color: var(--text);
+    color: #282828;
 }
 
 input.finance-card-title::placeholder {
-    color: var(--text-faint);
+    color: #717171;
 }
 
 input.finance-card-title:read-only {
@@ -647,14 +669,34 @@ input.finance-card-title:read-only {
 }
 
 input.finance-card-title:focus {
-    background: var(--panel-alt);
-    border-color: transparent;
     outline: none;
 }
 
-.finance-value-cell {
-    flex: 0 0 90px;
-    min-width: 0;
+/* Toggle, Delete, and the Value field all sit on the card's own
+   background, right-aligned as one group - .finance-card's own
+   justify-content:space-between is what pushes this away from the
+   Title field, leaving the row's color visible in between. */
+.finance-card-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.finance-card-value-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fafafa;
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    box-shadow: 0 1px 2px rgba(40, 40, 40, 0.08);
+    flex-shrink: 0;
+}
+
+.finance-card-value-field .currency-prefix {
+    color: #717171;
+    font-size: 13px;
 }
 
 /* Text-only entry - the native up/down stepper a type="number" input
@@ -662,8 +704,7 @@ input.finance-card-title:focus {
    directly, not a value anyone increments/decrements one unit at a time. */
 input.finance-card-value {
     width: auto;
-    flex: 1;
-    min-width: 0;
+    max-width: 90px;
     background: none;
     border: none;
     padding: 0;
@@ -682,27 +723,28 @@ input.finance-card-value::-webkit-inner-spin-button {
 }
 
 input.finance-card-value.value-positive {
-    color: #15803d;
+    color: #0fb54b;
 }
 
 input.finance-card-value.value-negative {
-    color: var(--danger-text);
+    color: #c24236;
 }
 
 input.finance-card-value.value-zero {
-    color: var(--text-faint);
+    color: #717171;
     font-weight: 500;
 }
 
-/* Floats over the card's own right padding instead of taking a slot in
-   the flex row, and only shows on hover/focus - a card at rest reads
-   clean, without a delete icon competing for attention next to every
-   value. */
+/* Same 16px/stroke-width:2 icon standard the sidebar nav uses
+   (.sb-item svg) - every icon in the app reads at this size, not a
+   smaller one-off per control. Always visible now (not a hover
+   reveal) at a fixed #bdbdbd, per the wireframe - sitting on the
+   card's own color rather than a fixed #fafafa field, a light/dark
+   contrast flip would normally apply here too, but the wireframe
+   calls for one flat icon color regardless of the row's color. */
+.finance-card-toggle,
 .finance-card-delete {
-    position: absolute;
-    top: 50%;
-    right: 8px;
-    transform: translateY(-50%);
+    flex-shrink: 0;
     width: 24px;
     height: 24px;
     display: flex;
@@ -711,74 +753,28 @@ input.finance-card-value.value-zero {
     background: none;
     border: none;
     border-radius: var(--radius-sm);
-    color: var(--text-faint);
+    color: #bdbdbd;
     cursor: pointer;
-    opacity: 0;
 }
 
-/* Same 16px/stroke-width:2 icon standard the sidebar nav uses
-   (.sb-item svg) - every icon in the app reads at this size, not a
-   smaller one-off per control. flex-shrink:0 is required here: inside
-   a fixed-size flex <button> Chromium silently shrinks an svg flex
-   item below its specified width (16px measured as 12px) even though
-   there's room, unlike a plain div - without this the icon renders
-   smaller than the sidebar's despite identical width/height. */
+.finance-card-toggle svg,
 .finance-card-delete svg {
     width: 16px;
     height: 16px;
     flex-shrink: 0;
 }
 
-.finance-card:hover .finance-card-delete,
-.finance-card-delete:focus {
-    opacity: 1;
+.finance-card-toggle:hover,
+.finance-card-toggle:focus {
+    background: rgba(255, 255, 255, 0.15);
+    color: #eeeeee;
+    outline: none;
 }
 
 .finance-card-delete:hover,
 .finance-card-delete:focus {
-    background: rgba(192, 57, 43, 0.1);
-    color: var(--danger-text);
-    outline: none;
-}
-
-/* Toggles a row inactive (unclickable, excluded from Sum) - same
-   hover-only visibility as Delete, positioned right after the Title
-   text rather than floating over the card's edge, since it acts on
-   the row itself rather than removing it. */
-.finance-card-toggle {
-    flex-shrink: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    border-radius: var(--radius-sm);
-    color: var(--text-faint);
-    cursor: pointer;
-    opacity: 0;
-}
-
-/* Same 16px/stroke-width:2 icon standard the sidebar nav uses
-   (.sb-item svg). flex-shrink:0 for the same reason as
-   .finance-card-delete svg above - without it Chromium shrinks this
-   below 16px inside the fixed-size flex button. */
-.finance-card-toggle svg {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-}
-
-.finance-card:hover .finance-card-toggle,
-.finance-card-toggle:focus {
-    opacity: 1;
-}
-
-.finance-card-toggle:hover,
-.finance-card-toggle:focus {
-    background: rgba(40, 40, 40, 0.06);
-    color: var(--text-muted);
+    background: rgba(194, 66, 54, 0.18);
+    color: #e88686;
     outline: none;
 }
 
@@ -793,65 +789,6 @@ input.finance-card-value.value-zero {
 .finance-card.is-off input.finance-card-value,
 .finance-card.is-off .finance-card-dot-btn {
     pointer-events: none;
-}
-
-.finance-card-delete:hover,
-.finance-card-delete:focus {
-    background: rgba(40, 40, 40, 0.06);
-    color: var(--text-muted);
-    outline: none;
-}
-
-/* Applied (see finance.js's use of nav.js's colorNeedsDarkText) when a
-   row's own color is light enough that the card's usual dark text
-   would wash out against it - mirrors Notes' note-card-light/-dark.
-   Every text element on the card is covered, the same way Notes flips
-   its own preview text/buttons rather than leaving one behind: the
-   Title, the muted "R$"-style currency prefix and a zero/empty Value
-   (both were still the card's fixed var(--text-faint) regardless of
-   background until this was added - unreadable on a darker preset),
-   and the toggle/delete icons. A positive/negative Value keeps its
-   default green/red in the light case (both are dark enough to already
-   read fine against a light preset), but gets its own lighter variant
-   in the dark case - the default dark green/red is barely distinguishable
-   from a dark green/blue preset background, since row color and Value
-   sign color were drawn from overlapping dark tones. */
-.finance-card.finance-card-light .finance-card-title {
-    color: #242322;
-}
-
-.finance-card.finance-card-light input.finance-card-title::placeholder,
-.finance-card.finance-card-light .currency-prefix,
-.finance-card.finance-card-light input.finance-card-value.value-zero {
-    color: #6b6a63;
-}
-
-.finance-card.finance-card-light .finance-card-toggle,
-.finance-card.finance-card-light .finance-card-delete {
-    color: #57554e;
-}
-
-.finance-card.finance-card-dark .finance-card-title {
-    color: #f5f4f1;
-}
-
-.finance-card.finance-card-dark input.finance-card-title::placeholder,
-.finance-card.finance-card-dark .currency-prefix,
-.finance-card.finance-card-dark input.finance-card-value.value-zero {
-    color: #b3b1a9;
-}
-
-.finance-card.finance-card-dark .finance-card-toggle,
-.finance-card.finance-card-dark .finance-card-delete {
-    color: #c9c7c0;
-}
-
-.finance-card.finance-card-dark input.finance-card-value.value-positive {
-    color: #7bcb98;
-}
-
-.finance-card.finance-card-dark input.finance-card-value.value-negative {
-    color: #e88787;
 }
 
 .finance-row-actions {

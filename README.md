@@ -191,48 +191,40 @@ the default on launch, reached through the sidebar like any other page.
   holds. That title field, and a row's own Title below it, are both
   read-only until double-clicked - there's no hover state to discover
   them by any more, so the table title carries a permanent faint tint
-  at rest (no outline in either state) to read as a field at all, and
-  both line up on the same left edge. A "Delete" link sits on the same
-  row, right-aligned, and removes the active table (confirms first) -
-  if it was the last one left, a fresh blank table takes its place so
-  Calculator is never left empty. Each entry is a light ("ledger") card
-  sitting on the dark panel - the same card language Project Manager's
-  project cards and To Do's kcards already use (light fill, soft
-  shadow, no border), stacked with a gap rather than divided rows in a
-  boxed list. A small colored dot opens the same shared color preset
-  popover every other picker in the app uses (To Do's list color,
-  Notes' card color) - the dot itself stays small at rest, but its
-  actual click target is bigger than it looks and grows the dot to
+  at rest (no outline in either state) to read as a field at all. Each
+  entry is a card sitting on the dark panel, tinted with whatever color
+  it's been given (or the plain light `--panel` fill if none) - the
+  row's color lives only on the card's own background now, per a
+  follow-up wireframe: a small colored dot opens the same shared color
+  preset popover every other picker in the app uses (To Do's list
+  color, Notes' card color) - the dot itself stays small at rest, but
+  its actual click target is bigger than it looks and grows the dot to
   meet your cursor as you approach, so you don't have to land a click
-  on an 8px circle. Picking a color fills the whole card with it, not
-  just the dot (a thin ring keeps the dot visible against its own
-  matching background) - the Title text, the "$"-style currency prefix,
-  a zero/empty Value, and the toggle/delete icons all flip between a
-  dark or light variant depending on the chosen color (the same
-  colorNeedsDarkText contrast check Notes uses for its own card color),
-  so nothing on a colored row goes back to blending into it the way the
-  currency prefix originally did (it kept a single fixed muted grey
-  regardless of background - the one piece Notes' own light/dark split
-  had covered from the start that this one initially missed). A
-  positive/negative Value keeps its default green/red in the light
-  case - both are already dark enough to read fine there - but switches
-  to a lighter green/red pairing in the dark case, since the app's
-  default dark green/red text was drawn from close to the same tonal
-  range as the dark row-color presets themselves and nearly disappeared
-  against them. The Value sits bold and right-aligned, color-coded by
-  sign - green for positive, red for negative, faint for zero/empty -
-  so the numbers read at a glance without opening each row. Hovering or
-  focusing a card reveals two icons: a toggle (Lucide circle-power)
-  right after the Title text, and Delete (Lucide trash-2) by the
-  card's edge. Toggling a row off dims it, blocks every field except
-  the toggle and Delete from being clicked, and drops it from the Sum -
-  for entries you want to keep on record without them counting; the
-  toggle stays reachable on hover either way, so turning a row back on
-  never requires anything else. Both icons render at the same 16px,
+  on an 8px circle - and both the Title and the Value/currency sit in
+  their own fixed `#fafafa` field instead of directly on that color, so
+  neither one needs to track it for contrast: Title text is always
+  `#282828`, the "R$"-style currency prefix is always `#717171`, and
+  the Value is always `#0fb54b` positive / `#c24236` negative / `#717171`
+  zero-or-empty, regardless of what the card itself is tinted. The
+  Title field sizes itself to its own text (a hidden same-font mirror
+  span drives an absolutely-positioned input's width, updated on every
+  keystroke) rather than filling the row, so it reads as a compact tag
+  at the card's left edge; Toggle (Lucide circle-power) and Delete
+  (Lucide trash-2) sit directly on the card's own color between the two
+  fields, always visible now rather than a hover reveal, at a flat
+  `#bdbdbd` regardless of the card's color - the one exception to the
+  "give it its own fixed field" rule, since two small icons didn't
+  need a third pill. Toggling a row off dims the whole card and blocks
+  every field except the toggle and Delete from being clicked, and
+  drops it from the Sum - for entries you want to keep on record
+  without them counting. Both icons render at the same 16px,
   stroke-width:2 size as every other icon in the app (see "Design
   system notes" below) - Title and Value are the only two fields, fixed
-  and permanent, with no custom-column feature. One currency applies
-  per table (the pill next to the title),
+  and permanent, with no custom-column feature. The Value is a
+  text-only entry - a bare `type="number"` input's native up/down
+  stepper is hidden, since this is a typed amount, not something
+  incremented one unit at a time. One currency applies per table (the
+  pill next to the title),
   matching Tracker's Day rate currency picker, so a running Sum at the
   bottom - a full-width total bar in the same light/shadowed card style
   - is always one coherent total: a negative Value just subtracts from
