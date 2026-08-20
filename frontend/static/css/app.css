@@ -794,14 +794,24 @@ input.finance-card-value.value-zero {
 /* Applied (see finance.js's use of nav.js's colorNeedsDarkText) when a
    row's own color is light enough that the card's usual dark text
    would wash out against it - mirrors Notes' note-card-light/-dark.
-   The Value stays in its own green/red/faint semantic colors either
-   way, since that coding matters more than matching the card - only
-   the plain Title text and the icon controls need to track contrast. */
+   Every text element on the card is covered, the same way Notes flips
+   its own preview text/buttons rather than leaving one behind: the
+   Title, the muted "R$"-style currency prefix and a zero/empty Value
+   (both were still the card's fixed var(--text-faint) regardless of
+   background until this was added - unreadable on a darker preset),
+   and the toggle/delete icons. A positive/negative Value keeps its
+   default green/red in the light case (both are dark enough to already
+   read fine against a light preset), but gets its own lighter variant
+   in the dark case - the default dark green/red is barely distinguishable
+   from a dark green/blue preset background, since row color and Value
+   sign color were drawn from overlapping dark tones. */
 .finance-card.finance-card-light .finance-card-title {
     color: #242322;
 }
 
-.finance-card.finance-card-light input.finance-card-title::placeholder {
+.finance-card.finance-card-light input.finance-card-title::placeholder,
+.finance-card.finance-card-light .currency-prefix,
+.finance-card.finance-card-light input.finance-card-value.value-zero {
     color: #6b6a63;
 }
 
@@ -814,13 +824,23 @@ input.finance-card-value.value-zero {
     color: #f5f4f1;
 }
 
-.finance-card.finance-card-dark input.finance-card-title::placeholder {
+.finance-card.finance-card-dark input.finance-card-title::placeholder,
+.finance-card.finance-card-dark .currency-prefix,
+.finance-card.finance-card-dark input.finance-card-value.value-zero {
     color: #b3b1a9;
 }
 
 .finance-card.finance-card-dark .finance-card-toggle,
 .finance-card.finance-card-dark .finance-card-delete {
     color: #c9c7c0;
+}
+
+.finance-card.finance-card-dark input.finance-card-value.value-positive {
+    color: #7bcb98;
+}
+
+.finance-card.finance-card-dark input.finance-card-value.value-negative {
+    color: #e88787;
 }
 
 .finance-row-actions {
@@ -925,17 +945,21 @@ input.finance-card-value.value-zero {
     border-color: var(--border);
 }
 
-/* The 21px left margin lines the title's text up with a row's own
-   Title text below it (measured: a row's text sits 52px in from the
-   panel edge - the card's own 14px padding, the color dot's 8px
-   hit-area footprint, and the 10px gap to the title - while this head
-   row's default flow position landed 29px short of that). */
+/* The 24px left margin lines the title's text up with a row's own
+   Title text below it. Both inputs carry a 1px transparent border, so
+   counted from the panel's own edge: the table title lands at
+   20 (panel padding) + margin + 1 (its border) + 8 (its own padding)
+   = margin + 29, and a row's Title lands at 20 (panel padding) + 14
+   (card padding) + 8 (dot hit-area footprint) + 10 (gap to the title)
+   + 1 (its border) + 0 (no padding of its own) = 53 - so margin needs
+   to be 24, not the 21 an earlier pass landed on by missing one of the
+   two borders in that arithmetic. */
 .finance-panel-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin: -6px 0 14px 21px;
+    margin: -6px 0 14px 24px;
 }
 
 .finance-panel-head .btn-danger-text {
@@ -1052,8 +1076,12 @@ table.task-table td:nth-child(6) {
    background/border/padding/radius by accident. The values themselves
    match that rule on purpose - Studio Logs' visible grey field is the
    established look every .cell-input use should have, Calculator
-   included, not something to design away from. */
-input.cell-input {
+   included, not something to design away from. textarea.cell-input
+   shares this rule (not a copy of it) so an auto-growing field like
+   .checklist-text below looks identical to every plain-input cell
+   without the two drifting apart over time. */
+input.cell-input,
+textarea.cell-input {
     width: 100%;
     background: var(--panel-alt);
     border: 1px solid var(--border);
@@ -1063,7 +1091,8 @@ input.cell-input {
     font-size: 13px;
 }
 
-input.cell-input:focus {
+input.cell-input:focus,
+textarea.cell-input:focus {
     border-color: var(--text-muted);
     outline: none;
 }
@@ -1732,9 +1761,16 @@ table.project-table tbody tr:hover td {
 }
 
 /* Narrower than modal-personal's default - a plain notepad-style note
-   doesn't need that much width, it'd just read as an empty room. */
+   doesn't need that much width, it'd just read as an empty room. Extra
+   top padding (the base .modal's 28px isn't enough here) clears the
+   close button and the list/text toggle button - both float via
+   position:absolute at top:10px, and .modal-close alone is 30px tall,
+   so its bottom edge reached y=40 and sat on top of whatever content
+   started at the base padding, crowding the first checklist row when
+   in list mode. */
 .modal.note-modal {
     max-width: 520px;
+    padding-top: 46px;
 }
 
 .modal-section {
@@ -1886,7 +1922,6 @@ table.project-table tbody tr:hover td {
     font-size: 14px;
     line-height: 1.6;
     min-height: 220px;
-    margin-top: 6px;
     padding: 0;
 }
 
@@ -1955,8 +1990,19 @@ table.project-table tbody tr:hover td {
     cursor: pointer;
 }
 
+/* A <textarea rows="1"> (see notes.js/todo.js/tracker.js), not a plain
+   <input> - autoGrowChecklistText (nav.js) drives its height from
+   scrollHeight on every keystroke so a long entry wraps and pushes the
+   row taller instead of scrolling its own text out of view. resize:none
+   hides the native drag-handle, which would otherwise fight the JS
+   auto-sizing; display:block avoids the few px of inline-baseline gap
+   a bare <textarea> gets under its siblings. */
 .checklist-text {
+    display: block;
     flex: 1;
+    resize: none;
+    overflow: hidden;
+    line-height: 1.4;
 }
 
 .checklist-item.checked .checklist-text {

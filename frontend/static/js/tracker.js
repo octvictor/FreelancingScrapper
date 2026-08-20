@@ -856,7 +856,7 @@ function checklistItemHtml(item) {
     return `
         <div class="checklist-item ${item.checked ? "checked" : ""}" data-id="${item.id}">
             <input type="checkbox" class="checklist-checkbox" ${item.checked ? "checked" : ""}>
-            <input type="text" class="cell-input checklist-text" data-field="text" placeholder="Checklist item" value="${escapeAttr(item.text)}">
+            <textarea class="cell-input checklist-text" data-field="text" placeholder="Checklist item" rows="1">${escapeAttr(item.text)}</textarea>
             <button class="row-delete-btn" data-role="delete" title="Delete item">&times;</button>
         </div>
     `;
@@ -872,9 +872,14 @@ function wireChecklistRow(row) {
     });
 
     const textInput = row.querySelector(".checklist-text");
+    autoGrowChecklistText(textInput);
+    textInput.addEventListener("input", () => autoGrowChecklistText(textInput));
     textInput.addEventListener("blur", () => saveChecklistItem(itemId, { text: textInput.value.trim() }));
     textInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") textInput.blur();
+        if (e.key === "Enter") {
+            e.preventDefault();
+            textInput.blur();
+        }
     });
 
     row.querySelector("[data-role='delete']").addEventListener("click", async () => {

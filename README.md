@@ -151,12 +151,21 @@ the default on launch, reached through the sidebar like any other page.
   delete control - with a toggle button that switches the *same* note
   between Text and List at any time (not just at creation): text-to-list
   splits the body on newlines into checklist items, list-to-text joins
-  the items back into lines. Cards themselves are read-only previews -
-  clicking one (anywhere but its color/delete controls or a list item's
-  checkbox) reopens that modal for full editing; a list note's items use
-  the same checkbox-and-title row as To Do's Steps, with "+ Add item" for
-  more, and can also be checked off straight from the card preview
-  without opening the modal. Since there's no title, both the card
+  the items back into lines. The modal's extra top padding (46px, up
+  from the 28px every other modal uses) exists purely to clear that
+  toggle button and the close (x) button - both float via
+  `position:absolute` at the same `top:10px`, and without the extra
+  padding the first checklist row started underneath them instead of
+  below. Cards themselves are read-only previews - clicking one
+  (anywhere but its color/delete controls or a list item's checkbox)
+  reopens that modal for full editing; a list note's items use the same
+  checkbox-and-text row as To Do's Steps (a `<textarea rows="1">` that
+  grows downward as its own text wraps, rather than a single-line input
+  that would scroll long text out of view - `autoGrowChecklistText()` in
+  nav.js drives it, shared by Notes/To Do/Personal Projects' checklist
+  alike since they're the same row markup), with "+ Add item" for more,
+  and can also be checked off straight from the card preview without
+  opening the modal. Since there's no title, both the card
   preview and any place Notes show up elsewhere (Command Center's rows
   and strip, search results) derive a short label from the body's first
   line, or a list's first item text. Cards flow into a responsive
@@ -197,15 +206,22 @@ the default on launch, reached through the sidebar like any other page.
   meet your cursor as you approach, so you don't have to land a click
   on an 8px circle. Picking a color fills the whole card with it, not
   just the dot (a thin ring keeps the dot visible against its own
-  matching background) - the Title text and the toggle/delete icons
-  flip between a dark or light variant depending on the chosen color
-  (the same colorNeedsDarkText contrast check Notes uses for its own
-  card color), so a row always stays readable no matter which preset
-  it's given; the Value keeps its own green/red/faint sign coding
-  either way, since that signal matters more than matching the card.
-  The Value sits bold and right-aligned, color-coded by sign - green
-  for positive, red for negative, faint for zero/empty - so the
-  numbers read at a glance without opening each row. Hovering or
+  matching background) - the Title text, the "$"-style currency prefix,
+  a zero/empty Value, and the toggle/delete icons all flip between a
+  dark or light variant depending on the chosen color (the same
+  colorNeedsDarkText contrast check Notes uses for its own card color),
+  so nothing on a colored row goes back to blending into it the way the
+  currency prefix originally did (it kept a single fixed muted grey
+  regardless of background - the one piece Notes' own light/dark split
+  had covered from the start that this one initially missed). A
+  positive/negative Value keeps its default green/red in the light
+  case - both are already dark enough to read fine there - but switches
+  to a lighter green/red pairing in the dark case, since the app's
+  default dark green/red text was drawn from close to the same tonal
+  range as the dark row-color presets themselves and nearly disappeared
+  against them. The Value sits bold and right-aligned, color-coded by
+  sign - green for positive, red for negative, faint for zero/empty -
+  so the numbers read at a glance without opening each row. Hovering or
   focusing a card reveals two icons: a toggle (Lucide circle-power)
   right after the Title text, and Delete (Lucide trash-2) by the
   card's edge. Toggling a row off dims it, blocks every field except

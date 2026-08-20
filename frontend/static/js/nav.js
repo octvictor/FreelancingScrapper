@@ -5,6 +5,18 @@ function $(id) {
     return document.getElementById(id);
 }
 
+// Shared by every .checklist-text field (To Do's Steps, Personal
+// Projects' checklist, Notes' list items - same markup/pattern in
+// todo.js/tracker.js/notes.js) - a checklist row's text is a <textarea
+// rows="1"> rather than a single-line <input>, so a long entry wraps
+// and grows the row downward instead of scrolling its text out of
+// view. Resetting height to "auto" first is what lets scrollHeight
+// shrink back down when text is deleted, not just grow.
+function autoGrowChecklistText(el) {
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+}
+
 // Some colors are light enough that white text on top of them (e.g.
 // Notes tinting a whole card with one) would be unreadable - this
 // decides whether a given color needs dark text instead, via the

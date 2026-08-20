@@ -252,7 +252,7 @@ function todoStepHtml(step) {
     return `
         <div class="checklist-item ${step.checked ? "checked" : ""}" data-id="${step.id}">
             <input type="checkbox" class="checklist-checkbox" ${step.checked ? "checked" : ""}>
-            <input type="text" class="cell-input checklist-text" data-field="text" placeholder="Step" value="${escapeAttr(step.text)}">
+            <textarea class="cell-input checklist-text" data-field="text" placeholder="Step" rows="1">${escapeAttr(step.text)}</textarea>
             <button class="row-delete-btn" data-role="delete" title="Delete step">&times;</button>
         </div>
     `;
@@ -268,9 +268,14 @@ function wireTodoStepRow(row) {
     });
 
     const textInput = row.querySelector(".checklist-text");
+    autoGrowChecklistText(textInput);
+    textInput.addEventListener("input", () => autoGrowChecklistText(textInput));
     textInput.addEventListener("blur", () => saveTodoStep(stepId, { text: textInput.value.trim() }));
     textInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") textInput.blur();
+        if (e.key === "Enter") {
+            e.preventDefault();
+            textInput.blur();
+        }
     });
 
     row.querySelector("[data-role='delete']").addEventListener("click", async () => {
