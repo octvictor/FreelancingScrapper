@@ -363,11 +363,6 @@ button, input, select, textarea {
     background: var(--panel);
 }
 
-#page-finance .panel .finance-table-title-input:hover,
-#page-finance .panel .finance-table-title-input:focus {
-    background: var(--panel);
-}
-
 #page-finance .panel .custom-select-trigger.finance-currency-select {
     background: var(--panel);
 }
@@ -593,11 +588,15 @@ table.gatherer-table td:nth-child(2) {
     cursor: pointer;
 }
 
+/* The ring keeps the dot visible now that a chosen color also fills
+   the whole card behind it (see financeRowHtml in finance.js) - without
+   it, a dot the same color as its own background would disappear. */
 .finance-card-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: var(--stripe, var(--border));
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 0 2px rgba(255, 255, 255, 0.35);
     transition: width 0.12s ease, height 0.12s ease;
 }
 
@@ -624,9 +623,9 @@ table.gatherer-table td:nth-child(2) {
     gap: 2px;
 }
 
-/* Reads as plain text at rest (no border/background) - only picks up
-   a background once you're actually hovering or focused in it, same
-   invisible-until-interacted convention as .finance-table-title-input. */
+/* Reads as plain text at rest - read-only until a double-click (wired
+   in finance.js) unlocks it, at which point it picks up a background
+   so it's clear you're now editing; no outline in either state. */
 input.finance-card-title {
     flex: 1;
     min-width: 0;
@@ -643,13 +642,13 @@ input.finance-card-title::placeholder {
     color: var(--text-faint);
 }
 
-input.finance-card-title:hover {
-    background: var(--panel-alt);
+input.finance-card-title:read-only {
+    cursor: default;
 }
 
 input.finance-card-title:focus {
     background: var(--panel-alt);
-    border-color: var(--border);
+    border-color: transparent;
     outline: none;
 }
 
@@ -708,10 +707,15 @@ input.finance-card-value.value-zero {
 
 /* Same 16px/stroke-width:2 icon standard the sidebar nav uses
    (.sb-item svg) - every icon in the app reads at this size, not a
-   smaller one-off per control. */
+   smaller one-off per control. flex-shrink:0 is required here: inside
+   a fixed-size flex <button> Chromium silently shrinks an svg flex
+   item below its specified width (16px measured as 12px) even though
+   there's room, unlike a plain div - without this the icon renders
+   smaller than the sidebar's despite identical width/height. */
 .finance-card-delete svg {
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
 }
 
 .finance-card:hover .finance-card-delete,
@@ -746,10 +750,13 @@ input.finance-card-value.value-zero {
 }
 
 /* Same 16px/stroke-width:2 icon standard the sidebar nav uses
-   (.sb-item svg). */
+   (.sb-item svg). flex-shrink:0 for the same reason as
+   .finance-card-delete svg above - without it Chromium shrinks this
+   below 16px inside the fixed-size flex button. */
 .finance-card-toggle svg {
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
 }
 
 .finance-card:hover .finance-card-toggle,
@@ -782,6 +789,38 @@ input.finance-card-value.value-zero {
     background: rgba(40, 40, 40, 0.06);
     color: var(--text-muted);
     outline: none;
+}
+
+/* Applied (see finance.js's use of nav.js's colorNeedsDarkText) when a
+   row's own color is light enough that the card's usual dark text
+   would wash out against it - mirrors Notes' note-card-light/-dark.
+   The Value stays in its own green/red/faint semantic colors either
+   way, since that coding matters more than matching the card - only
+   the plain Title text and the icon controls need to track contrast. */
+.finance-card.finance-card-light .finance-card-title {
+    color: #242322;
+}
+
+.finance-card.finance-card-light input.finance-card-title::placeholder {
+    color: #6b6a63;
+}
+
+.finance-card.finance-card-light .finance-card-toggle,
+.finance-card.finance-card-light .finance-card-delete {
+    color: #57554e;
+}
+
+.finance-card.finance-card-dark .finance-card-title {
+    color: #f5f4f1;
+}
+
+.finance-card.finance-card-dark input.finance-card-title::placeholder {
+    color: #b3b1a9;
+}
+
+.finance-card.finance-card-dark .finance-card-toggle,
+.finance-card.finance-card-dark .finance-card-delete {
+    color: #c9c7c0;
 }
 
 .finance-row-actions {
@@ -886,12 +925,17 @@ input.finance-card-value.value-zero {
     border-color: var(--border);
 }
 
+/* The 21px left margin lines the title's text up with a row's own
+   Title text below it (measured: a row's text sits 52px in from the
+   panel edge - the card's own 14px padding, the color dot's 8px
+   hit-area footprint, and the 10px gap to the title - while this head
+   row's default flow position landed 29px short of that). */
 .finance-panel-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin: -6px 0 14px -8px;
+    margin: -6px 0 14px 21px;
 }
 
 .finance-panel-head .btn-danger-text {
@@ -920,9 +964,11 @@ input.finance-card-value.value-zero {
 /* Editable title for the active table, shown inside its panel above
    the Currency row - renaming here is what the (now read-only) tab
    button reflects, since typing directly into a tab is no longer
-   possible. Styled like .modal-title-input: invisible until you
-   interact with it, so it doesn't look like a form field at rest. */
-.finance-table-title-input {
+   possible. Read-only at rest (a double-click, wired in finance.js,
+   is what unlocks it) - the :read-only tint is what tells you it's a
+   field at all, since there's no more hover state to discover it by;
+   editing drops the tint and never shows an outline/border either. */
+input.finance-table-title-input {
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -936,13 +982,13 @@ input.finance-card-value.value-zero {
     max-width: 320px;
 }
 
-.finance-table-title-input:hover {
-    background: var(--panel-alt);
+input.finance-table-title-input:read-only {
+    background: rgba(40, 40, 40, 0.06);
+    cursor: default;
 }
 
-.finance-table-title-input:focus {
-    background: var(--panel-alt);
-    border-color: var(--border);
+input.finance-table-title-input:focus {
+    border-color: transparent;
     outline: none;
 }
 

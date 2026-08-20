@@ -179,23 +179,33 @@ the default on launch, reached through the sidebar like any other page.
   Renaming happens once, in an editable title field inside the active
   table's panel, next to a small currency pill (USD/EUR/GBP/BRL) - the
   tab it belongs to just displays whatever the title field currently
-  holds. A "Delete" link sits on the same row, right-aligned, and
-  removes the active table (confirms first) - if it was the last one
-  left, a fresh blank table takes its place so Calculator is never left
-  empty. Each entry is a light ("ledger") card sitting on the dark
-  panel - the same card language Project Manager's project cards and To
-  Do's kcards already use (light fill, soft shadow, no border), stacked
-  with a gap rather than divided rows in a boxed list. A small colored
-  dot replaces the old full-height left stripe and opens the same
-  shared color preset popover every other picker in the app uses (To
-  Do's list color, Notes' card color) - the dot itself stays small at
-  rest, but its actual click target is bigger than it looks and grows
-  the dot to meet your cursor as you approach, so you don't have to
-  land a click on an 8px circle. The Title reads as plain text at rest
-  and only picks up a background once you're actually hovering or
-  focused in it; the Value sits bold and right-aligned, color-coded by
-  sign - green for positive, red for negative, faint for zero/empty -
-  so the numbers read at a glance without opening each row. Hovering or
+  holds. That title field, and a row's own Title below it, are both
+  read-only until double-clicked - there's no hover state to discover
+  them by any more, so the table title carries a permanent faint tint
+  at rest (no outline in either state) to read as a field at all, and
+  both line up on the same left edge. A "Delete" link sits on the same
+  row, right-aligned, and removes the active table (confirms first) -
+  if it was the last one left, a fresh blank table takes its place so
+  Calculator is never left empty. Each entry is a light ("ledger") card
+  sitting on the dark panel - the same card language Project Manager's
+  project cards and To Do's kcards already use (light fill, soft
+  shadow, no border), stacked with a gap rather than divided rows in a
+  boxed list. A small colored dot opens the same shared color preset
+  popover every other picker in the app uses (To Do's list color,
+  Notes' card color) - the dot itself stays small at rest, but its
+  actual click target is bigger than it looks and grows the dot to
+  meet your cursor as you approach, so you don't have to land a click
+  on an 8px circle. Picking a color fills the whole card with it, not
+  just the dot (a thin ring keeps the dot visible against its own
+  matching background) - the Title text and the toggle/delete icons
+  flip between a dark or light variant depending on the chosen color
+  (the same colorNeedsDarkText contrast check Notes uses for its own
+  card color), so a row always stays readable no matter which preset
+  it's given; the Value keeps its own green/red/faint sign coding
+  either way, since that signal matters more than matching the card.
+  The Value sits bold and right-aligned, color-coded by sign - green
+  for positive, red for negative, faint for zero/empty - so the
+  numbers read at a glance without opening each row. Hovering or
   focusing a card reveals two icons: a toggle (Lucide circle-power)
   right after the Title text, and Delete (Lucide trash-2) by the
   card's edge. Toggling a row off dims it, blocks every field except
@@ -492,7 +502,23 @@ rest of the app instead of drifting:
   (trash-2) icons were originally sized down to fit their buttons and
   read as illegibly small; both the icons and the buttons around them
   were resized up to match the sidebar instead of shrinking the icon to
-  fit a smaller button.
+  fit a smaller button. Setting `width`/`height: 16px` on an svg isn't
+  enough by itself inside a *fixed-size* flex `<button>` - Chromium
+  silently shrinks it further (16px measured as 12px in practice) even
+  though there's room, a quirk the sidebar's own full-width button
+  never triggers. `flex-shrink: 0` on the svg is what actually holds it
+  at the specified size; any new icon-in-a-small-button control needs
+  the same rule or it'll quietly render undersized again.
+- **Qualify an input's own `:focus`/`:read-only`, not just its base
+  rule.** `input[type="text"]:focus` in app.css's catch-all sets its
+  own `border-color`, at a specificity a plain `.my-input:focus` class
+  selector loses to (see "Qualify selectors that override a generic
+  input rule" above for the same fight at rest). A scoped input needs
+  `input.my-input:focus` to win by source order, *and* to re-declare
+  `border-color` itself if it wants a different one - inheriting only
+  `outline: none` from your own rule still leaves the generic
+  `border-color` painting a border you never asked for. Calculator's
+  table-title and row-title fields both hit this exact gap.
 - **One color picker, everywhere.** `openColorPresetPopover()` in
   `frontend/static/js/nav.js` is the app's only color picker - two
   single-hue tonal ramps (green, blue - `COLOR_PRESET_RAMPS` in the same

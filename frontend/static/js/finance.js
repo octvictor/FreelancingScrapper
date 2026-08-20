@@ -1,16 +1,20 @@
 // Calculator (Finances) tool - browser-tab-style tables, each an
 // inline-editable ledger of "card" rows (Title, currency Value, an
-// optional per-row color shown as a small dot) with a running SUM of
-// the Value column. Each row can also be toggled inactive - dimmed,
-// unclickable except for the toggle/delete controls, and excluded from
-// the Sum, for entries you want to keep around without counting. One
-// currency applies to each whole table (picked as a pill next to the
-// title, same USD/EUR/GBP/BRL set as Tracker's Day rate) rather than
-// per-row, so the SUM is always a single coherent total. Rows beyond
-// FINANCE_ROW_LIMIT collapse behind a "Show more" button, same pattern
-// as Project Manager's list. $()/confirmDialog/enhanceSelect/
-// refreshCustomSelect/openColorPresetPopover come from nav.js,
-// escapeAttr from gatherer.js.
+// optional per-row color that fills the whole card, with the Title
+// and icon colors flipping via colorNeedsDarkText so they stay
+// readable against it) with a running SUM of the Value column. Both
+// the table title and a row's Title are read-only until double-clicked
+// (see the `readonly` attribute toggling below) rather than editable
+// on a plain click/hover. Each row can also be toggled inactive -
+// dimmed, unclickable except for the toggle/delete controls, and
+// excluded from the Sum, for entries you want to keep around without
+// counting. One currency applies to each whole table (picked as a pill
+// next to the title, same USD/EUR/GBP/BRL set as Tracker's Day rate)
+// rather than per-row, so the SUM is always a single coherent total.
+// Rows beyond FINANCE_ROW_LIMIT collapse behind a "Show more" button,
+// same pattern as Project Manager's list. $()/confirmDialog/
+// enhanceSelect/refreshCustomSelect/openColorPresetPopover/
+// colorNeedsDarkText come from nav.js, escapeAttr from gatherer.js.
 
 let financeTables = [];
 let activeTableId = null;
@@ -105,8 +109,17 @@ async function saveFinanceTableTitle(id, title) {
     renderFinanceTabs();
 }
 
+// Read-only at rest (see the `readonly` attribute in index.html) - a
+// double-click is what unlocks it for typing, same convention a row's
+// own title now uses (wireFinanceRowEvents below). Blur re-locks it.
+$("finance-table-title-input").addEventListener("dblclick", (e) => {
+    e.target.readOnly = false;
+    e.target.focus();
+    e.target.select();
+});
 $("finance-table-title-input").addEventListener("blur", (e) => {
     saveFinanceTableTitle(activeTableId, e.target.value.trim() || "Untitled");
+    e.target.readOnly = true;
 });
 $("finance-table-title-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") e.target.blur();
@@ -122,6 +135,7 @@ async function addFinanceTable() {
     financeTables.push(table);
     await switchFinanceTable(table.id);
     const input = $("finance-table-title-input");
+    input.readOnly = false;
     input.focus();
     input.select();
 }
@@ -153,14 +167,20 @@ const FINANCE_DELETE_ICON_SVG =
 
 function financeRowHtml(row) {
     const isOff = !row.active;
+    // A chosen color fills the whole card (not just the dot) - text and
+    // icon colors flip via finance-card-light/-dark (colorNeedsDarkText,
+    // from nav.js) so they always stay readable against it, same
+    // contrast-pairing convention Notes uses for its own card color.
+    const bg = row.color || "var(--panel)";
+    const lightClass = row.color ? (colorNeedsDarkText(row.color) ? "finance-card-light" : "finance-card-dark") : "";
     return `
-        <div class="finance-card${isOff ? " is-off" : ""}" data-id="${row.id}" style="--stripe:${row.color || "var(--border)"};">
+        <div class="finance-card${isOff ? " is-off" : ""} ${lightClass}" data-id="${row.id}" style="background:${bg}; --stripe:${row.color || "var(--border)"};">
             <button class="finance-card-dot-btn" data-role="color" type="button" title="Row color">
                 <span class="finance-card-dot"></span>
             </button>
             <div class="finance-card-body">
                 <div class="finance-card-title-row">
-                    <input type="text" class="finance-card-title" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
+                    <input type="text" class="finance-card-title" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title" readonly>
                     <button class="finance-card-toggle" data-role="toggle" type="button" title="${isOff ? "Turn row back on" : "Turn row off"}">${FINANCE_TOGGLE_ICON_SVG}</button>
                 </div>
             </div>
@@ -198,7 +218,15 @@ function wireFinanceRowEvents() {
         const id = parseInt(rowEl.dataset.id, 10);
 
         const titleInput = rowEl.querySelector("[data-field='title']");
-        titleInput.addEventListener("blur", () => saveFinanceRow(id, { title: titleInput.value.trim() }));
+        titleInput.addEventListener("dblclick", () => {
+            titleInput.readOnly = false;
+            titleInput.focus();
+            titleInput.select();
+        });
+        titleInput.addEventListener("blur", () => {
+            saveFinanceRow(id, { title: titleInput.value.trim() });
+            titleInput.readOnly = true;
+        });
         titleInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") titleInput.blur();
         });
@@ -311,7 +339,11 @@ $("finance-add-row-btn").addEventListener("click", async () => {
     // visible right away - it's the thing you just asked to add.
     if (financeRows.length > FINANCE_ROW_LIMIT) financeExpanded = true;
     renderFinanceTable();
-    document.querySelector(`#finance-body .finance-card[data-id="${row.id}"] [data-field="title"]`)?.focus();
+    const newTitleInput = document.querySelector(`#finance-body .finance-card[data-id="${row.id}"] [data-field="title"]`);
+    if (newTitleInput) {
+        newTitleInput.readOnly = false;
+        newTitleInput.focus();
+    }
 });
 
 $("finance-expand-btn").addEventListener("click", () => {
