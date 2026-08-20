@@ -11,8 +11,10 @@ right. Below that, a permanent sidebar sits next to the page content
 and never shrinks, collapses, or hides; every row carries a Lucide icon
 plus its label, no background of its own at rest, and the open page's
 row gets a plain white card with a soft shadow, grouped under
-"Workspace" (Command Center, Project Manager, Studio Logs) and
-"Personal" (To Do, Notes, Finances). The content field sits flush
+"Workspace" (Command Center, Project Manager, Studio Logs),
+"Personal" (To Do, Notes), and "Finances" (Calculator, shown under its
+own group heading rather than living inside "Personal"). The content
+field sits flush
 against the header's bottom border with square corners on every side
 (no radius, no gap) - only its left edge, against the sidebar, keeps a
 border - and bleeds to the window's right and bottom edges rather than
@@ -59,7 +61,7 @@ the default on launch, reached through the sidebar like any other page.
   no longer directly editable from the card (that pill-and-select look
   was dropped on purpose) - both live in the modal now, alongside
   everything else. An All/Active/Completed toggle above the grid
-  filters which cards show; each view caps at 5 cards with its own
+  filters which cards show; each view caps at 2 cards with its own
   "Show more/less" button at the bottom so a long list doesn't dwarf
   the page. A "+ New project" button below the grid creates one. A
   small drag handle sits at the top-right of a card (next to the
@@ -161,8 +163,15 @@ the default on launch, reached through the sidebar like any other page.
   background - text on the card switches to dark automatically for a
   light enough pick - and an always-visible red delete button (with the
   themed confirm dialog).
-- **Calculator** - browser-tab-style, holding any number of independent ledgers
-  ("tables"). A tab bar lists every table as a plain button showing its
+- **Calculator** - shown under its own **Finances** sidebar group rather
+  than inside "Personal". The active table's panel uses the same darker
+  `#e6e5e1`/no-outline treatment as Project Manager and Studio Logs -
+  the table title field, currency pill, Sum bar, and every Title/
+  Custom-column/Value field inside it are the lighter tone so they
+  stand out against it; the tab bar above the panel is unaffected,
+  since it isn't part of the panel itself. Otherwise browser-tab-style,
+  holding any number of independent ledgers ("tables"). A tab bar lists
+  every table as a plain button showing its
   title - clicking one switches to it, and that's all a tab does;
   there's nothing to type into or delete on the tab itself. Renaming
   happens once, in an editable title field inside the active table's
@@ -364,21 +373,6 @@ executable), shared across every tool:
 
 - Scheduling (currently everything is triggered manually from the GUI).
 - Notifications (e.g. Slack/email) on new matches.
-- Cap Project Manager's project table to two rows per view, with an
-  expand/collapse button to reveal the rest - same pattern as the
-  existing 5-row cap, just tighter. Personal Projects keeps its current
-  uncapped table; this only applies to Project Manager's own list.
-- Remove the description line under the Studio Logs page title
-  ("Studios and companies you're tracking - add a row, fill it in, it
-  saves as you type.").
-- Remove the description line under the Finances page title ("Money
-  tools for freelance work.").
-- Give Finances its own sidebar category instead of sitting as a page
-  inside "Personal". A new **Finances** group (same pattern as the
-  existing Workspace/Personal groups), holding a single item renamed
-  **Calculator** - the page itself, unchanged otherwise, just under a
-  new heading instead of "Finances" in the sidebar and as its own page
-  title.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
@@ -453,17 +447,17 @@ rest of the app instead of drifting:
   mixed-weight/mixed-color glyphs on some letters. Page titles
   (`.page-title`) are 22px/400, matching `.cc-greeting` exactly.
 - **Panel is the dark tone, contents are the light tone.** The container
-  that wraps a page's board/table/grid (`.panel` in Project Manager and
-  Studio Logs, `.kanban-col` in To Do) uses `--panel-alt` (`#e6e5e1`)
-  with no border, and everything inside it that reads as a discrete
-  card, field, or button - cards, `.cell-input`, dropdowns/pills on
-  hover or focus, non-text buttons - uses `--panel` (`#fafafa`) instead,
-  standing out against the darker wrapper rather than blending into a
-  light one behind an outline. This is the default for any new page or
-  panel going forward, not just the two it's been applied to so far -
-  match it rather than falling back to the older light-panel-with-border
-  look. Calculator and Personal Projects' own sub-panel still use the
-  older look and are due for the same treatment, just not done yet.
+  that wraps a page's board/table/grid (`.panel` in Project Manager,
+  Studio Logs, and Calculator; `.kanban-col` in To Do) uses `--panel-alt`
+  (`#e6e5e1`) with no border, and everything inside it that reads as a
+  discrete card, field, or button - cards, `.cell-input`, dropdowns/
+  pills on hover or focus, non-text buttons - uses `--panel` (`#fafafa`)
+  instead, standing out against the darker wrapper rather than blending
+  into a light one behind an outline. Project Manager's Personal
+  Projects section is a direct-child `.panel` of the same page, so it
+  picks this up automatically rather than needing its own rule. This is
+  the default for any new page or panel going forward - match it rather
+  than falling back to the older light-panel-with-border look.
 - **Qualify selectors that override a generic input rule.** The catch-all
   `input[type="text"], input[type="password"], ...` rule in app.css has
   higher specificity than a bare class selector, so a class-only

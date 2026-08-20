@@ -12,7 +12,7 @@ let activeDayRate = null;
 
 // Each view (All/Active/Completed) shows at most this many rows until its
 // own "Show more" is clicked - keeps a long list from dwarfing the page.
-const PROJECT_ROW_LIMIT = 5;
+const PROJECT_ROW_LIMIT = 2;
 let expandedViews = { All: false, Active: false, Completed: false };
 
 const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };

@@ -309,24 +309,28 @@ button, input, select, textarea {
     margin: 0 0 14px 0;
 }
 
-/* Inverted panel, approved via mockup for Project Manager and Studio
-   Logs (not Calculator or Personal Projects' own sub-panel yet, and
-   never To Do, which already works this way through its own separate
-   classes) - the panel that wraps the board/table is the darker tone
-   instead of the lighter one, no outline, the same board/card
-   relationship To Do's .kanban-col/.kcard already has. Everything
-   inside that used to read as a grey field or pill against a light
-   panel would otherwise blend into the panel now that it's the same
-   grey, so those flip to the lighter tone to keep standing out.
-   Project cards need no change - they were already the lighter shade. */
+/* Inverted panel - the app-wide default (see README's Design system
+   notes): the panel that wraps a page's board/table/grid is the darker
+   tone instead of the lighter one, no outline, the same board/card
+   relationship To Do's .kanban-col/.kcard already has (To Do keeps its
+   own separate classes and isn't part of this rule). Covers Project
+   Manager's grid, its Personal Projects sub-panel (a direct-child
+   .panel of #page-tracker, same as the main grid), Studio Logs, and
+   Calculator. Everything inside that used to read as a grey field or
+   pill against a light panel would otherwise blend into the panel now
+   that it's the same grey, so those flip to the lighter tone to keep
+   standing out. Project cards need no change - they were already the
+   lighter shade. */
 #page-tracker > .panel,
-#page-gatherer > .panel {
+#page-gatherer > .panel,
+#page-finance > .panel {
     background: var(--panel-alt);
     border: none;
 }
 
 #page-tracker .panel input.cell-input,
-#page-gatherer .panel input.cell-input {
+#page-gatherer .panel input.cell-input,
+#page-finance .panel input.cell-input {
     background: var(--panel);
 }
 
@@ -355,7 +359,21 @@ button, input, select, textarea {
 }
 
 #page-tracker .panel .btn:not(.btn-text),
-#page-gatherer .panel .btn:not(.btn-text) {
+#page-gatherer .panel .btn:not(.btn-text),
+#page-finance .panel .btn:not(.btn-text) {
+    background: var(--panel);
+}
+
+#page-finance .panel .finance-table-title-input:hover,
+#page-finance .panel .finance-table-title-input:focus {
+    background: var(--panel);
+}
+
+#page-finance .panel .custom-select-trigger.finance-currency-select {
+    background: var(--panel);
+}
+
+#page-finance .panel .finance-total-bar {
     background: var(--panel);
 }
 
