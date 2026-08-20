@@ -901,11 +901,13 @@ def delete_note_item(item_id: int) -> None:
 # ---------- Calculator (Finances): browser-tab-style tables, each a ----------
 # ---------- Studio-Database-style ledger with a Value SUM -------------------
 # Each `finance_tables` row is one tab, with its own title and currency.
-# Title/Value/color are fixed columns on `finance_rows`; any further
-# user-added columns live in `finance_columns` with per-row values in
-# `finance_cells` (row_id, column_id) - an EAV side table so columns
-# can be added/renamed/deleted freely without ALTER TABLE gymnastics or
-# having to backfill every existing row.
+# Title/Value/color/active are fixed columns on `finance_rows`. Rows
+# used to support user-added freeform columns (`finance_columns`, with
+# per-row values in the `finance_cells` EAV side table) - that feature
+# was removed; the two tables still exist in SCHEMA (and still get
+# cleaned up below when a table/row they reference is deleted) purely
+# so a pre-existing local database with old column data doesn't error
+# out, not because anything can create new rows in them anymore.
 
 def list_finance_tables() -> list[dict]:
     with get_connection() as conn:
@@ -952,54 +954,10 @@ def delete_finance_table(table_id: int) -> None:
         conn.execute("DELETE FROM finance_tables WHERE id=?", (table_id,))
 
 
-def list_finance_columns(table_id: int) -> list[dict]:
-    with get_connection() as conn:
-        rows = conn.execute("SELECT * FROM finance_columns WHERE table_id=? ORDER BY id", (table_id,)).fetchall()
-        return [dict(row) for row in rows]
-
-
-def create_finance_column(table_id: int, name: str = "") -> dict:
-    with get_connection() as conn:
-        cur = conn.execute(
-            "INSERT INTO finance_columns (table_id, name, created_at) VALUES (?, ?, ?)",
-            (table_id, name, _now()),
-        )
-        row = conn.execute("SELECT * FROM finance_columns WHERE id=?", (cur.lastrowid,)).fetchone()
-        return dict(row)
-
-
-def update_finance_column(column_id: int, name: str) -> dict | None:
-    with get_connection() as conn:
-        conn.execute("UPDATE finance_columns SET name=? WHERE id=?", (name, column_id))
-        row = conn.execute("SELECT * FROM finance_columns WHERE id=?", (column_id,)).fetchone()
-        return dict(row) if row else None
-
-
-def delete_finance_column(column_id: int) -> None:
-    with get_connection() as conn:
-        conn.execute("DELETE FROM finance_cells WHERE column_id=?", (column_id,))
-        conn.execute("DELETE FROM finance_columns WHERE id=?", (column_id,))
-
-
-def _attach_finance_cells(conn, rows: list[dict]) -> list[dict]:
-    if not rows:
-        return rows
-    cell_rows = conn.execute(
-        f"SELECT * FROM finance_cells WHERE row_id IN ({','.join('?' * len(rows))})",
-        [r["id"] for r in rows],
-    ).fetchall()
-    cells_by_row: dict[int, dict] = {}
-    for cell in cell_rows:
-        cells_by_row.setdefault(cell["row_id"], {})[cell["column_id"]] = cell["value"]
-    for row in rows:
-        row["cells"] = cells_by_row.get(row["id"], {})
-    return rows
-
-
 def list_finance_rows(table_id: int) -> list[dict]:
     with get_connection() as conn:
         rows = conn.execute("SELECT * FROM finance_rows WHERE table_id=? ORDER BY id", (table_id,)).fetchall()
-        return _attach_finance_cells(conn, [dict(row) for row in rows])
+        return [dict(row) for row in rows]
 
 
 def create_finance_row(table_id: int) -> dict:
@@ -1010,9 +968,7 @@ def create_finance_row(table_id: int) -> dict:
             (table_id, now, now),
         )
         row = conn.execute("SELECT * FROM finance_rows WHERE id=?", (cur.lastrowid,)).fetchone()
-        result = dict(row)
-        result["cells"] = {}
-        return result
+        return dict(row)
 
 
 def update_finance_row(row_id: int, **fields) -> dict | None:
@@ -1024,29 +980,16 @@ def update_finance_row(row_id: int, **fields) -> dict | None:
         with get_connection() as conn:
             conn.execute(f"UPDATE finance_rows SET {set_clause} WHERE id=?", (*updates.values(), row_id))
             row = conn.execute("SELECT * FROM finance_rows WHERE id=?", (row_id,)).fetchone()
-            if row is None:
-                return None
-            return _attach_finance_cells(conn, [dict(row)])[0]
+            return dict(row) if row else None
     with get_connection() as conn:
         row = conn.execute("SELECT * FROM finance_rows WHERE id=?", (row_id,)).fetchone()
-        if row is None:
-            return None
-        return _attach_finance_cells(conn, [dict(row)])[0]
+        return dict(row) if row else None
 
 
 def delete_finance_row(row_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM finance_cells WHERE row_id=?", (row_id,))
         conn.execute("DELETE FROM finance_rows WHERE id=?", (row_id,))
-
-
-def set_finance_cell(row_id: int, column_id: int, value: str | None) -> None:
-    with get_connection() as conn:
-        conn.execute(
-            "INSERT INTO finance_cells (row_id, column_id, value) VALUES (?, ?, ?) "
-            "ON CONFLICT(row_id, column_id) DO UPDATE SET value=excluded.value",
-            (row_id, column_id, value),
-        )
 
 
 # ---------- Overview: cross-tool launcher counts, stats, search ----------

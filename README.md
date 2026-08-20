@@ -202,13 +202,11 @@ the default on launch, reached through the sidebar like any other page.
   the toggle and Delete from being clicked, and drops it from the Sum -
   for entries you want to keep on record without them counting; the
   toggle stays reachable on hover either way, so turning a row back on
-  never requires anything else. A "+" in the header adds freeform text
-  columns; unlike a typical spreadsheet, a column's value shows as a
-  small muted tag under the Title it belongs to instead of its own
-  vertical lane, so a card with no custom columns stays as compact as
-  one that never uses the feature - each column is inline-renamable and
-  has its own delete, while Title and Value are permanent and never get
-  one. One currency applies per table (the pill next to the title),
+  never requires anything else. Both icons render at the same 16px,
+  stroke-width:2 size as every other icon in the app (see "Design
+  system notes" below) - Title and Value are the only two fields, fixed
+  and permanent, with no custom-column feature. One currency applies
+  per table (the pill next to the title),
   matching Tracker's Day rate currency picker, so a running Sum at the
   bottom - a full-width total bar in the same light/shadowed card style
   - is always one coherent total: a negative Value just subtracts from
@@ -373,18 +371,16 @@ executable), shared across every tool:
   a 'list'-type note's checklist.
 - `finance_tables` - title, currency, position, created_at, updated_at.
   One row per Calculator tab - each tab is fully independent, with its
-  own columns, rows, and currency.
-- `finance_columns` - table_id, name, created_at. Any extra freeform
-  columns added on top of Title/Value for that table, shared across
-  every row in it, deletable independently of Title/Value.
-- `finance_rows` - table_id, title, value, color, created_at,
-  updated_at. A table's own rows - Title, Value, and an optional row
-  color are fixed columns on the row itself.
-- `finance_cells` - row_id, column_id, value (unique per row+column
-  pair). An EAV side table backing each row's value in a
-  `finance_columns` entry, so columns can be added/renamed/deleted
-  freely without an ALTER TABLE per column or backfilling every
-  existing row.
+  own rows and currency.
+- `finance_rows` - table_id, title, value, color, active, created_at,
+  updated_at. A table's own rows - Title, Value, an optional row color,
+  and the on/off toggle are fixed columns on the row itself.
+- `finance_columns` / `finance_cells` - leftover tables from a removed
+  freeform-column feature (an extra column per table, with per-row
+  values in `finance_cells` as an EAV side table). Nothing can create
+  rows in either anymore; they're only kept, and still cleaned up on
+  table/row delete, so a pre-existing local database with old column
+  data doesn't error out.
 
 ## Roadmap / not built yet
 
@@ -489,6 +485,14 @@ rest of the app instead of drifting:
   keeps the visible dot small at rest and grows it on hover/focus of a
   bigger invisible hit area around it, rather than sitting at a fixed
   16px like the others.
+- **One icon size app-wide.** The sidebar nav (`.sb-item svg`) is the
+  standard every icon button in the app now matches: Lucide markup at
+  `viewBox="0 0 24 24"` with `stroke-width="2"`, rendered at 16x16px -
+  not smaller. Calculator's per-row toggle (circle-power) and delete
+  (trash-2) icons were originally sized down to fit their buttons and
+  read as illegibly small; both the icons and the buttons around them
+  were resized up to match the sidebar instead of shrinking the icon to
+  fit a smaller button.
 - **One color picker, everywhere.** `openColorPresetPopover()` in
   `frontend/static/js/nav.js` is the app's only color picker - two
   single-hue tonal ramps (green, blue - `COLOR_PRESET_RAMPS` in the same

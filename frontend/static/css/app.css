@@ -539,79 +539,6 @@ table.gatherer-table td:nth-child(2) {
     color: var(--text-faint);
 }
 
-/* Auto-width now, not a fixed 110px lane - a custom column's value no
-   longer gets its own vertical column across every card, it shows as a
-   small tag under the Title it belongs to (see .finance-card-tag), so
-   its header chip only needs to be as wide as its own name. */
-.finance-row-head-col {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    flex: 0 0 auto;
-}
-
-/* An editable column header - looks like the plain uppercase header
-   text everywhere else until clicked into, unlike the fixed Title/
-   Value labels on either side of it. */
-.finance-col-header-input {
-    background: none;
-    border: none;
-    padding: 0;
-    width: auto;
-    max-width: 90px;
-    text-transform: uppercase;
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-    color: var(--text-faint);
-}
-
-.finance-col-header-input:hover,
-.finance-col-header-input:focus {
-    color: var(--text-muted);
-    outline: none;
-}
-
-.finance-col-delete-btn {
-    background: none;
-    border: none;
-    border-radius: var(--radius-sm);
-    color: var(--text-faint);
-    font-size: 13px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 2px;
-    flex-shrink: 0;
-}
-
-.finance-col-delete-btn:hover {
-    color: var(--danger-text);
-}
-
-/* Sits right before Value in the header row - a new custom column
-   lands between Title and Value, not after Value, so Value stays the
-   fixed rightmost figure. */
-.finance-add-col-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    background: none;
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius-sm);
-    color: var(--text-faint);
-    font-size: 13px;
-    line-height: 1;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.finance-add-col-btn:hover {
-    color: var(--text);
-    border-color: var(--border);
-}
-
 .finance-row-head-value {
     flex: 0 0 90px;
     min-width: 0;
@@ -726,38 +653,6 @@ input.finance-card-title:focus {
     outline: none;
 }
 
-/* Any custom columns render as small muted tags under the Title they
-   belong to, instead of each getting its own fixed-width lane across
-   every card - keeps a card that only uses Title/Value exactly as
-   compact as the approved design, and still shows custom data legibly
-   when a table actually has some. */
-.finance-card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-input.finance-card-tag {
-    width: auto;
-    max-width: 160px;
-    background: var(--panel-alt);
-    border: 1px solid transparent;
-    border-radius: var(--radius-pill);
-    padding: 2px 9px;
-    font-size: 11.5px;
-    color: var(--text-muted);
-}
-
-input.finance-card-tag::placeholder {
-    color: var(--text-faint);
-}
-
-input.finance-card-tag:hover,
-input.finance-card-tag:focus {
-    border-color: var(--border);
-    outline: none;
-}
-
 .finance-value-cell {
     flex: 0 0 90px;
     min-width: 0;
@@ -796,10 +691,10 @@ input.finance-card-value.value-zero {
 .finance-card-delete {
     position: absolute;
     top: 50%;
-    right: 10px;
+    right: 8px;
     transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -811,9 +706,12 @@ input.finance-card-value.value-zero {
     opacity: 0;
 }
 
+/* Same 16px/stroke-width:2 icon standard the sidebar nav uses
+   (.sb-item svg) - every icon in the app reads at this size, not a
+   smaller one-off per control. */
 .finance-card-delete svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 .finance-card:hover .finance-card-delete,
@@ -834,8 +732,8 @@ input.finance-card-value.value-zero {
    the row itself rather than removing it. */
 .finance-card-toggle {
     flex-shrink: 0;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -847,9 +745,11 @@ input.finance-card-value.value-zero {
     opacity: 0;
 }
 
+/* Same 16px/stroke-width:2 icon standard the sidebar nav uses
+   (.sb-item svg). */
 .finance-card-toggle svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 .finance-card:hover .finance-card-toggle,
@@ -873,7 +773,6 @@ input.finance-card-value.value-zero {
 
 .finance-card.is-off input.finance-card-title,
 .finance-card.is-off input.finance-card-value,
-.finance-card.is-off input.finance-card-tag,
 .finance-card.is-off .finance-card-dot-btn {
     pointer-events: none;
 }

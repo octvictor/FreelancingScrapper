@@ -1,21 +1,19 @@
 // Calculator (Finances) tool - browser-tab-style tables, each an
 // inline-editable ledger of "card" rows (Title, currency Value, an
-// optional per-row color shown as a small dot, plus any number of
-// user-added freeform text columns, which render as small tags under
-// Title) with a running SUM of the Value column. Each row can also be
-// toggled inactive - dimmed, unclickable except for the toggle/delete
-// controls, and excluded from the Sum, for entries you want to keep
-// around without counting. One currency applies to each whole table
-// (picked as a pill next to the title, same USD/EUR/GBP/BRL set as
-// Tracker's Day rate) rather than per-row, so the SUM is always a
-// single coherent total. Rows beyond FINANCE_ROW_LIMIT collapse behind
-// a "Show more" button, same pattern as Project Manager's list.
-// $()/confirmDialog/enhanceSelect/refreshCustomSelect/
-// openColorPresetPopover come from nav.js, escapeAttr from gatherer.js.
+// optional per-row color shown as a small dot) with a running SUM of
+// the Value column. Each row can also be toggled inactive - dimmed,
+// unclickable except for the toggle/delete controls, and excluded from
+// the Sum, for entries you want to keep around without counting. One
+// currency applies to each whole table (picked as a pill next to the
+// title, same USD/EUR/GBP/BRL set as Tracker's Day rate) rather than
+// per-row, so the SUM is always a single coherent total. Rows beyond
+// FINANCE_ROW_LIMIT collapse behind a "Show more" button, same pattern
+// as Project Manager's list. $()/confirmDialog/enhanceSelect/
+// refreshCustomSelect/openColorPresetPopover come from nav.js,
+// escapeAttr from gatherer.js.
 
 let financeTables = [];
 let activeTableId = null;
-let financeColumns = [];
 let financeRows = [];
 let financeExpanded = false;
 
@@ -86,7 +84,6 @@ async function switchFinanceTable(id) {
 async function loadFinanceTableData() {
     const resp = await fetch(`/api/finance/tables/${activeTableId}`);
     const data = await resp.json();
-    financeColumns = data.columns;
     financeRows = data.rows;
     const table = financeTables.find((t) => t.id === activeTableId);
     $("finance-currency-select").value = table ? table.currency : "USD";
@@ -132,28 +129,10 @@ async function addFinanceTable() {
 // ---------- Table ----------
 
 function renderFinanceHead() {
-    const dynamicHeaders = financeColumns.map((col) => `
-        <span class="finance-row-head-col">
-            <input type="text" class="finance-col-header-input" data-column-id="${col.id}" value="${escapeAttr(col.name)}" placeholder="Column">
-            <button class="finance-col-delete-btn" data-role="delete-column" data-column-id="${col.id}" type="button" title="Delete column">&times;</button>
-        </span>
-    `).join("");
     $("finance-row-head").innerHTML = `
         <span class="finance-row-head-title">Title</span>
-        ${dynamicHeaders}
-        <button class="finance-add-col-btn" id="finance-add-column-btn" type="button" title="Add column">+</button>
         <span class="finance-row-head-value">Value</span>
     `;
-    $("finance-row-head").querySelectorAll(".finance-col-header-input").forEach((input) => {
-        input.addEventListener("blur", () => saveFinanceColumnName(parseInt(input.dataset.columnId, 10), input.value.trim()));
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") input.blur();
-        });
-    });
-    $("finance-row-head").querySelectorAll("[data-role='delete-column']").forEach((btn) => {
-        btn.addEventListener("click", () => deleteFinanceColumn(parseInt(btn.dataset.columnId, 10)));
-    });
-    $("finance-add-column-btn").addEventListener("click", addFinanceColumn);
 }
 
 function financeValueClass(value) {
@@ -173,9 +152,6 @@ const FINANCE_DELETE_ICON_SVG =
     '<line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>';
 
 function financeRowHtml(row) {
-    const dynamicCells = financeColumns.map((col) => `
-        <input type="text" class="finance-card-tag" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-">
-    `).join("");
     const isOff = !row.active;
     return `
         <div class="finance-card${isOff ? " is-off" : ""}" data-id="${row.id}" style="--stripe:${row.color || "var(--border)"};">
@@ -187,7 +163,6 @@ function financeRowHtml(row) {
                     <input type="text" class="finance-card-title" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
                     <button class="finance-card-toggle" data-role="toggle" type="button" title="${isOff ? "Turn row back on" : "Turn row off"}">${FINANCE_TOGGLE_ICON_SVG}</button>
                 </div>
-                ${dynamicCells ? `<div class="finance-card-tags">${dynamicCells}</div>` : ""}
             </div>
             <div class="cost-cell finance-value-cell">
                 <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
@@ -242,14 +217,6 @@ function wireFinanceRowEvents() {
             if (e.key === "Enter") valueInput.blur();
         });
 
-        rowEl.querySelectorAll("[data-role='cell']").forEach((cellInput) => {
-            const columnId = parseInt(cellInput.dataset.columnId, 10);
-            cellInput.addEventListener("blur", () => saveFinanceCell(id, columnId, cellInput.value.trim() || null));
-            cellInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") cellInput.blur();
-            });
-        });
-
         rowEl.querySelector("[data-role='delete']").addEventListener("click", async () => {
             if (!(await confirmDialog("This can't be undone.", { title: "Delete this row?" }))) return;
             await fetch(`/api/finance/rows/${id}`, { method: "DELETE" });
@@ -288,16 +255,6 @@ async function saveFinanceRow(id, updates) {
     renderFinanceSum();
 }
 
-async function saveFinanceCell(rowId, columnId, value) {
-    await fetch(`/api/finance/rows/${rowId}/cells/${columnId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value }),
-    });
-    const row = financeRows.find((r) => r.id === rowId);
-    if (row) row.cells[columnId] = value;
-}
-
 // ---------- Row color ----------
 // Wired to the dot button in financeRowHtml - click opens the shared
 // color preset popover (nav.js), same one To Do's list color and
@@ -305,42 +262,6 @@ async function saveFinanceCell(rowId, columnId, value) {
 
 async function setFinanceRowColor(rowId, color) {
     await saveFinanceRow(rowId, { color });
-    renderFinanceTable();
-}
-
-// ---------- Columns ----------
-
-async function addFinanceColumn() {
-    const resp = await fetch(`/api/finance/tables/${activeTableId}/columns`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "" }),
-    });
-    const column = await resp.json();
-    financeColumns.push(column);
-    renderFinanceTable();
-    document.querySelector(`.finance-col-header-input[data-column-id="${column.id}"]`)?.focus();
-}
-
-async function saveFinanceColumnName(columnId, name) {
-    const resp = await fetch(`/api/finance/columns/${columnId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-    });
-    if (!resp.ok) return;
-    const updated = await resp.json();
-    const idx = financeColumns.findIndex((c) => c.id === updated.id);
-    if (idx !== -1) financeColumns[idx] = updated;
-}
-
-async function deleteFinanceColumn(columnId) {
-    if (!(await confirmDialog("This can't be undone.", { title: "Delete this column?" }))) return;
-    await fetch(`/api/finance/columns/${columnId}`, { method: "DELETE" });
-    financeColumns = financeColumns.filter((c) => c.id !== columnId);
-    financeRows.forEach((row) => {
-        delete row.cells[columnId];
-    });
     renderFinanceTable();
 }
 
