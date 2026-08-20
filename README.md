@@ -415,8 +415,6 @@ executable), shared across every tool:
 
 ## Roadmap / not built yet
 
-- Scheduling (currently everything is triggered manually from the GUI).
-- Notifications (e.g. Slack/email) on new matches.
 - Replace Command Center's "Full Board" layout with a node/graph system,
   renamed **Nexus**. An Obsidian-style graph reflecting the real DB
   hierarchy: Project Manager as a root node with its projects as
