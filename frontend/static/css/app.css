@@ -657,6 +657,9 @@ input.finance-card-title:focus {
     min-width: 0;
 }
 
+/* Text-only entry - the native up/down stepper a type="number" input
+   normally draws is hidden, since this is a currency amount typed in
+   directly, not a value anyone increments/decrements one unit at a time. */
 input.finance-card-value {
     width: auto;
     flex: 1;
@@ -668,6 +671,14 @@ input.finance-card-value {
     font-size: 15px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+input.finance-card-value::-webkit-outer-spin-button,
+input.finance-card-value::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 input.finance-card-value.value-positive {
