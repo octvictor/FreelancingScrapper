@@ -186,28 +186,37 @@ the default on launch, reached through the sidebar like any other page.
   panel - the same card language Project Manager's project cards and To
   Do's kcards already use (light fill, soft shadow, no border), stacked
   with a gap rather than divided rows in a boxed list. A small colored
-  dot replaces the old full-height left stripe (how a row picks that
-  color is still being redesigned - there's currently no control for it
-  in the UI); the Title reads as plain text at rest and only picks up a
-  background once you're actually hovering or focused in it; the Value
-  sits bold and right-aligned, color-coded by sign - green for positive,
-  red for negative, faint for zero/empty - so the numbers read at a
-  glance without opening each row. Delete (×) only appears on hovering
-  or focusing a card, so a card at rest reads clean. A "+" in the header
-  adds freeform text columns; unlike a typical spreadsheet, a column's
-  value shows as a small muted tag under the Title it belongs to instead
-  of its own vertical lane, so a card with no custom columns stays as
-  compact as one that never uses the feature - each column is inline-
-  renamable and has its own delete, while Title and Value are permanent
-  and never get one. One currency applies per table (the pill next to
-  the title), matching Tracker's Day rate currency picker, so a running
-  Sum at the bottom - a full-width total bar in the same light/shadowed
-  card style - is always one coherent total: a negative Value just
-  subtracts from it, being plain addition under the hood, and the Sum
-  still counts every row even the ones collapsed behind "Show more"
-  (rows past the 7th on a table cap there, same pattern as Project
-  Manager's list). A dashed "+ Add row" card - matching Notes' add-note
-  tile rather than a plain text link - creates a new one.
+  dot replaces the old full-height left stripe and opens the same
+  shared color preset popover every other picker in the app uses (To
+  Do's list color, Notes' card color) - the dot itself stays small at
+  rest, but its actual click target is bigger than it looks and grows
+  the dot to meet your cursor as you approach, so you don't have to
+  land a click on an 8px circle. The Title reads as plain text at rest
+  and only picks up a background once you're actually hovering or
+  focused in it; the Value sits bold and right-aligned, color-coded by
+  sign - green for positive, red for negative, faint for zero/empty -
+  so the numbers read at a glance without opening each row. Hovering or
+  focusing a card reveals two icons: a toggle (Lucide circle-power)
+  right after the Title text, and Delete (Lucide trash-2) by the
+  card's edge. Toggling a row off dims it, blocks every field except
+  the toggle and Delete from being clicked, and drops it from the Sum -
+  for entries you want to keep on record without them counting; the
+  toggle stays reachable on hover either way, so turning a row back on
+  never requires anything else. A "+" in the header adds freeform text
+  columns; unlike a typical spreadsheet, a column's value shows as a
+  small muted tag under the Title it belongs to instead of its own
+  vertical lane, so a card with no custom columns stays as compact as
+  one that never uses the feature - each column is inline-renamable and
+  has its own delete, while Title and Value are permanent and never get
+  one. One currency applies per table (the pill next to the title),
+  matching Tracker's Day rate currency picker, so a running Sum at the
+  bottom - a full-width total bar in the same light/shadowed card style
+  - is always one coherent total: a negative Value just subtracts from
+  it, being plain addition under the hood, and the Sum still counts
+  every visible-and-active row even the ones collapsed behind "Show
+  more" (rows past the 7th on a table cap there, same pattern as
+  Project Manager's list). A dashed "+ Add row" card - matching Notes'
+  add-note tile rather than a plain text link - creates a new one.
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -473,10 +482,13 @@ rest of the app instead of drifting:
   an element+class selector (`input.overview-search-input`) to tie
   specificity and win on source order instead.
 - **One swatch size app-wide.** Every color-picker trigger (To Do's
-  list color, Notes' card color, Calculator's row color) shares the
-  same `.swatch-btn` class in app.css, which is what keeps them the
-  same size automatically - resize that one rule rather than
-  overriding size per-tool.
+  list color, Notes' card color) shares the same `.swatch-btn` class in
+  app.css, which is what keeps them the same size automatically -
+  resize that one rule rather than overriding size per-tool. Calculator's
+  row color is the one exception on purpose: `.finance-card-dot-btn`
+  keeps the visible dot small at rest and grows it on hover/focus of a
+  bigger invisible hit area around it, rather than sitting at a fixed
+  16px like the others.
 - **One color picker, everywhere.** `openColorPresetPopover()` in
   `frontend/static/js/nav.js` is the app's only color picker - two
   single-hue tonal ramps (green, blue - `COLOR_PRESET_RAMPS` in the same

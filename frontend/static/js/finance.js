@@ -1,15 +1,17 @@
 // Calculator (Finances) tool - browser-tab-style tables, each an
-// inline-editable ledger of flex rows (Title, currency Value, an
-// optional per-row color shown as a stripe, plus any number of
-// user-added freeform text columns, which render between Title and
-// Value rather than after Value) with a running SUM of the Value
-// column. One currency applies to each whole table (picked as a pill
-// next to the title, same USD/EUR/GBP/BRL set as Tracker's Day rate)
-// rather than per-row, so the SUM is always a single coherent total.
-// Rows beyond FINANCE_ROW_LIMIT collapse behind a "Show more" button,
-// same pattern as Project Manager's list. $()/confirmDialog/
-// enhanceSelect/refreshCustomSelect come from nav.js, escapeAttr from
-// gatherer.js.
+// inline-editable ledger of "card" rows (Title, currency Value, an
+// optional per-row color shown as a small dot, plus any number of
+// user-added freeform text columns, which render as small tags under
+// Title) with a running SUM of the Value column. Each row can also be
+// toggled inactive - dimmed, unclickable except for the toggle/delete
+// controls, and excluded from the Sum, for entries you want to keep
+// around without counting. One currency applies to each whole table
+// (picked as a pill next to the title, same USD/EUR/GBP/BRL set as
+// Tracker's Day rate) rather than per-row, so the SUM is always a
+// single coherent total. Rows beyond FINANCE_ROW_LIMIT collapse behind
+// a "Show more" button, same pattern as Project Manager's list.
+// $()/confirmDialog/enhanceSelect/refreshCustomSelect/
+// openColorPresetPopover come from nav.js, escapeAttr from gatherer.js.
 
 let financeTables = [];
 let activeTableId = null;
@@ -160,22 +162,38 @@ function financeValueClass(value) {
     return num > 0 ? "value-positive" : "value-negative";
 }
 
+const FINANCE_TOGGLE_ICON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M12 7v4"></path><path d="M7.998 9.003a5 5 0 1 0 8-.005"></path><circle cx="12" cy="12" r="10"></circle></svg>';
+
+const FINANCE_DELETE_ICON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>' +
+    '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>' +
+    '<line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>';
+
 function financeRowHtml(row) {
     const dynamicCells = financeColumns.map((col) => `
         <input type="text" class="finance-card-tag" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-">
     `).join("");
+    const isOff = !row.active;
     return `
-        <div class="finance-card" data-id="${row.id}" style="--stripe:${row.color || "var(--border)"};">
-            <span class="finance-card-dot"></span>
+        <div class="finance-card${isOff ? " is-off" : ""}" data-id="${row.id}" style="--stripe:${row.color || "var(--border)"};">
+            <button class="finance-card-dot-btn" data-role="color" type="button" title="Row color">
+                <span class="finance-card-dot"></span>
+            </button>
             <div class="finance-card-body">
-                <input type="text" class="finance-card-title" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
+                <div class="finance-card-title-row">
+                    <input type="text" class="finance-card-title" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
+                    <button class="finance-card-toggle" data-role="toggle" type="button" title="${isOff ? "Turn row back on" : "Turn row off"}">${FINANCE_TOGGLE_ICON_SVG}</button>
+                </div>
                 ${dynamicCells ? `<div class="finance-card-tags">${dynamicCells}</div>` : ""}
             </div>
             <div class="cost-cell finance-value-cell">
                 <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
                 <input type="number" class="finance-card-value ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
             </div>
-            <button class="finance-card-delete" data-role="delete" title="Delete row">&times;</button>
+            <button class="finance-card-delete" data-role="delete" title="Delete row">${FINANCE_DELETE_ICON_SVG}</button>
         </div>
     `;
 }
@@ -238,6 +256,20 @@ function wireFinanceRowEvents() {
             financeRows = financeRows.filter((r) => r.id !== id);
             renderFinanceTable();
         });
+
+        rowEl.querySelector("[data-role='color']").addEventListener("click", (e) => {
+            const row = financeRows.find((r) => r.id === id);
+            openColorPresetPopover(e.currentTarget, row ? row.color : null, {
+                onChange: (hex) => setFinanceRowColor(id, hex),
+                onClear: () => setFinanceRowColor(id, null),
+            });
+        });
+
+        rowEl.querySelector("[data-role='toggle']").addEventListener("click", async () => {
+            const row = financeRows.find((r) => r.id === id);
+            await saveFinanceRow(id, { active: !(row && row.active) });
+            renderFinanceTable();
+        });
     });
 }
 
@@ -267,10 +299,9 @@ async function saveFinanceCell(rowId, columnId, value) {
 }
 
 // ---------- Row color ----------
-// The swatch button that opened the color preset popover (nav.js) was
-// removed from the row - it wasn't part of the approved design, only
-// the stripe was. This save function stays, ready for whatever new
-// trigger replaces it; nothing currently calls it.
+// Wired to the dot button in financeRowHtml - click opens the shared
+// color preset popover (nav.js), same one To Do's list color and
+// Notes' card color use.
 
 async function setFinanceRowColor(rowId, color) {
     await saveFinanceRow(rowId, { color });
@@ -322,6 +353,7 @@ async function deleteFinanceColumn(columnId) {
 function renderFinanceSum() {
     let total = 0;
     financeRows.forEach((row) => {
+        if (!row.active) return;
         const liveInput = document.querySelector(`#finance-body .finance-card[data-id="${row.id}"] [data-field='value']`);
         const value = parseFloat(liveInput ? liveInput.value : row.value);
         if (!isNaN(value)) total += value;

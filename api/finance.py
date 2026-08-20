@@ -37,6 +37,7 @@ class RowUpdate(BaseModel):
     title: str | None = None
     value: float | None = None
     color: str | None = None
+    active: bool | None = None
 
 
 class CellUpdate(BaseModel):

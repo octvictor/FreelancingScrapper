@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS finance_rows (
     title TEXT NOT NULL DEFAULT '',
     value REAL,
     color TEXT,
+    active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -249,6 +250,8 @@ def init_db() -> None:
             conn.execute("ALTER TABLE finance_rows ADD COLUMN table_id INTEGER")
         if "color" not in finance_row_cols:
             conn.execute("ALTER TABLE finance_rows ADD COLUMN color TEXT")
+        if "active" not in finance_row_cols:
+            conn.execute("ALTER TABLE finance_rows ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
 
         orphan_columns = conn.execute("SELECT COUNT(*) FROM finance_columns WHERE table_id IS NULL").fetchone()[0]
         orphan_rows = conn.execute("SELECT COUNT(*) FROM finance_rows WHERE table_id IS NULL").fetchone()[0]
@@ -1013,7 +1016,7 @@ def create_finance_row(table_id: int) -> dict:
 
 
 def update_finance_row(row_id: int, **fields) -> dict | None:
-    allowed = {"title", "value", "color"}
+    allowed = {"title", "value", "color", "active"}
     updates = {k: v for k, v in fields.items() if k in allowed}
     if updates:
         updates["updated_at"] = _now()

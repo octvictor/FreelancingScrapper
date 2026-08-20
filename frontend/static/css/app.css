@@ -644,15 +644,40 @@ table.gatherer-table td:nth-child(2) {
     padding: 12px 34px 12px 14px;
 }
 
-/* Replaces the old full-height left stripe - the color (still stored
-   per row, still unwired to a picker pending a future round) shows as
-   a small dot instead of spanning the card. */
+/* Replaces the old full-height left stripe - the color shows as a
+   small dot instead of spanning the card, opening the same shared
+   color preset popover every other picker in the app uses. The dot
+   itself stays small at rest; .finance-card-dot-btn is the actual
+   clickable element and is deliberately bigger than the dot it draws,
+   pulled back in with a negative margin so it doesn't shift the row's
+   layout - hovering anywhere in that bigger invisible area grows the
+   visible dot, so you don't have to land a click on an 8px target. */
+.finance-card-dot-btn {
+    width: 22px;
+    height: 22px;
+    margin: -7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
 .finance-card-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    flex-shrink: 0;
     background: var(--stripe, var(--border));
+    transition: width 0.12s ease, height 0.12s ease;
+}
+
+.finance-card-dot-btn:hover .finance-card-dot,
+.finance-card-dot-btn:focus-visible .finance-card-dot {
+    width: 14px;
+    height: 14px;
 }
 
 .finance-card-body {
@@ -663,11 +688,22 @@ table.gatherer-table td:nth-child(2) {
     gap: 6px;
 }
 
+/* Title sits next to the toggle-off control instead of alone, so it
+   no longer fills the row on its own - flex:1 (not width:100%) leaves
+   room for .finance-card-toggle beside it. */
+.finance-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
 /* Reads as plain text at rest (no border/background) - only picks up
    a background once you're actually hovering or focused in it, same
    invisible-until-interacted convention as .finance-table-title-input. */
 input.finance-card-title {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    width: auto;
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -755,7 +791,8 @@ input.finance-card-value.value-zero {
 
 /* Floats over the card's own right padding instead of taking a slot in
    the flex row, and only shows on hover/focus - a card at rest reads
-   clean, without a "x" competing for attention next to every value. */
+   clean, without a delete icon competing for attention next to every
+   value. */
 .finance-card-delete {
     position: absolute;
     top: 50%;
@@ -770,14 +807,75 @@ input.finance-card-value.value-zero {
     border: none;
     border-radius: var(--radius-sm);
     color: var(--text-faint);
-    font-size: 13px;
     cursor: pointer;
     opacity: 0;
+}
+
+.finance-card-delete svg {
+    width: 14px;
+    height: 14px;
 }
 
 .finance-card:hover .finance-card-delete,
 .finance-card-delete:focus {
     opacity: 1;
+}
+
+.finance-card-delete:hover,
+.finance-card-delete:focus {
+    background: rgba(192, 57, 43, 0.1);
+    color: var(--danger-text);
+    outline: none;
+}
+
+/* Toggles a row inactive (unclickable, excluded from Sum) - same
+   hover-only visibility as Delete, positioned right after the Title
+   text rather than floating over the card's edge, since it acts on
+   the row itself rather than removing it. */
+.finance-card-toggle {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-faint);
+    cursor: pointer;
+    opacity: 0;
+}
+
+.finance-card-toggle svg {
+    width: 14px;
+    height: 14px;
+}
+
+.finance-card:hover .finance-card-toggle,
+.finance-card-toggle:focus {
+    opacity: 1;
+}
+
+.finance-card-toggle:hover,
+.finance-card-toggle:focus {
+    background: rgba(40, 40, 40, 0.06);
+    color: var(--text-muted);
+    outline: none;
+}
+
+/* Inactive row - dimmed and unclickable except for the controls that
+   need to stay reachable: the toggle (to turn it back on) and Delete
+   (to remove it outright). Excluded from the Sum in JS. */
+.finance-card.is-off {
+    opacity: 0.55;
+}
+
+.finance-card.is-off input.finance-card-title,
+.finance-card.is-off input.finance-card-value,
+.finance-card.is-off input.finance-card-tag,
+.finance-card.is-off .finance-card-dot-btn {
+    pointer-events: none;
 }
 
 .finance-card-delete:hover,
