@@ -591,44 +591,11 @@ table.gatherer-table td:nth-child(2) {
     box-shadow: 0 1px 2px rgba(40, 40, 40, 0.08);
 }
 
-/* Replaces the old full-height left stripe - the color shows as a
-   small dot instead of spanning the card, opening the same shared
-   color preset popover every other picker in the app uses. The dot
-   itself stays small at rest; .finance-card-dot-btn is the actual
-   clickable element and is deliberately bigger than the dot it draws,
-   pulled back in with a negative margin so it doesn't shift the row's
-   layout - hovering anywhere in that bigger invisible area grows the
-   visible dot, so you don't have to land a click on an 8px target. */
-.finance-card-dot-btn {
-    width: 22px;
-    height: 22px;
-    margin: -7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-}
-
-/* The ring keeps the dot visible against the Title field's own fixed
-   #fafafa background if the chosen color happens to be close to white. */
-.finance-card-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--stripe, var(--border));
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
-    transition: width 0.12s ease, height 0.12s ease;
-}
-
-.finance-card-dot-btn:hover .finance-card-dot,
-.finance-card-dot-btn:focus-visible .finance-card-dot {
-    width: 14px;
-    height: 14px;
-}
+/* The row color shows as a small dot rather than the old full-height
+   left stripe, using the shared .color-dot-btn/.color-dot component
+   (see its own block further down) - this is where that component
+   started before being promoted to the app-wide standard. The row
+   passes its color in as --dot-color from financeRowHtml. */
 
 /* A plain <input> can't size itself to its own value - .finance-card-
    title-sizer is a hidden same-font mirror of whatever text should
@@ -791,7 +758,7 @@ input.finance-card-value.value-zero {
 
 .finance-card.is-off input.finance-card-title,
 .finance-card.is-off input.finance-card-value,
-.finance-card.is-off .finance-card-dot-btn {
+.finance-card.is-off .color-dot-btn {
     pointer-events: none;
 }
 
@@ -2298,14 +2265,6 @@ table.project-table tbody tr:hover td {
     margin-bottom: 10px;
 }
 
-/* Smaller than the shared .swatch-btn default (16px) - a quiet label
-   dot next to the title, not a control meant to draw the eye. */
-.kanban-col-head .swatch-btn {
-    width: 9px;
-    height: 9px;
-    font-size: 7px;
-}
-
 /* Qualified with the element type (not just the class) so this ties the
    generic input[type="text"] rule's specificity instead of losing to it -
    without this, the list title rendered with that rule's bordered-box
@@ -2425,45 +2384,58 @@ input.kanban-col-title-input:focus {
     font-size: 12px;
 }
 
-/* Small circular swatch showing (and, via its popover, setting) a
-   color - shared base between To Do's list color and Notes' card
-   color. Circular rather than square (like the rail's color dot and
-   the popover's preset palette below) so color pickers read as one
-   consistent shape language across the app, distinct from the sharp
-   squares used everywhere else. No border - a plain bordered shape
-   reads as a stray outline rather than a color chip. To Do's swatch
-   fills solid with the chosen color (unambiguous on its own); when
-   none is set it falls back to a half-fill "color" glyph via
-   .swatch-btn-empty + JS toggling the glyph text. Notes' swatch
-   (.note-color-btn, see below) instead never changes appearance at
-   all. */
-.swatch-btn {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    padding: 0;
-    background: transparent;
-    border: none;
-    cursor: pointer;
+/* The app's one color-picker trigger, used by every tool that has a
+   color to set (Calculator's row color, To Do's list color, Notes'
+   card color). Started as Calculator's row dot and was promoted to the
+   shared standard from there - anything new that opens
+   openColorPresetPopover() should render this markup rather than
+   inventing its own swatch:
+       <button class="color-dot-btn" data-role="color" type="button">
+           <span class="color-dot"></span>
+       </button>
+   ...with --dot-color set on the button (or any ancestor) to whatever
+   the dot should show; it falls back to a neutral when unset, so an
+   uncolored item needs no "empty" variant.
+
+   Two things carry the interaction. First, the button is deliberately
+   much bigger than the dot it draws and is pulled back in by a negative
+   margin equal to half that difference ((22-8)/2 = 7), so its layout
+   footprint stays the dot's own 8px and it doesn't shift whatever sits
+   beside it - the extra size is pure hit area reaching into the
+   surrounding whitespace. Second, entering that area grows the dot to
+   meet the cursor, so you never have to land a click on an 8px target
+   and the control announces itself before you commit to it. Keep the
+   negative margin in sync if either size changes.
+
+   The ring keeps the dot legible when its own color is close to the
+   surface behind it (a near-white pick on a light card, say). */
+.color-dot-btn {
+    width: 22px;
+    height: 22px;
+    margin: -7px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    line-height: 1;
-    color: var(--text-muted);
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
 }
 
-.swatch-btn:hover {
-    color: var(--text);
+.color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dot-color, var(--border));
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+    transition: width 0.12s ease, height 0.12s ease;
 }
 
-.swatch-btn.swatch-btn-empty {
-    background: var(--panel-alt);
-}
-
-.swatch-btn.swatch-btn-empty:hover {
-    background: var(--border-soft);
+.color-dot-btn:hover .color-dot,
+.color-dot-btn:focus-visible .color-dot {
+    width: 14px;
+    height: 14px;
 }
 
 /* Shared chrome for small popovers positioned relative to a trigger
@@ -2801,18 +2773,14 @@ input.kanban-col-title-input:focus {
     margin-top: 10px;
 }
 
-/* Notes' color-picker trigger stays a fixed, always-legible bright
-   grey glyph no matter what color the note itself is - unlike To Do's
-   swatch, it never fills with the chosen color (the card's own
-   background already shows that), which is what keeps it visible
-   against every preset color instead of blending into some of them. */
+/* Notes uses the shared .color-dot component like every other picker,
+   but feeds it a fixed neutral --dot-color instead of the note's own
+   color: here the color already fills the whole card behind the dot,
+   so a dot matching it would vanish into its own background. The
+   note-card-light/-dark blocks below swap this neutral for whichever
+   end reads against the chosen color. */
 .note-color-btn {
-    color: #79776f;
-    font-size: 15px;
-}
-
-.note-color-btn:hover {
-    color: var(--text);
+    --dot-color: #79776f;
 }
 
 .note-delete-btn {
@@ -2857,13 +2825,12 @@ input.kanban-col-title-input:focus {
     color: #6b6a63;
 }
 
-.note-card.note-card-light .note-drag-handle,
-.note-card.note-card-light .note-color-btn {
+.note-card.note-card-light .note-drag-handle {
     color: #57554e;
 }
 
-.note-card.note-card-light .note-color-btn:hover {
-    color: #242322;
+.note-card.note-card-light .note-color-btn {
+    --dot-color: #57554e;
 }
 
 .note-card.note-card-light .note-delete-btn {
@@ -2891,13 +2858,12 @@ input.kanban-col-title-input:focus {
     color: #b3b1a9;
 }
 
-.note-card.note-card-dark .note-drag-handle,
-.note-card.note-card-dark .note-color-btn {
+.note-card.note-card-dark .note-drag-handle {
     color: #c9c7c0;
 }
 
-.note-card.note-card-dark .note-color-btn:hover {
-    color: #f5f4f1;
+.note-card.note-card-dark .note-color-btn {
+    --dot-color: #c9c7c0;
 }
 
 .note-card.note-card-dark .note-delete-btn {

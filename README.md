@@ -115,8 +115,9 @@ the default on launch, reached through the sidebar like any other page.
   every list is visible at once instead of clicked through one at a
   time. Column width stays fixed regardless of content - task titles
   wrap instead of stretching the column. A column's header holds a
-  small color swatch (opens the shared color preset popover; shown as
-  a stripe on every card in that list), an editable title, a task
+  small color dot (the shared `.color-dot-btn` trigger - it grows on
+  hover and opens the color preset popover; the chosen color also shows
+  as a stripe on every card in that list), an editable title, a task
   count, and a delete (only visible on hover). "+ Add task" sits at the
   bottom of each column; a trailing "+ New list" column adds another
   list. Each task is a compact card: a colored stripe across the top in
@@ -171,9 +172,13 @@ the default on launch, reached through the sidebar like any other page.
   line, or a list's first item text. Cards flow into a responsive
   masonry grid (CSS columns, so it reflows its own column count as the
   window resizes) and can be dragged by a small handle to reorder - the
-  order persists. Each card has a color button (a fixed grey glyph, not
-  tinted by the note's own color) opening the same shared color preset
-  popover used by To Do's list colors, applied as the card's full
+  order persists. Each card has the shared `.color-dot-btn` color dot,
+  deliberately fed a fixed neutral rather than the note's own color -
+  here the color already fills the card behind it, so a matching dot
+  would disappear into its own background (the dot flips between a
+  light and dark neutral so it stays legible either way). It opens the
+  same shared color preset popover To Do's list colors use, applied as
+  the card's full
   background - text on the card switches to dark automatically for a
   light enough pick - and an always-visible red delete button (with the
   themed confirm dialog).
@@ -503,14 +508,28 @@ rest of the app instead of drifting:
   override (e.g. `.overview-search-input`) can silently lose to it. Use
   an element+class selector (`input.overview-search-input`) to tie
   specificity and win on source order instead.
-- **One swatch size app-wide.** Every color-picker trigger (To Do's
-  list color, Notes' card color) shares the same `.swatch-btn` class in
-  app.css, which is what keeps them the same size automatically -
-  resize that one rule rather than overriding size per-tool. Calculator's
-  row color is the one exception on purpose: `.finance-card-dot-btn`
-  keeps the visible dot small at rest and grows it on hover/focus of a
-  bigger invisible hit area around it, rather than sitting at a fixed
-  16px like the others.
+- **One color-picker trigger app-wide.** Every color control in the app
+  (Calculator's row color, To Do's list color, Notes' card color)
+  renders the same `.color-dot-btn` / `.color-dot` pair from app.css:
+  a `<button class="color-dot-btn">` wrapping a
+  `<span class="color-dot">`, with `--dot-color` set on the button or
+  any ancestor. The pattern started as Calculator's row dot and was
+  promoted to the standard from there, replacing the older fixed-16px
+  `.swatch-btn`. Two things make it work and both need to stay in sync
+  if the sizes change: the button is much bigger than the dot (22px vs
+  8px) and is pulled back by a negative margin of exactly half that
+  difference (7px), so its *layout* footprint is still the dot's 8px and
+  it never shifts what sits beside it - the extra size is pure hit area
+  reaching into surrounding whitespace; and entering that area grows the
+  dot to 14px to meet the cursor, so you never have to land a click on
+  an 8px target. Resize that one rule rather than overriding per-tool,
+  and don't reintroduce a per-tool swatch. `--dot-color` falls back to a
+  neutral when unset, so an uncolored item needs no separate "empty"
+  variant (To Do used to swap in a half-fill glyph for that; it doesn't
+  any more). The one per-tool decision left is *what* color to feed it:
+  Calculator and To Do pass the item's own color, while Notes passes a
+  fixed neutral instead, since there the color already fills the whole
+  card behind the dot and a matching dot would vanish into it.
 - **One icon size app-wide.** The sidebar nav (`.sb-item svg`) is the
   standard every icon button in the app now matches: Lucide markup at
   `viewBox="0 0 24 24"` with `stroke-width="2"`, rendered at 16x16px -

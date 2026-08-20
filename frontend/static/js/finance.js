@@ -178,10 +178,10 @@ function financeRowHtml(row) {
     // filling the row, so it reads as a compact pill, not a lane.
     const bg = row.color || "var(--panel)";
     return `
-        <div class="finance-card${isOff ? " is-off" : ""}" data-id="${row.id}" style="background:${bg}; --stripe:${row.color || "var(--border)"};">
+        <div class="finance-card${isOff ? " is-off" : ""}" data-id="${row.id}" style="background:${bg}; --dot-color:${row.color || "var(--border)"};">
             <div class="finance-card-title-field">
-                <button class="finance-card-dot-btn" data-role="color" type="button" title="Row color">
-                    <span class="finance-card-dot"></span>
+                <button class="color-dot-btn" data-role="color" type="button" title="Row color">
+                    <span class="color-dot"></span>
                 </button>
                 <div class="finance-card-title-measure">
                     <span class="finance-card-title-sizer" aria-hidden="true"></span>

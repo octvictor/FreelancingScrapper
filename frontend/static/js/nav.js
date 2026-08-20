@@ -84,7 +84,7 @@ function closeColorPresetPopover() {
 }
 
 function _onColorPresetOutsideClick(e) {
-    if (_colorPresetPopover && !_colorPresetPopover.contains(e.target) && !e.target.closest(".swatch-btn")) {
+    if (_colorPresetPopover && !_colorPresetPopover.contains(e.target) && !e.target.closest(".color-dot-btn")) {
         closeColorPresetPopover();
     }
 }

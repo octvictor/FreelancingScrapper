@@ -46,7 +46,9 @@ function todoColumnHtml(list) {
     return `
         <div class="kanban-col" data-id="${list.id}">
             <div class="kanban-col-head">
-                <button class="swatch-btn ${list.color ? "" : "swatch-btn-empty"}" data-role="color" type="button" title="List color" style="${list.color ? `background:${list.color};` : ""}">${list.color ? "" : "&#9681;"}</button>
+                <button class="color-dot-btn" data-role="color" type="button" title="List color" style="--dot-color:${list.color || "var(--border)"};">
+                    <span class="color-dot"></span>
+                </button>
                 <input type="text" class="kanban-col-title-input" data-role="title" value="${escapeAttr(list.title)}" placeholder="List name">
                 <span class="kanban-col-count">${tasks.length}</span>
                 <button class="kanban-col-delete" data-role="delete" type="button" title="Delete list">&times;</button>

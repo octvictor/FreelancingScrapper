@@ -20,8 +20,6 @@ let notes = [];
 let draggedNote = null;
 let activeNoteId = null;
 
-const NOTE_COLOR_GLYPH = "&#9681;";
-
 // ---------- Card previews ----------
 
 function noteItemHtml(item) {
@@ -68,7 +66,9 @@ function noteCardHtml(note) {
             <span class="note-drag-handle" title="Drag to reorder">&#8942;</span>
             ${notePreviewContentHtml(note)}
             <div class="note-card-footer">
-                <button class="note-color-btn swatch-btn" data-role="color" type="button" title="Note color">${NOTE_COLOR_GLYPH}</button>
+                <button class="note-color-btn color-dot-btn" data-role="color" type="button" title="Note color">
+                    <span class="color-dot"></span>
+                </button>
                 <button class="row-delete-btn note-delete-btn" data-role="delete" type="button" title="Delete note">&times;</button>
             </div>
         </div>
