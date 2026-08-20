@@ -329,8 +329,7 @@ button, input, select, textarea {
 }
 
 #page-tracker .panel input.cell-input,
-#page-gatherer .panel input.cell-input,
-#page-finance .panel input.cell-input {
+#page-gatherer .panel input.cell-input {
     background: var(--panel);
 }
 
@@ -522,11 +521,14 @@ table.gatherer-table td:nth-child(2) {
     border-color: var(--border);
 }
 
+/* Left/right padding match the card's own padding below (14px/34px) so
+   the Title/Value labels land directly above the card content instead
+   of the fixed 4px/15px inset the old boxed-row layout used. */
 .finance-row-head {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 4px 8px 15px;
+    padding: 0 34px 8px 14px;
 }
 
 .finance-row-head-title {
@@ -537,16 +539,15 @@ table.gatherer-table td:nth-child(2) {
     color: var(--text-faint);
 }
 
-/* Fixed flex-basis, not just a min-width - matches .finance-row-col's
-   own fixed basis exactly, so the header cell and every data cell
-   below it land at precisely the same width instead of each sizing
-   itself independently and drifting out of alignment. */
+/* Auto-width now, not a fixed 110px lane - a custom column's value no
+   longer gets its own vertical column across every card, it shows as a
+   small tag under the Title it belongs to (see .finance-card-tag), so
+   its header chip only needs to be as wide as its own name. */
 .finance-row-head-col {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-    flex: 0 0 110px;
-    min-width: 0;
+    flex: 0 0 auto;
 }
 
 /* An editable column header - looks like the plain uppercase header
@@ -557,8 +558,7 @@ table.gatherer-table td:nth-child(2) {
     border: none;
     padding: 0;
     width: auto;
-    flex: 1;
-    min-width: 0;
+    max-width: 90px;
     text-transform: uppercase;
     font-size: 10.5px;
     font-weight: 500;
@@ -622,77 +622,104 @@ table.gatherer-table td:nth-child(2) {
     text-align: right;
 }
 
-/* Matches the row-delete button's own footprint, so the Value label
-   lines up with the value cells below it rather than each row's
-   trailing delete (x). */
-.finance-row-head-spacer {
-    width: 22px;
-    flex-shrink: 0;
-}
-
+/* Ledger cards - approved via mockup ("Option B"), reusing the same
+   card language Project Manager's project cards and To Do's kcards
+   already use on this dark panel: light fill, soft shadow, no border,
+   stacked with a gap instead of a continuous divided list. */
 .finance-rows {
-    margin-top: 4px;
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-/* Each entry is a flex row (not a table row) carrying its color as a
-   stripe down the left edge - the same card language as the To Do
-   Kanban board's card stripe, reused here for a row instead of a
-   card. */
-.finance-row {
+.finance-card {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 11px 4px 11px 12px;
-    border-bottom: 1px solid var(--border-soft);
-    border-left: 3px solid var(--stripe, var(--border-soft));
+    gap: 10px;
+    background: var(--panel);
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 2px rgba(40, 40, 40, 0.08);
+    padding: 12px 34px 12px 14px;
 }
 
-.finance-row:last-child {
-    border-bottom: none;
+/* Replaces the old full-height left stripe - the color (still stored
+   per row, still unwired to a picker pending a future round) shows as
+   a small dot instead of spanning the card. */
+.finance-card-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--stripe, var(--border));
 }
 
-/* A per-row color swatch to the left of the Title field - reuses the
-   same circular .swatch-btn look as To Do's list-color picker. Same
-   behavior as To Do too: the row itself never gets tinted, only the
-   swatch icon shows the chosen color - kept legible with a thin ring
-   so a dark swatch color doesn't blend into the row's own background. */
-.finance-title-cell {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.finance-card-body {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.finance-title-cell .cell-input[data-field="title"] {
+/* Reads as plain text at rest (no border/background) - only picks up
+   a background once you're actually hovering or focused in it, same
+   invisible-until-interacted convention as .finance-table-title-input. */
+input.finance-card-title {
+    width: 100%;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0;
     font-size: 13.5px;
+    color: var(--text);
 }
 
-/* Invisible - matches the header row's "+" add-column button width
-   exactly, so a data row (which has no button of its own) still
-   consumes the same fixed width in the same slot. Without it the
-   header row's flex:1 Title label absorbs less leftover space than
-   the data rows' Title cell does (the button plus its own gap eats
-   into it), and every column after Title drifts out of alignment
-   between the header and the rows below it. */
-.finance-row-addcol-spacer {
-    flex: 0 0 20px;
-    min-width: 0;
+input.finance-card-title::placeholder {
+    color: var(--text-faint);
 }
 
-/* A direct flex child of .finance-row (unlike the Title/Value inputs,
-   which sit inside their own wrapping div) - width:auto plus a fixed
-   flex-basis overrides the shared .cell-input's width:100%, which
-   would otherwise become this item's flex-basis and starve the Title
-   cell next to it down to nothing. Muted text (not the shared
-   .cell-input default) so it reads as secondary data next to Title,
-   not the same weight. */
-.finance-row-col {
+input.finance-card-title:hover {
+    background: var(--panel-alt);
+}
+
+input.finance-card-title:focus {
+    background: var(--panel-alt);
+    border-color: var(--border);
+    outline: none;
+}
+
+/* Any custom columns render as small muted tags under the Title they
+   belong to, instead of each getting its own fixed-width lane across
+   every card - keeps a card that only uses Title/Value exactly as
+   compact as the approved design, and still shows custom data legibly
+   when a table actually has some. */
+.finance-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+input.finance-card-tag {
     width: auto;
-    flex: 0 0 110px;
-    min-width: 0;
-    font-size: 13px;
+    max-width: 160px;
+    background: var(--panel-alt);
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    padding: 2px 9px;
+    font-size: 11.5px;
     color: var(--text-muted);
+}
+
+input.finance-card-tag::placeholder {
+    color: var(--text-faint);
+}
+
+input.finance-card-tag:hover,
+input.finance-card-tag:focus {
+    border-color: var(--border);
+    outline: none;
 }
 
 .finance-value-cell {
@@ -700,46 +727,98 @@ table.gatherer-table td:nth-child(2) {
     min-width: 0;
 }
 
-.finance-value-cell .cell-input {
+input.finance-card-value {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    padding: 0;
     text-align: right;
-    font-size: 14.5px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
-.finance-value-cell .cell-input.value-positive {
+input.finance-card-value.value-positive {
     color: #15803d;
 }
 
-.finance-value-cell .cell-input.value-negative {
+input.finance-card-value.value-negative {
     color: var(--danger-text);
 }
 
-.finance-value-cell .cell-input.value-zero {
+input.finance-card-value.value-zero {
     color: var(--text-faint);
     font-weight: 500;
 }
 
-.finance-row-actions {
+/* Floats over the card's own right padding instead of taking a slot in
+   the flex row, and only shows on hover/focus - a card at rest reads
+   clean, without a "x" competing for attention next to every value. */
+.finance-card-delete {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-top: 14px;
-}
-
-.finance-add-row-link {
+    justify-content: center;
     background: none;
     border: none;
-    color: var(--text-muted);
-    font-size: 12px;
-    cursor: pointer;
-    padding: 6px 6px;
     border-radius: var(--radius-sm);
+    color: var(--text-faint);
+    font-size: 13px;
+    cursor: pointer;
+    opacity: 0;
 }
 
-.finance-add-row-link:hover {
+.finance-card:hover .finance-card-delete,
+.finance-card-delete:focus {
+    opacity: 1;
+}
+
+.finance-card-delete:hover,
+.finance-card-delete:focus {
+    background: rgba(40, 40, 40, 0.06);
+    color: var(--text-muted);
+    outline: none;
+}
+
+.finance-row-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* A dashed full-width card, matching the same "+" tile language Notes
+   uses for its add-note card, rather than a plain text link. */
+.finance-add-row-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.finance-add-row-card:hover {
     color: var(--text);
-    background: rgba(40, 40, 40, 0.05);
+    border-color: var(--text-muted);
+    background: rgba(40, 40, 40, 0.03);
+}
+
+.finance-row-actions .btn-text {
+    align-self: center;
 }
 
 .finance-total-bar {
@@ -750,6 +829,7 @@ table.gatherer-table td:nth-child(2) {
     padding: 14px 16px;
     background: var(--panel-alt);
     border-radius: var(--radius-md);
+    box-shadow: 0 1px 2px rgba(40, 40, 40, 0.08);
 }
 
 .finance-total-label {
@@ -814,7 +894,7 @@ table.gatherer-table td:nth-child(2) {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin: -6px 0 12px -8px;
+    margin: -6px 0 14px -8px;
 }
 
 .finance-panel-head .btn-danger-text {

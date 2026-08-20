@@ -141,7 +141,6 @@ function renderFinanceHead() {
         ${dynamicHeaders}
         <button class="finance-add-col-btn" id="finance-add-column-btn" type="button" title="Add column">+</button>
         <span class="finance-row-head-value">Value</span>
-        <span class="finance-row-head-spacer"></span>
     `;
     $("finance-row-head").querySelectorAll(".finance-col-header-input").forEach((input) => {
         input.addEventListener("blur", () => saveFinanceColumnName(parseInt(input.dataset.columnId, 10), input.value.trim()));
@@ -163,20 +162,20 @@ function financeValueClass(value) {
 
 function financeRowHtml(row) {
     const dynamicCells = financeColumns.map((col) => `
-        <input type="text" class="cell-input finance-row-col" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-">
+        <input type="text" class="finance-card-tag" data-role="cell" data-column-id="${col.id}" value="${escapeAttr(row.cells[col.id] || "")}" placeholder="-">
     `).join("");
     return `
-        <div class="finance-row" data-id="${row.id}" style="--stripe:${row.color || "var(--border-soft)"};">
-            <div class="finance-title-cell">
-                <input type="text" class="cell-input" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
+        <div class="finance-card" data-id="${row.id}" style="--stripe:${row.color || "var(--border)"};">
+            <span class="finance-card-dot"></span>
+            <div class="finance-card-body">
+                <input type="text" class="finance-card-title" data-field="title" value="${escapeAttr(row.title)}" placeholder="Title">
+                ${dynamicCells ? `<div class="finance-card-tags">${dynamicCells}</div>` : ""}
             </div>
-            ${dynamicCells}
-            <span class="finance-row-addcol-spacer"></span>
             <div class="cost-cell finance-value-cell">
                 <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
-                <input type="number" class="cell-input ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
+                <input type="number" class="finance-card-value ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">
             </div>
-            <button class="row-delete-btn" data-role="delete" title="Delete row">&times;</button>
+            <button class="finance-card-delete" data-role="delete" title="Delete row">&times;</button>
         </div>
     `;
 }
@@ -202,16 +201,16 @@ function renderFinanceTable() {
 }
 
 function wireFinanceRowEvents() {
-    document.querySelectorAll("#finance-body .finance-row[data-id]").forEach((rowEl) => {
+    document.querySelectorAll("#finance-body .finance-card[data-id]").forEach((rowEl) => {
         const id = parseInt(rowEl.dataset.id, 10);
 
-        const titleInput = rowEl.querySelector(".cell-input[data-field='title']");
+        const titleInput = rowEl.querySelector("[data-field='title']");
         titleInput.addEventListener("blur", () => saveFinanceRow(id, { title: titleInput.value.trim() }));
         titleInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") titleInput.blur();
         });
 
-        const valueInput = rowEl.querySelector(".cell-input[data-field='value']");
+        const valueInput = rowEl.querySelector("[data-field='value']");
         valueInput.addEventListener("input", () => {
             valueInput.classList.remove("value-positive", "value-negative", "value-zero");
             valueInput.classList.add(financeValueClass(valueInput.value));
@@ -323,7 +322,7 @@ async function deleteFinanceColumn(columnId) {
 function renderFinanceSum() {
     let total = 0;
     financeRows.forEach((row) => {
-        const liveInput = document.querySelector(`#finance-body .finance-row[data-id="${row.id}"] .cell-input[data-field='value']`);
+        const liveInput = document.querySelector(`#finance-body .finance-card[data-id="${row.id}"] [data-field='value']`);
         const value = parseFloat(liveInput ? liveInput.value : row.value);
         if (!isNaN(value)) total += value;
     });
@@ -359,7 +358,7 @@ $("finance-add-row-btn").addEventListener("click", async () => {
     // visible right away - it's the thing you just asked to add.
     if (financeRows.length > FINANCE_ROW_LIMIT) financeExpanded = true;
     renderFinanceTable();
-    document.querySelector(`#finance-body .finance-row[data-id="${row.id}"] .cell-input[data-field="title"]`)?.focus();
+    document.querySelector(`#finance-body .finance-card[data-id="${row.id}"] [data-field="title"]`)?.focus();
 });
 
 $("finance-expand-btn").addEventListener("click", () => {

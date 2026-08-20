@@ -170,41 +170,44 @@ the default on launch, reached through the sidebar like any other page.
   themed confirm dialog).
 - **Calculator** - shown under its own **Finances** sidebar group rather
   than inside "Personal". The active table's panel uses the same darker
-  `#e6e5e1`/no-outline treatment as Project Manager and Studio Logs -
-  the table title field, currency pill, Sum bar, and every Title/
-  Custom-column/Value field inside it are the lighter tone so they
-  stand out against it; the tab bar above the panel is unaffected,
-  since it isn't part of the panel itself. Otherwise browser-tab-style,
-  holding any number of independent ledgers ("tables"). A tab bar lists
-  every table as a plain button showing its
-  title - clicking one switches to it, and that's all a tab does;
-  there's nothing to type into or delete on the tab itself. Renaming
-  happens once, in an editable title field inside the active table's
-  panel, next to a small currency pill (USD/EUR/GBP/BRL) - the tab it
-  belongs to just displays whatever the title field currently holds. A
-  "Delete" link sits on the same row, right-aligned, and removes the
-  active table (confirms first) - if it was the last one left, a fresh
-  blank table takes its place so Calculator is never left empty. Each
-  table is a list of flex rows rather than a literal spreadsheet grid,
-  columns fixed-width and aligned under their own header labels: every
-  row carries its own color as a stripe down the left edge (how a row
-  picks that color is being redesigned - there's currently no control
-  for it in the UI), an editable Title in the same visible grey field
-  Studio Logs uses, and a Value shown right-aligned and color-coded by
-  sign - green for
-  positive, red for negative, faint for zero/empty - so the numbers
-  read at a glance without opening each row. A "+" in the header adds
-  freeform text columns, and - unlike a typical spreadsheet - a new
-  column lands between Title and Value rather than after Value, so
-  Value stays the fixed rightmost figure; each column is inline-
+  `#e6e5e1`/no-outline treatment as Project Manager and Studio Logs; the
+  tab bar above the panel is unaffected, since it isn't part of the
+  panel itself. Browser-tab-style, holding any number of independent
+  ledgers ("tables"). A tab bar lists every table as a plain button
+  showing its title - clicking one switches to it, and that's all a tab
+  does; there's nothing to type into or delete on the tab itself.
+  Renaming happens once, in an editable title field inside the active
+  table's panel, next to a small currency pill (USD/EUR/GBP/BRL) - the
+  tab it belongs to just displays whatever the title field currently
+  holds. A "Delete" link sits on the same row, right-aligned, and
+  removes the active table (confirms first) - if it was the last one
+  left, a fresh blank table takes its place so Calculator is never left
+  empty. Each entry is a light ("ledger") card sitting on the dark
+  panel - the same card language Project Manager's project cards and To
+  Do's kcards already use (light fill, soft shadow, no border), stacked
+  with a gap rather than divided rows in a boxed list. A small colored
+  dot replaces the old full-height left stripe (how a row picks that
+  color is still being redesigned - there's currently no control for it
+  in the UI); the Title reads as plain text at rest and only picks up a
+  background once you're actually hovering or focused in it; the Value
+  sits bold and right-aligned, color-coded by sign - green for positive,
+  red for negative, faint for zero/empty - so the numbers read at a
+  glance without opening each row. Delete (×) only appears on hovering
+  or focusing a card, so a card at rest reads clean. A "+" in the header
+  adds freeform text columns; unlike a typical spreadsheet, a column's
+  value shows as a small muted tag under the Title it belongs to instead
+  of its own vertical lane, so a card with no custom columns stays as
+  compact as one that never uses the feature - each column is inline-
   renamable and has its own delete, while Title and Value are permanent
   and never get one. One currency applies per table (the pill next to
   the title), matching Tracker's Day rate currency picker, so a running
-  Sum at the bottom - shown as a full-width total bar - is always one
-  coherent total: a negative Value just subtracts from it, being plain
-  addition under the hood, and the Sum still counts every row even the
-  ones collapsed behind "Show more" (rows past the 7th on a table cap
-  there, same pattern as Project Manager's list).
+  Sum at the bottom - a full-width total bar in the same light/shadowed
+  card style - is always one coherent total: a negative Value just
+  subtracts from it, being plain addition under the hood, and the Sum
+  still counts every row even the ones collapsed behind "Show more"
+  (rows past the 7th on a table cap there, same pattern as Project
+  Manager's list). A dashed "+ Add row" card - matching Notes' add-note
+  tile rather than a plain text link - creates a new one.
 
 Everything lands in a shared local SQLite database (`data/scraper.db`)
 so it accumulates across sessions instead of being lost between runs.
