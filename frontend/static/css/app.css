@@ -943,12 +943,18 @@ input.finance-card-value.value-zero {
    exactly cover that span's box. max-width/overflow cap it at a
    reasonable width so an unusually long title doesn't crowd the
    currency pill and Delete off to the right. */
+/* The 10px radius is a deliberate one-off, not a --radius-* token: the
+   user's reference sets it by proportion (about a fifth of the field's
+   own ~50px height), and the nearest token (--radius-lg, 8px) reads
+   visibly tighter than that. Keep this matched to the input's own
+   radius below - the overflow:hidden clip mask has to be rounded the
+   same way or it flattens the input's corners. */
 .finance-table-title-measure {
     position: relative;
     display: inline-block;
     max-width: 320px;
     overflow: hidden;
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
 }
 
 /* Right padding is a few px wider than the input's own - a plain
@@ -956,7 +962,18 @@ input.finance-card-value.value-zero {
    tracked text identically (the sizer was clipping a trailing
    descender like "j"), so this extra slack is invisible buffer room,
    not a look you're meant to notice. */
+/* display:block is load-bearing, not cosmetic: a <span> is inline, and
+   vertical padding on an inline box paints but contributes nothing to
+   layout height (horizontal padding does, which is why the width was
+   right all along while the height was not). Left inline, this sizer
+   made the measure box only line-height tall (24px), and the input -
+   pinned at inset:0 - was locked to that 24px while carrying 13px of
+   its own vertical padding, so its text got pushed down and clipped at
+   the bottom. That was the real cause of the "too close to the bottom /
+   cutting letters" reports; raising the padding only made it worse,
+   because the box it was padding inside of never grew. */
 .finance-table-title-sizer {
+    display: block;
     visibility: hidden;
     white-space: pre;
     font-size: 16px;
@@ -979,7 +996,7 @@ input.finance-table-title-input {
     width: 100%;
     background: none;
     border: 1px solid transparent;
-    border-radius: var(--radius-sm);
+    border-radius: 10px;
     color: var(--text);
     font-size: 16px;
     font-weight: 700;

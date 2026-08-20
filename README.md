@@ -525,6 +525,20 @@ rest of the app instead of drifting:
   never triggers. `flex-shrink: 0` on the svg is what actually holds it
   at the specified size; any new icon-in-a-small-button control needs
   the same rule or it'll quietly render undersized again.
+- **A mirror-span sizer must be `display: block`.** The auto-width
+  fields (Calculator's table title and row Title) size themselves by
+  mirroring their text into a hidden sibling `<span>` and pinning the
+  real `<input>` over it with `inset: 0`. A `<span>` is inline, and
+  vertical padding on an inline box *paints but adds no layout height*
+  - horizontal padding does, so a sizer left inline gets the width
+  right and the height silently wrong. The measure box then collapses
+  to one line-height, the absolutely-positioned input is locked to
+  that height while still carrying its own vertical padding, and its
+  text is pushed down and clipped at the bottom. The tell is that
+  raising the padding makes the clipping *worse* rather than better,
+  because the box being padded inside of never grows. Measure
+  `getBoundingClientRect().height` on the measure element when a field
+  looks vertically cramped - if it equals the line-height, this is why.
 - **Qualify an input's own `:focus`/`:read-only`, not just its base
   rule.** `input[type="text"]:focus` in app.css's catch-all sets its
   own `border-color`, at a specificity a plain `.my-input:focus` class
