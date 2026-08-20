@@ -893,20 +893,19 @@ input.finance-card-value.value-zero {
     border-color: var(--border);
 }
 
-/* The left margin lines the title field's own left edge up with a
-   row's Title pill below it (measured directly - the row redesign that
-   put Title in its own #fafafa pill changed the offset chain enough
-   that recomputing by hand kept drifting; this was checked against the
-   actual rendered boxes instead: the row pill's left edge sits 16px
-   left of where this field's box landed at the previous margin, so it
-   moved from 24px to 8px). Re-measure if either side's own padding/
-   structure changes again rather than trusting the arithmetic. */
+/* No left margin: this row is a direct child of .panel, same as
+   .finance-rows below it, so with margin-left:0 both start flush at
+   the panel's own content edge - which is what actually needs to line
+   up here. Earlier passes chased alignment against the row card's
+   inner white Title pill (or its text) instead of the colored card's
+   own left edge, and kept adding a left margin to compensate for that
+   pill's inset - the wrong target entirely, not just the wrong number. */
 .finance-panel-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin: -6px 0 14px 8px;
+    margin: -6px 0 14px 0;
 }
 
 .finance-panel-head .btn-danger-text {
@@ -932,6 +931,30 @@ input.finance-card-value.value-zero {
     border-color: var(--border-soft);
 }
 
+/* Same auto-width trick as a row's own Title (see
+   .finance-card-title-measure): a plain <input> can't size itself to
+   its own value, so the hidden .finance-table-title-sizer mirrors
+   whatever text should determine the width (autoSizeTitleField in
+   nav.js keeps it synced) and the input is absolutely positioned to
+   exactly cover that span's box. max-width/overflow cap it at a
+   reasonable width so an unusually long title doesn't crowd the
+   currency pill and Delete off to the right. */
+.finance-table-title-measure {
+    position: relative;
+    display: inline-block;
+    max-width: 320px;
+    overflow: hidden;
+}
+
+.finance-table-title-sizer {
+    visibility: hidden;
+    white-space: pre;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    padding: 6px 8px;
+}
+
 /* Editable title for the active table, shown inside its panel above
    the Currency row - renaming here is what the (now read-only) tab
    button reflects, since typing directly into a tab is no longer
@@ -940,6 +963,9 @@ input.finance-card-value.value-zero {
    field at all, since there's no more hover state to discover it by;
    editing drops the tint and never shows an outline/border either. */
 input.finance-table-title-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
     background: none;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -948,15 +974,14 @@ input.finance-table-title-input {
     font-weight: 700;
     letter-spacing: -0.01em;
     padding: 6px 8px;
-    flex: 1;
-    min-width: 0;
-    max-width: 320px;
 }
 
 /* Stronger than the original 0.06 - at that opacity the field's edge
    (especially the rounded corner) was too close to the panel's own
    #e6e5e1 to read as a clear boundary, which made an already-correct
-   left-alignment with the row's own Title pill hard to confirm by eye. */
+   left-alignment with the row card's own outer edge hard to confirm
+   by eye (see .finance-panel-head above - this field aligns to the
+   colored card itself, not the white Title pill inside it). */
 input.finance-table-title-input:read-only {
     background: rgba(40, 40, 40, 0.14);
     cursor: default;

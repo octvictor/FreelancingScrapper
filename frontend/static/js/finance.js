@@ -93,6 +93,7 @@ async function loadFinanceTableData() {
     $("finance-currency-select").value = table ? table.currency : "USD";
     refreshCustomSelect($("finance-currency-select"));
     $("finance-table-title-input").value = table ? table.title : "";
+    autoSizeTitleField($("finance-table-title-input"));
     renderFinanceTable();
 }
 
@@ -121,6 +122,7 @@ $("finance-table-title-input").addEventListener("blur", (e) => {
     saveFinanceTableTitle(activeTableId, e.target.value.trim() || "Untitled");
     e.target.readOnly = true;
 });
+$("finance-table-title-input").addEventListener("input", (e) => autoSizeTitleField(e.target));
 $("finance-table-title-input").addEventListener("keydown", (e) => {
     if (e.key === "Enter") e.target.blur();
 });

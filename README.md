@@ -191,7 +191,15 @@ the default on launch, reached through the sidebar like any other page.
   holds. That title field, and a row's own Title below it, are both
   read-only until double-clicked - there's no hover state to discover
   them by any more, so the table title carries a permanent faint tint
-  at rest (no outline in either state) to read as a field at all. Each
+  at rest (no outline in either state) to read as a field at all, and
+  both auto-size to their own text rather than sitting in a fixed-width
+  box (a hidden same-font mirror span drives the width - see
+  autoSizeTitleField in nav.js). The table title field's left edge
+  lines up with the row card's own left edge below it (not the row's
+  white Title pill, which sits inset inside that card by the card's own
+  padding - a distinction that isn't obvious from a screenshot alone,
+  confirmed by comparing getBoundingClientRect() on both in a live
+  browser rather than trusting the rendered CSS by eye). Each
   entry is a card sitting on the dark panel, tinted with whatever color
   it's been given (or the plain light `--panel` fill if none) - the
   row's color lives only on the card's own background now, per a
