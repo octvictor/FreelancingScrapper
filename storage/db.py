@@ -138,13 +138,6 @@ CREATE TABLE IF NOT EXISTS finance_tables (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS finance_columns (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    table_id INTEGER NOT NULL,
-    name TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS finance_rows (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     table_id INTEGER NOT NULL,
@@ -156,13 +149,6 @@ CREATE TABLE IF NOT EXISTS finance_rows (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS finance_cells (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    row_id INTEGER NOT NULL,
-    column_id INTEGER NOT NULL,
-    value TEXT,
-    UNIQUE(row_id, column_id)
-);
 """
 
 
@@ -234,17 +220,23 @@ def init_db() -> None:
         if "type" not in note_columns:
             conn.execute("ALTER TABLE notes ADD COLUMN type TEXT NOT NULL DEFAULT 'text'")
 
-        # Finances shipped as a single flat table before multi-table tabs
-        # existed - `finance_columns`/`finance_rows` predate `table_id`,
-        # and the currency used to live in a separate `finance_settings`
-        # singleton row instead of on `finance_tables` directly. Patch
-        # the columns in, then - if any pre-migration rows are found -
-        # create one default table to own them (carrying over the old
-        # singleton's currency if it's there) rather than losing them.
-        finance_column_cols = {row["name"] for row in conn.execute("PRAGMA table_info(finance_columns)")}
-        if "table_id" not in finance_column_cols:
-            conn.execute("ALTER TABLE finance_columns ADD COLUMN table_id INTEGER")
+        # Calculator's user-added freeform columns were removed as a
+        # feature a while back, leaving `finance_columns` and its
+        # `finance_cells` EAV side table unreachable - nothing has been
+        # able to write to either since. They were kept around so an
+        # older local DB wouldn't error out; now that every code path
+        # referencing them is gone, drop them outright. DROP ... IF
+        # EXISTS makes this a no-op on a DB that never had them.
+        conn.execute("DROP TABLE IF EXISTS finance_cells")
+        conn.execute("DROP TABLE IF EXISTS finance_columns")
 
+        # Finances shipped as a single flat table before multi-table tabs
+        # existed - `finance_rows` predates `table_id`, and the currency
+        # used to live in a separate `finance_settings` singleton row
+        # instead of on `finance_tables` directly. Patch the columns in,
+        # then - if any pre-migration rows are found - create one default
+        # table to own them (carrying over the old singleton's currency
+        # if it's there) rather than losing them.
         finance_row_cols = {row["name"] for row in conn.execute("PRAGMA table_info(finance_rows)")}
         if "table_id" not in finance_row_cols:
             conn.execute("ALTER TABLE finance_rows ADD COLUMN table_id INTEGER")
@@ -253,9 +245,8 @@ def init_db() -> None:
         if "active" not in finance_row_cols:
             conn.execute("ALTER TABLE finance_rows ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
 
-        orphan_columns = conn.execute("SELECT COUNT(*) FROM finance_columns WHERE table_id IS NULL").fetchone()[0]
         orphan_rows = conn.execute("SELECT COUNT(*) FROM finance_rows WHERE table_id IS NULL").fetchone()[0]
-        if orphan_columns or orphan_rows:
+        if orphan_rows:
             legacy_currency = "USD"
             has_settings_table = conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='finance_settings'"
@@ -270,7 +261,6 @@ def init_db() -> None:
                 ("Finances", legacy_currency, now, now),
             )
             default_table_id = cur.lastrowid
-            conn.execute("UPDATE finance_columns SET table_id=? WHERE table_id IS NULL", (default_table_id,))
             conn.execute("UPDATE finance_rows SET table_id=? WHERE table_id IS NULL", (default_table_id,))
 
 
@@ -901,13 +891,9 @@ def delete_note_item(item_id: int) -> None:
 # ---------- Calculator (Finances): browser-tab-style tables, each a ----------
 # ---------- Studio-Database-style ledger with a Value SUM -------------------
 # Each `finance_tables` row is one tab, with its own title and currency.
-# Title/Value/color/active are fixed columns on `finance_rows`. Rows
-# used to support user-added freeform columns (`finance_columns`, with
-# per-row values in the `finance_cells` EAV side table) - that feature
-# was removed; the two tables still exist in SCHEMA (and still get
-# cleaned up below when a table/row they reference is deleted) purely
-# so a pre-existing local database with old column data doesn't error
-# out, not because anything can create new rows in them anymore.
+# Title/Value/color/active are fixed columns on `finance_rows` - rows
+# briefly supported user-added freeform columns too, but that feature
+# and its two backing tables are gone (see the DROP in init_db).
 
 def list_finance_tables() -> list[dict]:
     with get_connection() as conn:
@@ -945,12 +931,7 @@ def update_finance_table(table_id: int, **fields) -> dict | None:
 
 def delete_finance_table(table_id: int) -> None:
     with get_connection() as conn:
-        conn.execute(
-            "DELETE FROM finance_cells WHERE row_id IN (SELECT id FROM finance_rows WHERE table_id=?)",
-            (table_id,),
-        )
         conn.execute("DELETE FROM finance_rows WHERE table_id=?", (table_id,))
-        conn.execute("DELETE FROM finance_columns WHERE table_id=?", (table_id,))
         conn.execute("DELETE FROM finance_tables WHERE id=?", (table_id,))
 
 
@@ -988,7 +969,6 @@ def update_finance_row(row_id: int, **fields) -> dict | None:
 
 def delete_finance_row(row_id: int) -> None:
     with get_connection() as conn:
-        conn.execute("DELETE FROM finance_cells WHERE row_id=?", (row_id,))
         conn.execute("DELETE FROM finance_rows WHERE id=?", (row_id,))
 
 

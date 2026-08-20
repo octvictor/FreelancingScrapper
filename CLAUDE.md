@@ -1,4 +1,4 @@
-# Freelancing Tools - working notes for Claude
+# VAIO - working notes for Claude
 
 ## Always use the installed design skills
 
@@ -28,7 +28,7 @@ app is deliberately vanilla with no build step).
 
 FastAPI backend + hand-written HTML/CSS/JS frontend. No Node build step,
 no framework - plain static files under `frontend/`. SQLite at
-`data/scraper.db`. Run with `run.sh` / `run.bat` (port 8501).
+`data/vaio.db`. Run with `run.sh` / `run.bat` (port 8501).
 
 - `frontend/index.html` - every page, shown/hidden by `nav.js`
 - `frontend/static/css/app.css` - the whole stylesheet

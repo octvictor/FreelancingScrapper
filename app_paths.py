@@ -23,5 +23,36 @@ def _app_root() -> Path:
 
 APP_ROOT = _app_root()
 DATA_DIR = APP_ROOT / "data"
-DB_PATH = DATA_DIR / "scraper.db"
 PROJECT_DOCS_DIR = DATA_DIR / "project_docs"
+
+# The DB was called scraper.db back when this app was a job scraper. It
+# gets renamed once, here, rather than asking anyone to move a file by
+# hand - and deliberately at import time, because storage/db.py takes
+# DB_PATH from this module and its get_connection() *creates* the file
+# if it's missing. Resolving the name any later would risk sqlite
+# happily making a new empty vaio.db while the real data sat untouched
+# in scraper.db next to it.
+#
+# Every branch below is written to fail toward keeping data:
+#   - if vaio.db already exists, use it and never touch the legacy file
+#     (so a stray leftover scraper.db can't clobber the live DB);
+#   - if there's nothing to migrate, just use the new name;
+#   - if the rename itself fails - most likely on Windows, where a file
+#     open in another process can't be renamed - keep using scraper.db
+#     rather than silently starting from an empty database. The rename
+#     is retried on the next launch.
+LEGACY_DB_PATH = DATA_DIR / "scraper.db"
+
+
+def _resolve_db_path() -> Path:
+    current = DATA_DIR / "vaio.db"
+    if current.exists() or not LEGACY_DB_PATH.exists():
+        return current
+    try:
+        LEGACY_DB_PATH.rename(current)
+    except OSError:
+        return LEGACY_DB_PATH
+    return current
+
+
+DB_PATH = _resolve_db_path()

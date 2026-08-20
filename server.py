@@ -1,4 +1,4 @@
-"""Freelancing Tools - FastAPI backend + static frontend server.
+"""VAIO - FastAPI backend + static frontend server.
 
 Run with: uvicorn server:app --reload (or ./run.sh / run.bat)
 """
@@ -35,7 +35,7 @@ class NoCacheStaticFiles(StaticFiles):
         return response
 
 
-app = FastAPI(title="Freelancing Tools")
+app = FastAPI(title="VAIO")
 app.include_router(gatherer_router, prefix="/api/gatherer")
 app.include_router(tracker_router, prefix="/api/tracker")
 app.include_router(todo_router, prefix="/api/todo")

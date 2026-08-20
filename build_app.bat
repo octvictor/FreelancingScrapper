@@ -1,5 +1,5 @@
 @echo off
-REM Builds a standalone, double-clickable app (dist\FreelancingTools.exe).
+REM Builds a standalone, double-clickable app (dist\VAIO.exe).
 REM
 REM Run this ONCE (and again only if you change requirements.txt or the
 REM app's code) - after that, day-to-day use is just double-clicking
@@ -17,11 +17,11 @@ pip install -q pyinstaller
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
-pyinstaller --onefile --name FreelancingTools ^
+pyinstaller --onefile --name VAIO ^
     --add-data "frontend;frontend" ^
     --collect-all uvicorn ^
     launcher.py
 
 echo.
-echo Build finished: dist\FreelancingTools.exe
+echo Build finished: dist\VAIO.exe
 echo Move/copy that file anywhere (Desktop, Start Menu folder, ...) and double-click it to run the app.

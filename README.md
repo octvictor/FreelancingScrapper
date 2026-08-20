@@ -1,4 +1,4 @@
-# Freelancing Tools
+# VAIO
 
 A personal-use suite of tools for freelance 3D artist work: a FastAPI
 backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
@@ -247,7 +247,7 @@ the default on launch, reached through the sidebar like any other page.
   Project Manager's list). A dashed "+ Add row" card - matching Notes'
   add-note tile rather than a plain text link - creates a new one.
 
-Everything lands in a shared local SQLite database (`data/scraper.db`)
+Everything lands in a shared local SQLite database (`data/vaio.db`)
 so it accumulates across sessions instead of being lost between runs.
 
 ## Two ways to run this
@@ -268,7 +268,7 @@ made on Mac won't run on Windows and vice versa):
 ./build_app.sh      # Windows: build_app.bat / Mac: double-click build_app.command
 ```
 
-This creates `dist/FreelancingTools` (`dist/FreelancingTools.exe` on
+This creates `dist/VAIO` (`dist/VAIO.exe` on
 Windows) - a single self-contained file with Python and FastAPI bundled
 in. Move it wherever you like and double-click it to launch; it opens in
 your browser automatically.
@@ -357,7 +357,7 @@ into a venv from before that change - the fix is on both scripts now.
 
 ## Data model
 
-SQLite (`data/scraper.db`, next to `server.py` or next to the packaged
+SQLite (`data/vaio.db`, next to `server.py` or next to the packaged
 executable), shared across every tool:
 
 - `gatherer_entries` - title, url, type (Studio/Company), status

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds a standalone, double-clickable app (dist/FreelancingTools).
+# Builds a standalone, double-clickable app (dist/VAIO).
 #
 # Run this ONCE (and again only if you change requirements.txt or the
 # app's code) - after that, day-to-day use is just double-clicking the
@@ -20,11 +20,11 @@ pip install -q pyinstaller
 
 rm -rf build dist
 
-pyinstaller --onefile --name FreelancingTools \
+pyinstaller --onefile --name VAIO \
     --add-data "frontend:frontend" \
     --collect-all uvicorn \
     launcher.py
 
 echo ""
-echo "Build finished: dist/FreelancingTools"
+echo "Build finished: dist/VAIO"
 echo "Move/copy that file anywhere (Desktop, Applications, ...) and double-click it to run the app."
