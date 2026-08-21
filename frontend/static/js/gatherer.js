@@ -193,6 +193,7 @@ enhanceSelect($("filter-status"));
 $("gatherer-expand-btn").addEventListener("click", () => {
     gathererExpanded = !gathererExpanded;
     renderGathererTable();
+    if (!gathererExpanded) window.scrollTo({ top: 0 });
 });
 
 // ---------- Add row ----------

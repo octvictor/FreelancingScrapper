@@ -350,3 +350,13 @@ async function refreshTodoBoard() {
 }
 
 refreshTodoBoard();
+
+
+function applyTodoBoardFit() {
+    fitBoardHeight($("todo-board"));
+}
+
+onRowFitResize(() => {
+    const page = $("page-todo");
+    if (page && page.style.display !== "none") applyTodoBoardFit();
+});

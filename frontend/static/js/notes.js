@@ -75,6 +75,12 @@ function noteCardHtml(note) {
     `;
 }
 
+// Notes grows without bound like the other tools, so the page shows what
+// reaches the bottom of the window and puts the rest behind "Show more".
+// The + add card is never hidden - it is the first thing in the grid and
+// the only way to create a note from this page.
+let notesExpanded = false;
+
 function renderNotes() {
     const addCardHtml = `
         <button class="note-card note-add-card" id="note-add-btn" type="button" title="Add note">
@@ -84,7 +90,46 @@ function renderNotes() {
     $("notes-grid").innerHTML = addCardHtml + notes.map(noteCardHtml).join("");
     wireNoteAddCard();
     document.querySelectorAll("#notes-grid .note-card:not(.note-add-card)").forEach(wireNoteCard);
+    applyNotesFit();
 }
+
+function applyNotesFit() {
+    const grid = $("notes-grid");
+    const cards = Array.from(grid.querySelectorAll(".note-card:not(.note-add-card)"));
+
+    let shown = cards.length;
+    if (notesExpanded) {
+        cards.forEach((card) => { card.style.display = ""; });
+    } else {
+        // 44 leaves room for the expand button under the grid.
+        shown = applyColumnFit(grid, ".note-card:not(.note-add-card)", { reserve: 44 });
+    }
+
+    const btn = $("notes-expand-btn");
+    const hidden = cards.length - shown;
+    if (notesExpanded) {
+        btn.style.display = "";
+        btn.textContent = "Show less";
+    } else if (hidden > 0) {
+        btn.style.display = "";
+        btn.textContent = `Show ${hidden} more`;
+    } else {
+        btn.style.display = "none";
+    }
+}
+
+$("notes-expand-btn").addEventListener("click", () => {
+    notesExpanded = !notesExpanded;
+    applyNotesFit();
+    // Collapsing from halfway down the expanded list would otherwise leave
+    // you staring at the space the list used to occupy.
+    if (!notesExpanded) window.scrollTo({ top: 0 });
+});
+
+onRowFitResize(() => {
+    const page = $("page-notes");
+    if (page && page.style.display !== "none") applyNotesFit();
+});
 
 // Re-renders just one card from current state - used after edits made
 // in the modal (on close) or a quick action on the card itself, so the

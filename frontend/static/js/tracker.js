@@ -177,7 +177,7 @@ function applyProjectRowCap(expanded) {
 
     // Measured: the "+ New project" button, the collapsed Personal
     // Projects panel and the gaps between them come to ~150px.
-    const rowLimit = rowsOfCardsThatFit(cards, body.getBoundingClientRect().top, {
+    const rowLimit = rowsOfCardsThatFit(cards, documentTopOf(body), {
         reserve: 150, min: PROJECT_ROW_MIN,
     });
 

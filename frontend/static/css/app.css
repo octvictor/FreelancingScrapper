@@ -2725,6 +2725,12 @@ input.kanban-col-title-input:focus {
     column-gap: 16px;
 }
 
+.notes-foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
 /* Colorless cards take the light tone: the grid now sits on a
    --panel-alt panel, and a card in the panel's own color is no card at
    all. The inline background from notes.js wins whenever one is set. */

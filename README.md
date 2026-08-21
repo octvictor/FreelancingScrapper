@@ -541,8 +541,24 @@ Four rules when adding one:
 - Re-render when the page becomes visible. A first render while the
   section is still `display: none` measures every height as zero, so the
   cap concludes that everything fits and hides nothing. `showPage` in
-  nav.js calls back into tracker, gatherer and finance for exactly this
-  reason; a new tool that measures its own layout needs the same hook.
+  nav.js calls back into tracker, gatherer, finance, notes and todo for
+  exactly this reason; a new tool that measures its own layout needs the
+  same hook.
+- Measure from the **document**, not the viewport (`documentTopOf`).
+  `getBoundingClientRect().top` goes negative once the page is scrolled,
+  so "room left below" computes as far more than exists - expanding a
+  list and scrolling down to the collapse button made the next fit decide
+  everything fits, and collapse silently did nothing.
+
+Three shapes, three helpers, because the geometry genuinely differs:
+`applyRowFit` for a stack of equal rows (tables), `rowsOfCardsThatFit` for
+a wrapping card grid where the unit is a row of cards, and
+`applyColumnFit` for Notes' CSS multi-column grid, which has no rows at
+all - hiding one card reflows every card after it, so it estimates from
+the height ratio then corrects a step at a time. A kanban board is the
+exception that scrolls instead: `fitBoardHeight` caps `.todo-board`'s
+height so it ends at the fold and scrolls internally, because capping it
+would mean a "Show more" button per column.
 
 **A dynamically created `input[type="date"]` must opt in.**
 `enhanceDateField()` is swept over the document once on `DOMContentLoaded`,

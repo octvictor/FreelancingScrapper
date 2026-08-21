@@ -166,6 +166,8 @@ function showPage(page) {
     if (page === "tracker" && typeof onProjectPageShown === "function") onProjectPageShown();
     if (page === "gatherer" && typeof renderGathererTable === "function") renderGathererTable();
     if (page === "finance" && typeof renderFinanceTable === "function") renderFinanceTable();
+    if (page === "notes" && typeof applyNotesFit === "function") applyNotesFit();
+    if (page === "todo" && typeof applyTodoBoardFit === "function") applyTodoBoardFit();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page
@@ -628,6 +630,17 @@ document.addEventListener("DOMContentLoaded", () => {
    font-size, padding and whether a cell wrapped, and the only reliable
    source for the real number is a row that has actually been laid out. */
 
+// Distance from the top of the document to this element. getBoundingClientRect
+// is viewport-relative, so once the page is scrolled its `top` goes negative
+// and "space left below" computes as far more than exists - expanding a list
+// then scrolling down to the collapse button made the next fit conclude that
+// everything fits, and collapse did nothing. Every fit below asks how much
+// room there is with the page at rest, which is what these lists are sized
+// for, so the answer must not depend on where it happens to be scrolled.
+function documentTopOf(el) {
+    return el.getBoundingClientRect().top + window.scrollY;
+}
+
 const ROW_FIT_MIN = 3;      // never collapse to something useless
 const ROW_FIT_BOTTOM_GAP = 24;
 
@@ -642,7 +655,7 @@ function applyRowFit(container, rowSelector, { reserve = 0, min = ROW_FIT_MIN } 
 
     rows.forEach((row) => { row.style.display = ""; });
 
-    const top = container.getBoundingClientRect().top;
+    const top = documentTopOf(container);
     const rowHeight = rows[0].getBoundingClientRect().height;
     if (rowHeight <= 0) return rows.length;
 
@@ -681,4 +694,54 @@ function onRowFitResize(handler) {
         clearTimeout(timer);
         timer = setTimeout(handler, 150);
     });
+}
+
+// A CSS multi-column grid (Notes) has no rows to divide by: cards flow
+// down each column, and hiding one reflows every card after it, so the
+// answer cannot be computed in one pass. This estimates from the ratio of
+// full content height to available height - close, because the cards are
+// similar sizes - then corrects a step at a time until the grid just
+// clears the bottom edge. Two or three reflows in practice, not thirty.
+function applyColumnFit(container, cardSelector, { reserve = 0, min = ROW_FIT_MIN } = {}) {
+    if (!container) return 0;
+    const cards = Array.from(container.querySelectorAll(cardSelector));
+    if (!cards.length) return 0;
+    cards.forEach((card) => { card.style.display = ""; });
+
+    const top = documentTopOf(container);
+    const limit = window.innerHeight - top - reserve - ROW_FIT_BOTTOM_GAP;
+    const fullHeight = container.getBoundingClientRect().height;
+    if (fullHeight <= limit || limit <= 0) return cards.length;
+
+    const setShown = (n) => {
+        cards.forEach((card, i) => { card.style.display = i < n ? "" : "none"; });
+        return container.getBoundingClientRect().height;
+    };
+
+    let keep = Math.max(min, Math.min(cards.length,
+        Math.floor(cards.length * limit / fullHeight)));
+
+    let guard = 0;
+    while (keep > min && setShown(keep) > limit && guard++ < 60) keep--;
+    while (keep < cards.length && guard++ < 60) {
+        if (setShown(keep + 1) > limit) { setShown(keep); break; }
+        keep++;
+    }
+    return keep;
+}
+
+
+// A kanban board is the one shape that should scroll rather than collapse:
+// its columns are already independent lists, and capping each one would
+// mean a "Show more" button per column. Instead the board itself is given
+// a height that ends at the fold and scrolls inside, which is how every
+// other board works. Horizontal scrolling stays as it was.
+function fitBoardHeight(board, { reserve = 0 } = {}) {
+    if (!board) return;
+    board.style.maxHeight = "";
+    const top = documentTopOf(board);
+    const available = window.innerHeight - top - reserve - ROW_FIT_BOTTOM_GAP;
+    if (available <= 0) return;
+    board.style.maxHeight = available + "px";
+    board.style.overflowY = "auto";
 }

@@ -213,7 +213,7 @@ function renderFinanceTable() {
     // padding come to ~200px under the list.
     const shown = financeExpanded
         ? rendered.length
-        : applyRowFit($("finance-body"), ".finance-card[data-id]", { reserve: 200 });
+        : applyRowFit($("finance-body"), ".finance-card[data-id]", { reserve: 224 });
 
     const expandBtn = $("finance-expand-btn");
     const hiddenCount = financeRows.length - shown;
@@ -369,6 +369,7 @@ $("finance-add-row-btn").addEventListener("click", async () => {
 $("finance-expand-btn").addEventListener("click", () => {
     financeExpanded = !financeExpanded;
     renderFinanceTable();
+    if (!financeExpanded) window.scrollTo({ top: 0 });
 });
 
 (async function initFinance() {
