@@ -16,7 +16,11 @@ let activeDayRate = null;
 // row depending on window width, so the cap is applied by measuring
 // actual rendered card positions (see applyProjectRowCap) rather than
 // slicing the array to a fixed card count.
-const PROJECT_ROW_LIMIT = 2;
+// Rows of cards, not a card count - the grid wraps a different number per
+// row at every width. How many rows is decided by rowsOfCardsThatFit
+// (nav.js) from the room actually in front of the user, so a tall window
+// shows more and a short one fewer, rather than both showing two.
+const PROJECT_ROW_MIN = 1;
 let expandedViews = { All: false, Active: false, Completed: false };
 
 const CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
@@ -127,7 +131,7 @@ function renderProjectTable() {
         : `<p class="muted project-card-empty">No projects yet.</p>`;
 
     const expandBtn = $("project-expand-btn");
-    const hiddenCount = applyProjectRowCap(PROJECT_ROW_LIMIT, expanded);
+    const hiddenCount = applyProjectRowCap(expanded);
     if (hiddenCount > 0) {
         expandBtn.style.display = "";
         expandBtn.textContent = expanded ? "Show less" : `Show ${hiddenCount} more`;
@@ -162,12 +166,19 @@ function renderProjectTable() {
 // every card the same offsetTop, so no row boundary is found and
 // nothing is hidden; onProjectPageShown() re-runs this once the page
 // becomes visible to correct that.
-function applyProjectRowCap(rowLimit, expanded) {
+function applyProjectRowCap(expanded) {
+    const body = $("project-table-body");
     const cards = Array.from(document.querySelectorAll("#project-table-body .project-card"));
     if (!cards.length) return 0;
 
     cards.forEach((card) => {
         card.style.display = "";
+    });
+
+    // Measured: the "+ New project" button, the collapsed Personal
+    // Projects panel and the gaps between them come to ~150px.
+    const rowLimit = rowsOfCardsThatFit(cards, body.getBoundingClientRect().top, {
+        reserve: 150, min: PROJECT_ROW_MIN,
     });
 
     const rowTops = [];
@@ -188,9 +199,9 @@ function applyProjectRowCap(rowLimit, expanded) {
     return overflowCards.length;
 }
 
-// Called by nav.js when Project Manager becomes the visible page, and
-// on window resize while it's visible - both change how many cards fit
-// per row, which changes where the 2-row cutoff falls.
+// Called by nav.js when Project Manager becomes the visible page, and on
+// window resize while it's visible - both change how many cards fit per
+// row and how many rows clear the bottom edge.
 function onProjectPageShown() {
     renderProjectTable();
 }

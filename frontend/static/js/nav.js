@@ -159,7 +159,13 @@ function showPage(page) {
     if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
     if (page === "notes" && typeof refreshNotes === "function") refreshNotes();
     if (page === "todo" && typeof refreshTodoBoard === "function") refreshTodoBoard();
+    // Anything that measures its own layout has to re-run once its page is
+    // actually visible: a first render while the section is display:none
+    // reads every height as zero, so a fit-to-window cap silently decides
+    // that everything fits.
     if (page === "tracker" && typeof onProjectPageShown === "function") onProjectPageShown();
+    if (page === "gatherer" && typeof renderGathererTable === "function") renderGathererTable();
+    if (page === "finance" && typeof renderFinanceTable === "function") renderFinanceTable();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page
@@ -607,3 +613,72 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('input[type="date"]').forEach(enhanceDateField);
 });
+
+/* ---------------- Fit-to-window row caps ----------------
+   Long lists show a window onto themselves rather than all of it, but how
+   big that window should be is not a number anyone can pick in advance -
+   it is however much room the page actually has. A constant (8 rows, 2
+   rows) is right at exactly one window size and wrong everywhere else:
+   too much on a short window, and leaving half the page empty on a tall
+   one. These derive the cap from the space in front of the user, and are
+   re-run on resize, so the list always ends near the bottom of the
+   window.
+
+   Measured rather than calculated from CSS: row heights change with
+   font-size, padding and whether a cell wrapped, and the only reliable
+   source for the real number is a row that has actually been laid out. */
+
+const ROW_FIT_MIN = 3;      // never collapse to something useless
+const ROW_FIT_BOTTOM_GAP = 24;
+
+// Rows already rendered inside `container` are shown or hidden so the list
+// ends just short of the window's bottom edge. `reserve` is whatever sits
+// below the list and must stay visible (an "+ Add row" footer, a sum).
+// Returns how many are left showing.
+function applyRowFit(container, rowSelector, { reserve = 0, min = ROW_FIT_MIN } = {}) {
+    if (!container) return 0;
+    const rows = Array.from(container.querySelectorAll(rowSelector));
+    if (!rows.length) return 0;
+
+    rows.forEach((row) => { row.style.display = ""; });
+
+    const top = container.getBoundingClientRect().top;
+    const rowHeight = rows[0].getBoundingClientRect().height;
+    if (rowHeight <= 0) return rows.length;
+
+    const available = window.innerHeight - top - reserve - ROW_FIT_BOTTOM_GAP;
+    const fits = Math.max(min, Math.floor(available / rowHeight));
+    if (fits >= rows.length) return rows.length;
+
+    rows.slice(fits).forEach((row) => { row.style.display = "none"; });
+    return fits;
+}
+
+// Same idea for a wrapping grid of cards, where the unit is a row of
+// cards rather than one card: how many whole rows clear the bottom edge.
+function rowsOfCardsThatFit(cards, containerTop, { reserve = 0, min = 1 } = {}) {
+    const rowTops = [];
+    cards.forEach((card) => {
+        const top = card.offsetTop;
+        if (!rowTops.includes(top)) rowTops.push(top);
+    });
+    if (rowTops.length < 2) return Math.max(min, rowTops.length);
+
+    const rowHeight = rowTops[1] - rowTops[0];
+    if (rowHeight <= 0) return Math.max(min, rowTops.length);
+
+    const available = window.innerHeight - containerTop - reserve - ROW_FIT_BOTTOM_GAP;
+    return Math.max(min, Math.floor(available / rowHeight));
+}
+
+// Re-fits whichever page is showing. Debounced: resize fires continuously
+// while a window is dragged, and each run does layout reads. The timer is
+// per registration, not shared - a shared one would let each caller cancel
+// the others, so only the last tool registered would ever re-fit.
+function onRowFitResize(handler) {
+    let timer = null;
+    window.addEventListener("resize", () => {
+        clearTimeout(timer);
+        timer = setTimeout(handler, 150);
+    });
+}

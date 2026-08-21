@@ -517,19 +517,32 @@ Measured on this machine at 1440x900, per frame while settling: 500 nodes
 
 ## Design system notes
 
-**Long lists are capped and expandable, not scrolled.** Every tool whose
-data grows without bound shows a window onto it with a "Show N more"
-button: Project Manager two rows of cards
-(`PROJECT_ROW_LIMIT`, measured from rendered card positions rather than a
-card count, since the grid wraps differently per window width), Personal
-Projects five, Studio Logs eight (`GATHERER_ROW_LIMIT`), Calculator seven
-(`FINANCE_ROW_LIMIT`), Command Center three to five per panel in SQL. The
-caps are deliberate and are why several pages sit around 60% of the window
-even on a full database - that is the design working, not a layout bug.
-Two rules when adding one: apply the cap **after** filtering, so narrowing
-by a column narrows what the cap counts; and if a newly created row would
-land outside the cap, expand first, so you never create something the user
-cannot see (see the add handlers in gatherer.js and finance.js).
+**Long lists are capped to what fits the window, not to a number.** Every
+tool whose data grows without bound shows a window onto it with a "Show N
+more" button, and how big that window is comes from `applyRowFit` /
+`rowsOfCardsThatFit` in nav.js: enough rows are rendered to overflow any
+plausible window, the real row height is measured from the laid-out DOM,
+and whatever does not reach the bottom edge is hidden. A constant is right
+at exactly one window size and wrong everywhere else - too many rows on a
+short window, half a page of nothing on a tall one. Measured across
+1100x700 to 1920x1080 on a full database, the capped pages land 87-99% of
+the viewport at every size, and Studio Logs goes from 9 rows to 18.
+
+Four rules when adding one:
+
+- Apply the cap **after** filtering, so narrowing by a column narrows what
+  the cap counts.
+- If a newly created row would land outside the cap, expand first - never
+  create something the user cannot see (see the add handlers in
+  gatherer.js and finance.js).
+- Re-run on resize, debounced, with a timer **per registration** -
+  `onRowFitResize` used to share one timer, which let each tool cancel the
+  others so only the last registered ever re-fit.
+- Re-render when the page becomes visible. A first render while the
+  section is still `display: none` measures every height as zero, so the
+  cap concludes that everything fits and hides nothing. `showPage` in
+  nav.js calls back into tracker, gatherer and finance for exactly this
+  reason; a new tool that measures its own layout needs the same hook.
 
 **A dynamically created `input[type="date"]` must opt in.**
 `enhanceDateField()` is swept over the document once on `DOMContentLoaded`,

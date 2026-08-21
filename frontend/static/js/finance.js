@@ -22,7 +22,9 @@ let financeRows = [];
 let financeExpanded = false;
 
 const FINANCE_CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", BRL: "R$" };
-const FINANCE_ROW_LIMIT = 7;
+// Enough rows to overflow any plausible window; applyRowFit (nav.js)
+// then hides whatever does not reach the bottom edge.
+const FINANCE_RENDER_BOUND = 40;
 
 function financeCurrencySymbol() {
     const table = financeTables.find((t) => t.id === activeTableId);
@@ -202,16 +204,25 @@ function financeRowHtml(row) {
 
 function renderFinanceTable() {
     renderFinanceHead();
-    const visible = financeExpanded ? financeRows : financeRows.slice(0, FINANCE_ROW_LIMIT);
-    $("finance-body").innerHTML = visible.length
-        ? visible.map(financeRowHtml).join("")
+    const rendered = financeExpanded ? financeRows : financeRows.slice(0, FINANCE_RENDER_BOUND);
+    $("finance-body").innerHTML = rendered.length
+        ? rendered.map(financeRowHtml).join("")
         : `<p class="muted" style="padding: 14px 10px;">No rows yet.</p>`;
 
+    // Measured: "+ Add row", the SUM panel and the panel's own bottom
+    // padding come to ~200px under the list.
+    const shown = financeExpanded
+        ? rendered.length
+        : applyRowFit($("finance-body"), ".finance-card[data-id]", { reserve: 200 });
+
     const expandBtn = $("finance-expand-btn");
-    const hiddenCount = financeRows.length - visible.length;
-    if (financeRows.length > FINANCE_ROW_LIMIT) {
+    const hiddenCount = financeRows.length - shown;
+    if (financeExpanded) {
         expandBtn.style.display = "";
-        expandBtn.textContent = financeExpanded ? "Show less" : `Show ${hiddenCount} more`;
+        expandBtn.textContent = "Show less";
+    } else if (hiddenCount > 0) {
+        expandBtn.style.display = "";
+        expandBtn.textContent = `Show ${hiddenCount} more`;
     } else {
         expandBtn.style.display = "none";
     }
@@ -346,7 +357,7 @@ $("finance-add-row-btn").addEventListener("click", async () => {
     financeRows.push(row);
     // A new row that would land behind "Show more" should still be
     // visible right away - it's the thing you just asked to add.
-    if (financeRows.length > FINANCE_ROW_LIMIT) financeExpanded = true;
+    financeExpanded = true;
     renderFinanceTable();
     const newTitleInput = document.querySelector(`#finance-body .finance-card[data-id="${row.id}"] [data-field="title"]`);
     if (newTitleInput) {
@@ -384,3 +395,9 @@ $("finance-expand-btn").addEventListener("click", () => {
         renderFinanceTable();
     }
 })();
+
+
+onRowFitResize(() => {
+    const page = $("page-finance");
+    if (page && page.style.display !== "none") renderFinanceTable();
+});

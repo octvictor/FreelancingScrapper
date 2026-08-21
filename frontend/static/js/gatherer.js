@@ -7,10 +7,12 @@ const gathererFilters = { type: "", status: "" };
 
 // This list is meant to get long - it is a running log of every studio
 // worth contacting - so the page shows a window onto it rather than all
-// of it, same as Project Manager's two rows of cards and Calculator's
-// seven. The cap applies after filtering, so narrowing by Type or Status
-// narrows what the cap is counting.
-const GATHERER_ROW_LIMIT = 8;
+// of it. How many rows that is comes from applyRowFit (nav.js): whatever
+// reaches the bottom of the window, not a constant. The cap applies after
+// filtering, so narrowing by Type or Status narrows what it counts.
+// Enough rows are rendered to overflow any plausible window, then the
+// overflow is hidden - one layout pass, no guessing at row height.
+const GATHERER_RENDER_BOUND = 40;
 let gathererExpanded = false;
 
 function escapeAttr(value) {
@@ -71,24 +73,36 @@ function getFilteredEntries() {
 function renderGathererTable() {
     cleanupCustomSelectsIn($("gatherer-body"));
     const rows = getFilteredEntries();
-    const visible = gathererExpanded ? rows : rows.slice(0, GATHERER_ROW_LIMIT);
+    const rendered = gathererExpanded ? rows : rows.slice(0, GATHERER_RENDER_BOUND);
 
-    $("gatherer-body").innerHTML = visible.length
-        ? visible.map(gathererRowHtml).join("")
+    $("gatherer-body").innerHTML = rendered.length
+        ? rendered.map(gathererRowHtml).join("")
         : `<tr><td colspan="6" class="muted" style="padding: 14px 10px;">No rows match this filter.</td></tr>`;
 
+    // 56 leaves room for the "+ Add row" footer under the table.
+    const shown = gathererExpanded
+        ? rendered.length
+        : applyRowFit($("gatherer-body"), "tr[data-id]", { reserve: 56 });
+
     const expandBtn = $("gatherer-expand-btn");
-    if (rows.length > GATHERER_ROW_LIMIT) {
+    const hidden = rows.length - shown;
+    if (gathererExpanded) {
         expandBtn.style.display = "";
-        expandBtn.textContent = gathererExpanded
-            ? "Show less"
-            : `Show ${rows.length - visible.length} more`;
+        expandBtn.textContent = "Show less";
+    } else if (hidden > 0) {
+        expandBtn.style.display = "";
+        expandBtn.textContent = `Show ${hidden} more`;
     } else {
         expandBtn.style.display = "none";
     }
 
     wireGathererRowEvents();
 }
+
+onRowFitResize(() => {
+    const page = $("page-gatherer");
+    if (page && page.style.display !== "none") renderGathererTable();
+});
 
 function wireGathererRowEvents() {
     document.querySelectorAll("#gatherer-body tr[data-id]").forEach((tr) => {
@@ -207,7 +221,7 @@ $("gatherer-add-btn").addEventListener("click", async () => {
     // below the fold and the focus call below would find nothing. Same
     // reasoning as the filter reset above: never add something the user
     // cannot see.
-    if (getFilteredEntries().length > GATHERER_ROW_LIMIT) gathererExpanded = true;
+    gathererExpanded = true;
 
     renderGathererTable();
     const newTitleInput = document.querySelector(`#gatherer-body tr[data-id="${entry.id}"] .cell-input[data-field="title"]`);
