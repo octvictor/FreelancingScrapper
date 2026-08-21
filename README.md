@@ -29,12 +29,17 @@ Nexus sits above it as the first Workspace row.
   under To Do and tasks under their list, notes hanging flat off Notes,
   and Calculator's tables (not their rows). Studio Logs is left out.
   Nodes take the item's own color when it has one and their tool's color
-  otherwise; size grows with how many things connect to them. Hovering a
-  node lights its immediate neighbours and dims everything else, so one
-  branch reads clearly out of the whole; clicking one opens that exact
+  otherwise; size grows with how many things connect to them. Labels are
+  cut to 28 characters - a note or task can carry a whole sentence, and
+  drawn in full it runs across the graph and swamps everything near it.
+  Hovering a node grows it and lights its immediate neighbours while
+  everything else dims, so one branch reads clearly out of the whole;
+  clicking one opens that exact
   item in its real editor - the same modals the rest of the app uses -
   and clicking a root navigates to that page. Scroll to zoom, drag the
-  background to pan, drag a node to move it.
+  background to pan, drag a node to move it. The page cancels the content
+  field's side gap and runs to its edges, so a node dragged toward a side
+  isn't clipped by a margin the canvas has already ended before.
 
 - **Command Center** (shown as such, internally still "Overview") - the
   app's home page, its "Full Board" layout (one of three combinations
@@ -511,6 +516,24 @@ Measured on this machine at 1440x900, per frame while settling: 500 nodes
     Manager's rows instead of a flat table.
 
 ## Design system notes
+
+**The page gap is leftover space, not a percentage.** `.ct-card` sets its
+side padding with `clamp(20px, calc((100vw - 1400px) / 2), 180px)`. The
+gap exists to stop content sprawling on a full-screen display, so it may
+only spend room the window can spare: nothing below ~1400px, growing from
+there, capped at 180px. It was a flat `10%` before, which took the same
+cut at every size - a windowed app lost the room its tables needed and
+started scrolling sideways, content that fit fine before the gap existed
+no longer did. This app is meant to be run windowed, so the narrow end is
+the case that has to be right. A page that wants the full field cancels
+the gap with `margin-inline: calc(var(--ct-pad-x) * -1)` (see
+`#page-nexus`) rather than by overriding the padding.
+
+**A kanban board is allowed to scroll sideways.** `.kanban-col` is
+`flex: 0 0 230px` on purpose - past a certain number of lists no window
+fits them all, and shrinking the columns to avoid a scrollbar squishes
+the cards instead. That one horizontal scroll is the board's own sizing,
+not the page gap.
 
 A few shared rules to keep in mind so new UI stays consistent with the
 rest of the app instead of drifting:

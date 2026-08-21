@@ -265,13 +265,23 @@ button, input, select, textarea {
 
 /* Flush against the header's bottom border - no top border/radius of its
    own, since the header already closes off that edge. Only the left
-   border (against the sidebar) remains. */
+   border (against the sidebar) remains.
+
+   The side gap is leftover space, not a proportion of the window. As a
+   percentage it took the same cut at every size, so a windowed app lost
+   the room its tables needed and started scrolling sideways - content
+   that fit fine before the gap existed no longer did. The clamp gives
+   the gap only once the window is wide enough to spare it: nothing below
+   ~1400px, growing from there, capped so a very wide screen doesn't
+   strand the content in the middle. This app is meant to be run
+   windowed, so the narrow end is the case that has to be right. */
 .ct-card {
+    --ct-pad-x: clamp(20px, calc((100vw - 1400px) / 2), 180px);
     flex: 1;
     min-width: 0;
     background: var(--panel);
     border-left: 1px solid var(--border);
-    padding: 34px 10% 40px;
+    padding: 34px var(--ct-pad-x) 40px;
 }
 
 .page-title {
@@ -3377,15 +3387,21 @@ input.qc-input {
 }
 
 /* ---------- Nexus (graph home page) ---------- */
-/* The stage fills the content card and the canvas fills the stage - the
-   graph is the page, not a panel sitting on it, so it gets no --panel
-   card treatment of its own. Height is viewport-derived rather than
-   content-derived: a canvas has no intrinsic size, so it would collapse
-   to zero against a content-sized parent. */
+/* Nexus is the page rather than content sitting on it, so it cancels the
+   content field's own gap and runs to its edges - otherwise a node
+   dragged toward a side disappears under the gap while the canvas it
+   belongs to has already ended. Height is viewport-derived (the 77px is
+   the header plus its border) rather than content-derived: a canvas has
+   no intrinsic size, so it collapses to zero against a content-sized
+   parent. */
+#page-nexus {
+    margin: -34px calc(var(--ct-pad-x) * -1) -40px;
+}
+
 .nexus-stage {
     position: relative;
     width: 100%;
-    height: calc(100vh - 190px);
+    height: calc(100vh - 77px);
     min-height: 380px;
 }
 
@@ -3406,8 +3422,8 @@ input.qc-input {
 
 .nexus-hint {
     position: absolute;
-    left: 0;
-    bottom: 0;
+    left: 22px;
+    bottom: 18px;
     margin: 0;
     font-size: 11px;
     color: var(--text-faint);

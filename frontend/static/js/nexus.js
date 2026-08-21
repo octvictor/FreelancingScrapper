@@ -36,6 +36,7 @@ const NEXUS_VELOCITY_DECAY = 0.6; // friction; higher = settles sooner
 const NEXUS_ALPHA_DECAY = 0.0228;
 const NEXUS_ALPHA_MIN = 0.001;
 const NEXUS_LABEL_FADE = 0.28;     // labels fade out below 2x this zoom
+const NEXUS_LABEL_MAX_CHARS = 28; // longer labels are cut with an ellipsis
 const NEXUS_LABEL_BUDGET = 400;   // never draw more labels than this in a frame
 
 // One hue per tool, so a cluster reads as "that's To Do" before you can
@@ -61,6 +62,17 @@ let nexusLoaded = false;
 let nexusUserAdjusted = false;   // set on first manual pan/zoom - auto-fit yields for good
 
 const nexusCamera = { x: 0, y: 0, scale: 1 };
+
+// A note or task can carry a whole sentence as its label, and drawn in
+// full it runs clear across the graph and swamps everything near it.
+// Truncated once at load rather than per frame - the label pass already
+// runs on every node in view, and measuring a long string there is the
+// expensive kind of work to repeat 60 times a second.
+function nexusShortLabel(label) {
+    const text = (label || "").trim();
+    if (text.length <= NEXUS_LABEL_MAX_CHARS) return text;
+    return text.slice(0, NEXUS_LABEL_MAX_CHARS - 1).trimEnd() + "\u2026";
+}
 
 function nexusPrefersReducedMotion() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -301,19 +313,17 @@ function nexusDraw() {
 
     for (const n of nexusNodes) {
         if (!visible(n)) continue;
-        const r = nexusNodeRadius(n);
+        // The hovered node grows instead of taking an outline. A hard ring
+        // reads as a border drawn on top of the node rather than as the
+        // node responding, and it fights the node's own color - which is
+        // the thing carrying meaning here.
+        const r = nexusNodeRadius(n) * (n.id === nexusHoverId ? 1.4 : 1);
         const dimmed = hovered && !related.has(n.id);
         ctx.globalAlpha = dimmed ? 0.25 : 1;
         ctx.fillStyle = nexusNodeColor(n);
         ctx.beginPath();
         ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
         ctx.fill();
-        if (n.id === nexusHoverId) {
-            ctx.strokeStyle = "#282828";
-            ctx.lineWidth = 2 / nexusCamera.scale;
-            ctx.stroke();
-            ctx.lineWidth = 1 / nexusCamera.scale;
-        }
     }
     ctx.globalAlpha = 1;
 
@@ -365,11 +375,12 @@ function nexusDraw() {
         if (hovered && !related.has(n.id) && n.kind !== "root") continue;
 
         const sx = toScreenX(n.x);
-        const sy = toScreenY(n.y) + nexusNodeRadius(n) * nexusCamera.scale + 3;
+        const grown = nexusNodeRadius(n) * (n.id === nexusHoverId ? 1.4 : 1);
+        const sy = toScreenY(n.y) + grown * nexusCamera.scale + 3;
         // The rect is padded past the glyphs on both axes: a collision
         // test tight to the text lets two labels sit 1px apart and pass,
         // which reads as a collision even though it technically isn't.
-        const halfW = ctx.measureText(n.label).width / 2 + 5;
+        const halfW = ctx.measureText(n.short).width / 2 + 5;
         const rect = [sx - halfW, sy - 2, sx + halfW, sy + 16];
         if (rect[2] < 0 || rect[0] > w || rect[3] < 0 || rect[1] > h) continue;
 
@@ -381,7 +392,7 @@ function nexusDraw() {
 
         ctx.globalAlpha = labelAlpha * (hovered && !related.has(n.id) ? 0.45 : 1);
         ctx.fillStyle = n.kind === "root" ? "#282828" : "#606060";
-        ctx.fillText(n.label, sx, sy);
+        ctx.fillText(n.short, sx, sy);
         placed.push(rect);
         drawn++;
     }
@@ -623,7 +634,9 @@ async function loadNexus() {
     const resp = await fetch("/api/nexus/graph");
     const data = await resp.json();
 
-    nexusNodes = data.nodes.map((n) => ({ ...n, x: 0, y: 0, vx: 0, vy: 0, degree: 0 }));
+    nexusNodes = data.nodes.map((n) => ({
+        ...n, x: 0, y: 0, vx: 0, vy: 0, degree: 0, short: nexusShortLabel(n.label),
+    }));
     nexusById = new Map(nexusNodes.map((n) => [n.id, n]));
 
     nexusLinks = data.edges
