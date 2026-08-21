@@ -207,7 +207,7 @@ button, input, select, textarea {
 }
 
 .sb-group {
-    margin-top: 34px;
+    margin-top: 22px;
 }
 
 .sb-group:first-of-type {
@@ -3049,9 +3049,12 @@ input.qc-input {
     margin: 7px 2px 0;
 }
 
+/* 700, not the 600 that "semibold" implies: only Light/Regular/Medium/Bold
+   have real font files, and requesting an unbacked 600 makes the browser
+   synthesize a faux-bold face. Bold is the real next step up from Medium. */
 .cc-section-title {
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-muted);
@@ -3061,15 +3064,43 @@ input.qc-input {
 .cc-cols {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    gap: 18px;
 }
 
 .cc-block {
-    margin-top: 36px;
+    margin-top: 18px;
 }
 
+/* The two rows used to sit at different distances because the lower one
+   held less; with each block inside its own panel the panels themselves
+   do that work, and an uneven gap just reads as a mistake. */
 .cc-block-tight {
     margin-top: 18px;
+}
+
+.cc-panel {
+    background: var(--panel-alt);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px 18px;
+}
+
+/* --border-soft is a hair off --panel-alt, so a divider set in it
+   disappears the moment it sits on a panel instead of the page. */
+.cc-panel .focus-row,
+.cc-panel .cc-row,
+.cc-panel .proj-mini {
+    border-bottom-color: var(--border);
+}
+
+.cc-panel .focus-row:last-child,
+.cc-panel .cc-row:last-child,
+.cc-panel .proj-mini:last-child {
+    border-bottom-color: transparent;
+}
+
+/* A checkbox is a field, and fields take the light tone against a panel. */
+.cc-panel .focus-check:not(.checked) {
+    background: var(--panel);
 }
 
 .cc-empty {

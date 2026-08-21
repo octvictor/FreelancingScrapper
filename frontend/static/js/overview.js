@@ -87,7 +87,10 @@ function ccProjectMiniHtml(p) {
 // own content instead: a text note's first line, or a list note's
 // item count (with its first item as a small preview underneath).
 function ccNoteChipHtml(n) {
-    const bg = n.color || "var(--panel-alt)";
+    // A colorless note takes the light tone, not --panel-alt: the strip now
+    // sits on a --panel-alt panel, and a chip in the panel's own color is
+    // an invisible chip.
+    const bg = n.color || "var(--panel)";
     const lightTextClass = n.color && !colorNeedsDarkText(n.color) ? "chip-light-text" : "";
     let headline;
     let preview = "";
