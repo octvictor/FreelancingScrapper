@@ -145,6 +145,10 @@ const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"]
 // or hides, so switching pages only ever swaps which section is visible
 // inside .ct-card and which .sb-item is marked active.
 function showPage(page) {
+    // Nothing outside PAGE_IDS may reach the loop below: an unknown page
+    // matches no section, so every one of them would be hidden and the
+    // app would go blank with no way back except clicking a real tab.
+    if (!PAGE_IDS.includes(page)) return;
     PAGE_IDS.forEach((id) => {
         const section = $("page-" + id);
         if (section) section.style.display = id === page ? "" : "none";
@@ -172,7 +176,11 @@ function navigateTo(page) {
     showPage(page);
 }
 
-document.querySelectorAll(".sb-item").forEach((btn) => {
+// [data-page] matters: the theme toggle is also an .sb-item, because it
+// borrows the row geometry, but it is a switch and not a destination. A
+// bare .sb-item selector handed its undefined dataset.page to showPage,
+// which hid every section and blanked the page on every theme switch.
+document.querySelectorAll(".sb-item[data-page]").forEach((btn) => {
     btn.addEventListener("click", () => navigateTo(btn.dataset.page));
 });
 
