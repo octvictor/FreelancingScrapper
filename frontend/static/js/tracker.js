@@ -364,6 +364,9 @@ function renderTaskTable(tasks, projectId) {
     document.querySelectorAll("#task-table-body tr[data-id]").forEach((tr) => {
         const taskId = parseInt(tr.dataset.id, 10);
 
+        const rowDate = tr.querySelector(".date-input");
+        if (rowDate) enhanceDateField(rowDate);
+
         const taskInput = tr.querySelector(".cell-input[data-field='task']");
         taskInput.addEventListener("blur", () => saveTaskField(projectId, taskId, { task: taskInput.value.trim() }));
         taskInput.addEventListener("keydown", (e) => {

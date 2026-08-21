@@ -517,6 +517,28 @@ Measured on this machine at 1440x900, per frame while settling: 500 nodes
 
 ## Design system notes
 
+**Long lists are capped and expandable, not scrolled.** Every tool whose
+data grows without bound shows a window onto it with a "Show N more"
+button: Project Manager two rows of cards
+(`PROJECT_ROW_LIMIT`, measured from rendered card positions rather than a
+card count, since the grid wraps differently per window width), Personal
+Projects five, Studio Logs eight (`GATHERER_ROW_LIMIT`), Calculator seven
+(`FINANCE_ROW_LIMIT`), Command Center three to five per panel in SQL. The
+caps are deliberate and are why several pages sit around 60% of the window
+even on a full database - that is the design working, not a layout bug.
+Two rules when adding one: apply the cap **after** filtering, so narrowing
+by a column narrows what the cap counts; and if a newly created row would
+land outside the cap, expand first, so you never create something the user
+cannot see (see the add handlers in gatherer.js and finance.js).
+
+**A dynamically created `input[type="date"]` must opt in.**
+`enhanceDateField()` is swept over the document once on `DOMContentLoaded`,
+which covers the static fields in index.html but never table rows built
+later. Every render that emits a date input has to call
+`enhanceDateField()` on it itself - see `wireGathererRowEvents` and
+`renderTaskTable`. Miss it and the row silently keeps the OS-formatted
+native control while every other date in the app shows the custom one.
+
 **An empty panel offers the action.** `.empty-action` is the shared empty
 state: a ghost button in To Do's `.kanban-col-new` language (faint text on
 a barely-there tint, brightening on hover). An empty panel is the moment a

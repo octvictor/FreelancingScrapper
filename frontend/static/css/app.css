@@ -447,6 +447,16 @@ input[type="url"]:focus {
     overflow-x: auto;
 }
 
+/* "+ Add row" on the left, "Show N more" on the right - the add button
+   keeps its place whether or not the list is long enough to collapse. */
+.gatherer-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+}
+
 table.gatherer-table,
 table.task-table,
 table.project-table {
@@ -3553,7 +3563,10 @@ input.qc-input {
     display: inline-flex;
 }
 
-.date-field-native {
+/* Qualified with the element, per the README's specificity note: a bare
+   .date-field-native loses to input.cell-input on table rows, which left
+   the hidden input holding a 129x16 box behind the trigger. */
+input.date-field-native {
     position: absolute;
     opacity: 0;
     pointer-events: none;

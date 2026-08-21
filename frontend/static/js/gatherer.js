@@ -5,6 +5,14 @@
 let gathererEntries = [];
 const gathererFilters = { type: "", status: "" };
 
+// This list is meant to get long - it is a running log of every studio
+// worth contacting - so the page shows a window onto it rather than all
+// of it, same as Project Manager's two rows of cards and Calculator's
+// seven. The cap applies after filtering, so narrowing by Type or Status
+// narrows what the cap is counting.
+const GATHERER_ROW_LIMIT = 8;
+let gathererExpanded = false;
+
 function escapeAttr(value) {
     return String(value ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
@@ -63,9 +71,22 @@ function getFilteredEntries() {
 function renderGathererTable() {
     cleanupCustomSelectsIn($("gatherer-body"));
     const rows = getFilteredEntries();
-    $("gatherer-body").innerHTML = rows.length
-        ? rows.map(gathererRowHtml).join("")
+    const visible = gathererExpanded ? rows : rows.slice(0, GATHERER_ROW_LIMIT);
+
+    $("gatherer-body").innerHTML = visible.length
+        ? visible.map(gathererRowHtml).join("")
         : `<tr><td colspan="6" class="muted" style="padding: 14px 10px;">No rows match this filter.</td></tr>`;
+
+    const expandBtn = $("gatherer-expand-btn");
+    if (rows.length > GATHERER_ROW_LIMIT) {
+        expandBtn.style.display = "";
+        expandBtn.textContent = gathererExpanded
+            ? "Show less"
+            : `Show ${rows.length - visible.length} more`;
+    } else {
+        expandBtn.style.display = "none";
+    }
+
     wireGathererRowEvents();
 }
 
@@ -111,6 +132,9 @@ function wireGathererRowEvents() {
         enhanceSelect(statusSelect);
 
         dateInput.addEventListener("change", () => saveGathererFields(id, { sent_date: dateInput.value || null }));
+        // Rows are built after DOMContentLoaded, so nav.js's one-time sweep
+        // never sees them - every table row has to opt in itself.
+        enhanceDateField(dateInput);
 
         tr.querySelector("[data-role='delete']").addEventListener("click", async () => {
             if (!(await confirmDialog("This can't be undone.", { title: "Delete this row?" }))) return;
@@ -150,6 +174,13 @@ $("filter-status").addEventListener("change", (e) => {
 });
 enhanceSelect($("filter-status"));
 
+// ---------- Show more / less ----------
+
+$("gatherer-expand-btn").addEventListener("click", () => {
+    gathererExpanded = !gathererExpanded;
+    renderGathererTable();
+});
+
 // ---------- Add row ----------
 
 $("gatherer-add-btn").addEventListener("click", async () => {
@@ -171,6 +202,12 @@ $("gatherer-add-btn").addEventListener("click", async () => {
         refreshCustomSelect($("filter-type"));
         refreshCustomSelect($("filter-status"));
     }
+
+    // The new row goes on the end, so past the cap it would be created
+    // below the fold and the focus call below would find nothing. Same
+    // reasoning as the filter reset above: never add something the user
+    // cannot see.
+    if (getFilteredEntries().length > GATHERER_ROW_LIMIT) gathererExpanded = true;
 
     renderGathererTable();
     const newTitleInput = document.querySelector(`#gatherer-body tr[data-id="${entry.id}"] .cell-input[data-field="title"]`);
