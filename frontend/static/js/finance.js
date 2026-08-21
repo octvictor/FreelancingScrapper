@@ -178,7 +178,10 @@ function financeRowHtml(row) {
     // The Title field's width is driven by financeRowTitleSizerHtml's
     // hidden mirror span (autoSizeTitleField, nav.js) rather than
     // filling the row, so it reads as a compact pill, not a lane.
-    const bg = row.color || "var(--panel)";
+    // --finance-row-bg, not --panel: an uncolored row has to differ from
+    // the surface it sits on, and in dark mode --panel is exactly that
+    // surface, so the row vanished into the page.
+    const bg = row.color || "var(--finance-row-bg)";
     return `
         <div class="finance-card${isOff ? " is-off" : ""}" data-id="${row.id}" style="background:${bg}; --dot-color:${row.color || "var(--border)"};">
             <div class="finance-card-title-field">

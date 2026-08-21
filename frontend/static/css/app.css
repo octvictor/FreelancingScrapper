@@ -53,6 +53,11 @@
     /* Surfaces that lift off their ground */
     --sb-item-active: #ffffff;
     --field: #fafafa;
+    /* An uncolored Calculator row. On paper it can be the same near-white
+       as --panel and still read, because the row carries a shadow; on a
+       dark ground an identical tone just disappears into the page, so it
+       takes a lifted grey of its own rather than reusing --panel. */
+    --finance-row-bg: #fafafa;
     --field-text: #282828;
     --field-muted: #717171;
     --field-faint: #bdbdbd;
@@ -127,11 +132,13 @@
 }
 
 /* ---------- Dark theme ----------
-   Same roles, second set of values. The light theme is warm paper
-   (#f7f6f2 is a yellow-biased off-white), so the dark one is warm
-   charcoal at the same hue rather than the blue-grey every dark mode
-   defaults to - the app should read as the same app with the lights
-   off, not as a different product.
+   Same roles, second set of values. The greys here are deliberately
+   neutral - no hue at all. They started warm, mirroring the light
+   theme's yellow-biased paper, and that was wrong in practice: a warm
+   grey at small sizes reads as a tan or amber cast rather than as
+   warmth, which put a false third accent next to the real amber and
+   green status colors. The status hues stay exactly as they are; it is
+   only the greys that went neutral.
 
    Two relationships are preserved rather than mirrored:
    - Panels always lift toward the light source. In light, --panel is
@@ -154,16 +161,20 @@
 :root[data-theme="dark"] {
     color-scheme: dark;
 
-    --bg: #141311;
-    --panel: #1c1b18;
-    --panel-alt: #26241f;
-    --border: #35322b;
-    --border-soft: #272521;
-    --text: #edebe3;
-    --text-muted: #a8a499;
-    --text-faint: #7a7669;
-    --accent: #edebe3;
-    --accent-text: #141311;
+    --bg: #131313;
+    --panel: #1c1c1c;
+    --panel-alt: #262626;
+    --border: #343434;
+    --border-soft: #272727;
+    --text: #ebebeb;
+    --text-muted: #a3a3a3;
+    /* #7b, not the #76 the neutral ramp wanted: dropping the warm tint
+       cost this tone a little luminance, which put the empty-state
+       actions at 2.93:1 on --panel-alt. Three steps up clears 3:1 and
+       still leaves a clear gap below --text-muted. */
+    --text-faint: #7b7b7b;
+    --accent: #ebebeb;
+    --accent-text: #131313;
     --accent-blue: #7fb4d8;
     --green: #34d06a;
     --red: #e88b8b;
@@ -171,12 +182,13 @@
 
     --checkbox-checked: #98FBCB;
 
-    --sb-item-active: #2a2823;
-    --field: #232220;
-    --field-text: #edebe3;
-    --field-muted: #918d83;
-    --field-faint: #6b675d;
-    --field-bright: #edebe3;
+    --sb-item-active: #2a2a2a;
+    --field: #242424;
+    --finance-row-bg: #2e2e2e;
+    --field-text: #ebebeb;
+    --field-muted: #8e8e8e;
+    --field-faint: #6a6a6a;
+    --field-bright: #ebebeb;
 
     --amber-bg: #3a2c13;
     --amber-text: #e8b25f;
@@ -199,7 +211,7 @@
     --blue-tint-strong: rgba(127, 180, 216, 0.26);
     --accent-blue-hover: #a8cfe8;
 
-    --pill-neutral-bg: #2f2d28;
+    --pill-neutral-bg: #2f2f2f;
 
     --money-pos: #3ed27a;
     --money-neg: #e8776a;
@@ -216,16 +228,16 @@
     --accent-green-hover: #84bca0;
     --on-accent-green: #12211a;
     --checkbox-mark: #1c3d2c;
-    --note-dot: #9a968b;
+    --note-dot: #969696;
 
-    --ink-03: rgba(250, 248, 240, 0.04);
-    --ink-035: rgba(250, 248, 240, 0.045);
-    --ink-05: rgba(250, 248, 240, 0.06);
-    --ink-06: rgba(250, 248, 240, 0.07);
-    --ink-07: rgba(250, 248, 240, 0.08);
-    --ink-08: rgba(250, 248, 240, 0.09);
-    --ink-14: rgba(250, 248, 240, 0.16);
-    --ink-15: rgba(250, 248, 240, 0.12);
+    --ink-03: rgba(255, 255, 255, 0.045);
+    --ink-035: rgba(255, 255, 255, 0.05);
+    --ink-05: rgba(255, 255, 255, 0.065);
+    --ink-06: rgba(255, 255, 255, 0.075);
+    --ink-07: rgba(255, 255, 255, 0.085);
+    --ink-08: rgba(255, 255, 255, 0.095);
+    --ink-14: rgba(255, 255, 255, 0.16);
+    --ink-15: rgba(255, 255, 255, 0.12);
     --ring-15: rgba(0, 0, 0, 0.45);
     --ring-20: rgba(0, 0, 0, 0.55);
     --row-press: rgba(0, 0, 0, 0.16);
@@ -1233,14 +1245,13 @@ input.finance-table-title-input {
     padding: 13px 14px;
 }
 
-/* Stronger than the original 0.06 - at that opacity the field's edge
-   (especially the rounded corner) was too close to the panel's own
-   #e6e5e1 to read as a clear boundary, which made an already-correct
-   left-alignment with the row card's own outer edge hard to confirm
-   by eye (see .finance-panel-head above - this field aligns to the
-   colored card itself, not the white Title pill inside it). */
+/* No resting background in either theme - the title is just the title.
+   It carried an --ink-14 tint before, to mark it as an editable field
+   in the absence of a hover state, but a panel under a heading reads as
+   chrome and the tint is the loudest thing in the panel. Renaming is
+   still a double-click (wired in finance.js); nothing signals that at
+   rest, which is the accepted cost of the plainer heading. */
 input.finance-table-title-input:read-only {
-    background: var(--ink-14);
     cursor: default;
 }
 

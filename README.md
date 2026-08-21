@@ -458,6 +458,17 @@ Overview only had a class for the light-ink case, so a pale note fell
 through to `--text` - fine on paper, invisible the moment `--text` went
 pale. If a surface carries a user color, both ink cases need a class.
 
+**The dark greys are neutral, and that was a correction.** They shipped
+warm first, mirroring the light theme's yellow-biased paper, on the theory
+that the app should read as the same app with the lights off. In use it
+read as a tan cast rather than as warmth - worst at small sizes, where
+`--text-faint` on a panel looked like a third accent sitting next to the
+real amber and green. The greys are now hue-free; the status hues were
+never the problem and are untouched. One knock-on: dropping the tint costs
+a grey some luminance, so `--text-faint` sits at `#7b7b7b` rather than the
+`#76` the ramp wanted, which is what keeps the empty-state actions above
+3:1 on `--panel-alt`.
+
 Three relationships in the dark palette are deliberate and worth keeping:
 panels always lift *toward* the light source (`--panel` is brighter than
 `--bg` in both themes), `--panel-alt` inverts direction because its job is
@@ -466,6 +477,14 @@ on charcoal, and `--accent` / `--accent-text` swap wholesale. Shadows do
 not invert - there is no light shadow - they get darker and deeper. The ink
 washes (`--ink-*`, used for hover tints and zebra stripes) do invert, and
 land a little heavier, because a 3% wash disappears on charcoal.
+
+A token that means "a surface on `--panel`" cannot *be* `--panel`, even
+when the two are the same value in one theme. An uncolored Calculator row
+was `--panel`, which on paper still reads because the row carries a shadow
+- but in dark it was the exact tone of the page behind it and vanished.
+Hence `--finance-row-bg`: same near-white as before in light, a lifted grey
+in dark. Look for the same trap anywhere a card defaults to the surface it
+sits on.
 
 The theme is stamped on `<html>` by a blocking inline script in the
 `<head>`, above the stylesheet link, so no frame of the wrong theme ever
