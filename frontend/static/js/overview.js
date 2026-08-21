@@ -91,7 +91,11 @@ function ccNoteChipHtml(n) {
     // darker tone to read as a chip at all - the reverse of what it would
     // need if this ever moved onto a --panel-alt panel.
     const bg = n.color || "var(--panel-alt)";
-    const lightTextClass = n.color && !colorNeedsDarkText(n.color) ? "chip-light-text" : "";
+    // Both cases need a class. A colored chip carries the user's own color
+    // in either theme, so its text has to be pinned to a fixed ink that
+    // suits that color - falling through to --text meant a pale note went
+    // pale-on-pale the moment the app switched to dark.
+    const textClass = n.color ? (colorNeedsDarkText(n.color) ? "chip-dark-text" : "chip-light-text") : "";
     let headline;
     let preview = "";
     if (n.type === "list") {
@@ -104,7 +108,7 @@ function ccNoteChipHtml(n) {
             : "Empty note";
     }
     return `
-        <div class="note-chip ${lightTextClass}" style="background:${bg};" data-role="cc-note" data-id="${n.id}">
+        <div class="note-chip ${textClass}" style="background:${bg};" data-role="cc-note" data-id="${n.id}">
             <p class="note-chip-title">${headline}</p>
             <p class="note-chip-body">${preview}</p>
         </div>

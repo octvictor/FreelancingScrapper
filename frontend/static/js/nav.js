@@ -741,3 +741,62 @@ function fitBoardHeight(board, { reserve = 0 } = {}) {
     board.style.maxHeight = available + "px";
     board.style.overflowY = "auto";
 }
+
+// ---------- Theme ----------
+// The stamp on <html> is written by the inline script in index.html
+// before the stylesheet paints; this only reads it back and switches it.
+// Every color in app.css goes through a token that has a value in both
+// :root and :root[data-theme="dark"], so flipping the attribute is the
+// whole switch - nothing here touches an individual element.
+
+const THEME_KEY = "vaio-theme";
+
+function currentTheme() {
+    return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
+// The icon and label both name the theme you would GET by clicking, not
+// the one you are in - a control should say what it does.
+function paintThemeToggle() {
+    const dark = currentTheme() === "dark";
+    const moon = document.querySelector(".sb-theme-moon");
+    const sun = document.querySelector(".sb-theme-sun");
+    if (!moon || !sun) return;
+    // setAttribute, not .className - on an SVG element className is a
+    // read-only SVGAnimatedString, so assigning to it fails silently and
+    // both icons stay visible on top of each other.
+    moon.setAttribute("class", `sb-theme-moon sb-theme-icon-${dark ? "hidden" : "shown"}`);
+    sun.setAttribute("class", `sb-theme-sun sb-theme-icon-${dark ? "shown" : "hidden"}`);
+    $("theme-toggle-label").textContent = dark ? "Light" : "Dark";
+    $("theme-toggle").setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+}
+
+function setTheme(theme, remember = true) {
+    document.documentElement.dataset.theme = theme;
+    if (remember) {
+        try {
+            localStorage.setItem(THEME_KEY, theme);
+        } catch (e) {
+            // Private mode - the theme still applies, it just won't persist.
+        }
+    }
+    paintThemeToggle();
+}
+
+$("theme-toggle").addEventListener("click", () => {
+    setTheme(currentTheme() === "dark" ? "light" : "dark");
+});
+
+// Follow the OS only while the user hasn't pinned a choice. Once they
+// click the toggle, that choice outranks the system in both directions.
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    let saved = null;
+    try {
+        saved = localStorage.getItem(THEME_KEY);
+    } catch (err) {
+        /* private mode - nothing was ever pinned */
+    }
+    if (!saved) setTheme(e.matches ? "dark" : "light", false);
+});
+
+paintThemeToggle();

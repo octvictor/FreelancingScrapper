@@ -441,6 +441,51 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**Two themes, one rule: no color literal outside the token block.** Every
+color in `app.css` is a named token defined twice - once on `:root` (light,
+warm paper) and once on `:root[data-theme="dark"]` (warm charcoal). Adding
+a color means adding a token with both values, not a hex where it is used.
+Roughly seventy literals were spread through the stylesheet before dark
+mode; they are gone, and the two blocks are checked for parity (same token
+names on both sides) rather than by eye.
+
+There are exactly two sanctioned exceptions, both in Notes: the
+`.note-card-light` / `.note-card-dark` ramps and `.note-chip-dark-text` /
+`.note-chip-light-text`. Those inks are chosen against the note's *own*
+user-picked color, which does not change when the theme does, so they must
+not follow the theme. The bug that proves the rule: the note chip on
+Overview only had a class for the light-ink case, so a pale note fell
+through to `--text` - fine on paper, invisible the moment `--text` went
+pale. If a surface carries a user color, both ink cases need a class.
+
+Three relationships in the dark palette are deliberate and worth keeping:
+panels always lift *toward* the light source (`--panel` is brighter than
+`--bg` in both themes), `--panel-alt` inverts direction because its job is
+"reads as a distinct surface" and that means recessing on paper but lifting
+on charcoal, and `--accent` / `--accent-text` swap wholesale. Shadows do
+not invert - there is no light shadow - they get darker and deeper. The ink
+washes (`--ink-*`, used for hover tints and zebra stripes) do invert, and
+land a little heavier, because a 3% wash disappears on charcoal.
+
+The theme is stamped on `<html>` by a blocking inline script in the
+`<head>`, above the stylesheet link, so no frame of the wrong theme ever
+paints. It reads localStorage, falls back to `prefers-color-scheme`, and
+follows the OS only until the toggle is used once. Never apply the theme by
+`@media` alone: the toggle has to be able to beat the OS in both
+directions.
+
+Two traps this cost: **`element.className` is read-only on an SVG** (it is
+an `SVGAnimatedString`), so the icon-swap classes silently did nothing and
+both icons stayed lit - use `setAttribute("class", ...)`. And when auditing
+contrast, composite the alpha: a `rgba(...,0.22)` pill measured as if it
+were opaque reports a 1.27:1 failure that does not exist.
+
+**The rail is its own column, sized to the window.** `position: sticky;
+top: 0; height: 100vh` - not to the page beside it. Nothing sat at the
+rail's bottom edge until the theme toggle did, so the rail quietly growing
+to match a long page never showed; now it would drift the toggle by however
+far that page overflows and scroll it off on a long one.
+
 **One rail, no header.** The app used to carry two pieces of navigation
 furniture. Measured, the pair took 27% of a 1280x800 window and 30% of a
 1120x720 one - and the smaller the window, the worse, because both bands
@@ -449,7 +494,8 @@ personal tool you launched yourself, in its own window, the least
 informative row of pixels on screen), a 527px search box sized like a web
 app's global search, and a theme toggle with no listener behind it. The
 first two moved into the rail and the third was deleted rather than left
-as a control that does nothing. Chrome is now 19% at 1280x800, 22% at
+as a control that does nothing - it returned to the rail's foot, wired up,
+when dark mode landed. Chrome is now 19% at 1280x800, 22% at
 1120x720.
 
 The band it returns is on the axis that is actually scarce: every page
