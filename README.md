@@ -458,6 +458,24 @@ Overview only had a class for the light-ink case, so a pale note fell
 through to `--text` - fine on paper, invisible the moment `--text` went
 pale. If a surface carries a user color, both ink cases need a class.
 
+**A picked card color has to clear two rules that pull against each
+other.** The picker's swatches tint a whole surface - a note, a To Do
+list, a Calculator row - and a color is stored as one hex and painted on
+both a `#fafafa` page and a `#1c1c1c` one. Rule one: stay under 5.5:1
+against both grounds, which puts relative luminance in roughly
+[0.15, 0.26]. (Under 4:1 against both is arithmetically impossible - the
+grounds are too far apart.) Rule two: the text on the card, whose ink
+`colorNeedsDarkText` picks, needs 4.5:1 - and mid-tone is the *worst*
+place to be for that, since neither ink is far from it. The current ten
+clear both, which cost the eight hues about 12% of their value; the two
+neutrals sit slightly outside rule one on purpose, because "darker and
+brighter grey" is a request for separation. Keep both checks, and keep
+every hue clear of luma 0.55 where the ink flips and both inks are poor.
+
+The pale tints the picker used to hold (`#C2E0CE`, `#88A8BF`) fail rule
+one badly on charcoal. Colors already stored on existing rows still
+render - they just are not offered any more.
+
 **The dark greys are neutral, and that was a correction.** They shipped
 warm first, mirroring the light theme's yellow-biased paper, on the theory
 that the app should read as the same app with the lights off. In use it

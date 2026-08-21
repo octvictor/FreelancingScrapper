@@ -61,16 +61,37 @@ function dueDateMeta(dateStr) {
 
 // ---------- Color preset picker ----------
 // The one color picker for the whole app (To Do's list color, Notes'
-// card color, Calculator's row color, and anything added later) - two
-// single-hue tonal ramps (green, blue) as one-click swatches. A free-form
-// hue/saturation wheel came before this and got replaced: precise but slow
-// for what's meant to be a quick pick. Every tool calls
+// card color, Calculator's row color, and anything added later). A
+// free-form hue/saturation wheel came before this and got replaced:
+// precise but slow for what's meant to be a quick pick. Every tool calls
 // openColorPresetPopover with its own save/clear callbacks rather than
 // keeping its own popover and color list.
+//
+// Eight hues plus a dark/bright neutral pair, all mid-tone. That is not a
+// style preference, it is the only range that works now that the app has
+// two themes: a picked color is stored as one hex and painted on both a
+// #fafafa page and a #1c1c1c one. Solving "stay under 5.5:1 against both
+// grounds" leaves relative luminance in roughly [0.15, 0.26] - the pale
+// tints this list used to hold (#C2E0CE and friends) glare on charcoal,
+// and the deep ones (#1E2B33) turn into heavy slabs on paper. Every hue
+// here takes light text, so the ink is consistent across the set; Ash is
+// the single swatch that flips to dark, which is the point of it.
+//
+// The two neutrals sit a little outside that band by design - "darker
+// and brighter grey" is a request for separation, and clamping both into
+// the band would leave them almost the same tone as each other.
+//
+// A second constraint pins the values down further, and pulls against the
+// first: whatever makes a color survive both grounds (mid luminance) also
+// makes text on it weak, because neither ink is far from it. Every swatch
+// here is tuned to clear 4.5:1 against the ink colorNeedsDarkText picks
+// for it, which cost the eight hues about 12% of their value. Keep that
+// check if these are ever retuned - and keep every hue clear of luma 0.55,
+// where the ink flips and both inks are equally poor.
 
-const COLOR_PRESET_RAMPS = [
-    ["#2E4A3D", "#3E6653", "#5C8C74", "#8CB89E", "#C2E0CE"],
-    ["#1E2B33", "#324553", "#597792", "#88A8BF", "#C6D9E6"],
+const COLOR_PRESETS = [
+    ["#A35C52", "#946642", "#7E6E3C", "#4F7864", "#45787B"],
+    ["#527295", "#6F6A97", "#8E6281", "#6A6A6A", "#9A9A9A"],
 ];
 
 let _colorPresetPopover = null;
@@ -109,7 +130,7 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
 
     const current = currentColor ? currentColor.toUpperCase() : null;
     panel.innerHTML = `
-        ${COLOR_PRESET_RAMPS.map((ramp) => `
+        ${COLOR_PRESETS.map((ramp) => `
             <div class="color-preset-row">
                 ${ramp.map((hex) => `
                     <button type="button" class="color-preset-swatch ${hex === current ? "selected" : ""}" style="background:${hex};" data-hex="${hex}" title="${hex}"></button>
