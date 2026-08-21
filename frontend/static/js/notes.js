@@ -54,7 +54,7 @@ function notePreviewContentHtml(note) {
 }
 
 function noteCardHtml(note) {
-    const bg = note.color || "var(--panel-alt)";
+    const bg = note.color || "var(--panel)";
     // Several of the shared preset colors are light enough that the
     // app's default (dark) text would be unreadable on them, and the
     // rest are dark enough that it needs to flip the other way instead -

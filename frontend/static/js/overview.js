@@ -122,7 +122,7 @@ async function refreshOverview() {
     const todayFocus = data.today_focus || [];
     $("cc-today-focus").innerHTML = todayFocus.length
         ? todayFocus.map(ccFocusRowHtml).join("")
-        : `<p class="cc-empty">Nothing open right now.</p>`;
+        : ccEmptyHtml("+ Add your first to-do", "todo");
 
     const dueSoon = data.due_soon || [];
     $("cc-due-soon").innerHTML = dueSoon.length
@@ -130,22 +130,24 @@ async function refreshOverview() {
             const meta = dueDateMeta(p.deadline);
             return ccRowHtml("cc-project", p.id, escapeAttr(p.title) || "Untitled project", meta.label, `cc-dot-${meta.urgency}`);
         }).join("")
-        : `<p class="cc-empty">No upcoming deadlines.</p>`;
+        : ccEmptyHtml("+ Set a deadline on a project", "tracker");
 
     const activeProjects = data.active_projects || [];
     $("cc-active-projects").innerHTML = activeProjects.length
         ? activeProjects.map(ccProjectMiniHtml).join("")
-        : `<p class="cc-empty">No active projects.</p>`;
+        : ccEmptyHtml("+ New project", "tracker");
 
     const recentNotes = data.recent_notes || [];
     $("cc-recent-notes").innerHTML = recentNotes.length
         ? recentNotes.map((n) => ccRowHtml("cc-note", n.id, ccNoteLabel(n), ccRelativeTime(n.updated_at))).join("")
-        : `<p class="cc-empty">No notes yet.</p>`;
+        : ccEmptyHtml("+ Write your first note", "notes");
 
     const notesPreview = data.notes_preview || [];
     $("cc-notes-strip").innerHTML = notesPreview.length
         ? notesPreview.map(ccNoteChipHtml).join("")
-        : `<p class="cc-empty">No notes yet.</p>`;
+        // The quick-capture field is right up the page and does this
+        // faster than a trip to Notes does.
+        : ccEmptyHtml("+ Write something down", "quick-capture");
 }
 
 // ---------- Today's Focus: check off without leaving the page ----------
@@ -173,10 +175,24 @@ $("cc-today-focus").addEventListener("click", async (e) => {
     openTodoTaskModal(Number(listId), Number(taskId));
 });
 
+// An empty panel is the moment you are most likely to want the missing
+// thing, so it offers the action instead of only reporting the absence.
+// Built on To Do's .kanban-col-new ghost card, which the app already had -
+// this is that pattern spread, not a new one.
+function ccEmptyHtml(label, goTo) {
+    return `<button type="button" class="empty-action" data-role="cc-empty-action" data-goto="${goTo}">${label}</button>`;
+}
+
 // ---------- Due Soon / Active Projects / Recent Notes / Notes strip: click to open ----------
 
 function ccBindOpenOnClick(containerId) {
     $(containerId).addEventListener("click", (e) => {
+        const empty = e.target.closest("[data-role='cc-empty-action']");
+        if (empty) {
+            if (empty.dataset.goto === "quick-capture") $("qc-input").focus();
+            else navigateTo(empty.dataset.goto);
+            return;
+        }
         const projectRow = e.target.closest("[data-role='cc-project']");
         if (projectRow) {
             navigateTo("tracker");
@@ -191,7 +207,7 @@ function ccBindOpenOnClick(containerId) {
     });
 }
 
-["cc-due-soon", "cc-active-projects", "cc-recent-notes", "cc-notes-strip"].forEach(ccBindOpenOnClick);
+["cc-today-focus", "cc-due-soon", "cc-active-projects", "cc-recent-notes", "cc-notes-strip"].forEach(ccBindOpenOnClick);
 
 // ---------- Quick capture: Enter drops a line straight into Notes ----------
 

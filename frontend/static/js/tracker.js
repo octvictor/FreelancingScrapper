@@ -100,21 +100,17 @@ function projectCardHtml(project) {
                 <div class="project-card-title">${escapeAttr(project.title) || "Untitled project"}</div>
                 <div class="project-card-top-right">
                     <span class="row-drag-handle" title="Drag to reorder">&#8942;</span>
-                    <div class="project-card-meta">
-                        <div>Client: <b>${escapeAttr(project.client) || "&mdash;"}</b></div>
-                        <div>Logs: <b>${project.log_count || 0}</b></div>
-                    </div>
+                    <span class="project-card-status">${isCompleted ? "Completed" : "Active"}</span>
                 </div>
             </div>
             <div class="project-card-desc">${escapeAttr(project.description || "")}</div>
             <div class="project-card-foot">
-                <div class="project-card-status-group">
-                    <span class="project-card-status">${isCompleted ? "Completed" : "Active"}</span>
-                    <span class="project-card-sep">&middot;</span>
-                    <span class="project-card-paid ${isPaid ? "is-paid" : ""}">${isPaid ? "Paid" : "Unpaid"}</span>
+                <div class="project-card-meta">
+                    <div>Client: <b>${escapeAttr(project.client) || "&mdash;"}</b></div>
+                    <div>Logs: <b>${project.log_count || 0}</b></div>
                 </div>
                 <div class="project-card-sum">
-                    <span class="project-card-sum-label">SUM</span>
+                    <span class="project-card-sum-label ${isPaid ? "is-paid" : ""}">${isPaid ? "PAID" : "UNPAID"}</span>
                     <span class="project-card-sum-value">${projectCardCurrencySymbol(project)}${logSum.toFixed(2)}</span>
                 </div>
             </div>
@@ -355,7 +351,15 @@ function renderTaskTable(tasks, projectId) {
     cleanupCustomSelectsIn($("task-table-body"));
     $("task-table-body").innerHTML = tasks.length
         ? tasks.map(taskRowHtml).join("")
-        : `<tr><td colspan="7" class="muted" style="padding: 14px 10px;">No tasks logged yet.</td></tr>`;
+        // Offers the action rather than only reporting the absence - it
+        // clicks the same "+ Add task" button already below the table, so
+        // there is one code path for logging a task, not two.
+        : `<tr><td colspan="7" class="task-table-empty-cell">
+               <button type="button" class="empty-action" id="task-empty-add">+ Log the first task</button>
+           </td></tr>`;
+
+    const emptyAdd = $("task-empty-add");
+    if (emptyAdd) emptyAdd.addEventListener("click", () => $("task-add-btn").click());
 
     document.querySelectorAll("#task-table-body tr[data-id]").forEach((tr) => {
         const taskId = parseInt(tr.dataset.id, 10);

@@ -517,6 +517,56 @@ Measured on this machine at 1440x900, per frame while settling: 500 nodes
 
 ## Design system notes
 
+**An empty panel offers the action.** `.empty-action` is the shared empty
+state: a ghost button in To Do's `.kanban-col-new` language (faint text on
+a barely-there tint, brightening on hover). An empty panel is the moment a
+user is most likely to want the missing thing, so it hands them the way to
+make it rather than only reporting the absence. Command Center's four
+panels and the project modal's Log all use it. Don't ship a bare grey
+sentence as an empty state.
+
+**Dates never render in the OS's format.** `enhanceDateField()` in nav.js
+replaces every `input[type="date"]` with a trigger button plus a calendar
+popover, and prints one fixed format (`18 Aug 2026`) everywhere. A native
+date input picks its format from the operating system, so the same field
+reads `mm/dd/yyyy` on one machine and `dd/mm/yyyy` on another - the only
+control in the app whose appearance wasn't ours. The native input stays in
+the DOM, hidden, as the source of truth: existing code keeps assigning
+`.value` and listening for `change` exactly as before.
+
+**Every popover type must declare its own open state.** `.popover-panel`
+is `display: none` and the shared `.open` class sets no display of its
+own - only `.color-preset-popover.open` did, so a new popover with
+`class="popover-panel foo open"` renders, answers `querySelectorAll`, and
+even accepts scripted `.click()` while being completely invisible. That
+combination makes it easy to write a passing test for a popover nobody can
+see; assert a non-zero `getBoundingClientRect()` and drive it with a real
+mouse click, not `element.click()`.
+
+**Escape inside a modal needs the capture phase.** A popover opened from
+inside a modal shares `document` with the modal's own Escape handler, and
+`stopPropagation()` does not stop a sibling listener on the same element.
+Bind with `{ capture: true }` and use `stopImmediatePropagation()`, or one
+Escape closes both layers at once (see `onDateFieldKeydown`).
+
+**Modals animate; nothing else does.** `.modal-backdrop > .modal` gets a
+200ms `cubic-bezier(0.23, 1, 0.32, 1)` entry from `scale(0.97)` and 6px
+up. Page switching happens dozens of times a day and stays instant - a
+transition on something that frequent is a tax paid all day. A modal is
+occasional, and a hard cut reads as the page being replaced rather than
+covered. Entry only: closing is the user's own action with their eye
+already on the button. Never `scale(0)`; reduced motion keeps the fade and
+drops the movement.
+
+**A page takes a panel wrapper unless its contents already carry the panel
+tone.** Project Manager, Studio Logs, Calculator and Notes wrap their
+contents in `.panel` (`--panel-alt`, contents light inside). To Do does
+not, and shouldn't: its `.kanban-col` already *is* that layer, so a
+wrapper would make three levels (wrapper / column / card) out of a
+two-tone system - the columns would vanish into the wrapper, or the cards
+into the columns. Two tones, two levels; a third level needs a third
+token, which isn't worth adding.
+
 **The page gap is leftover space, not a percentage.** `.ct-card` sets its
 side padding with `clamp(20px, calc((100vw - 1400px) / 2), 180px)`. The
 gap exists to stop content sprawling on a full-screen display, so it may

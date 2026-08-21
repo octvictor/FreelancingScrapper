@@ -331,6 +331,7 @@ button, input, select, textarea {
    that it's the same grey, so those flip to the lighter tone to keep
    standing out. Project cards need no change - they were already the
    lighter shade. */
+#page-notes > .panel,
 #page-tracker > .panel,
 #page-gatherer > .panel,
 #page-finance > .panel {
@@ -1563,9 +1564,8 @@ table.project-table tbody tr:hover td {
 .project-card-top-right {
     flex: none;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
+    align-items: center;
+    gap: 6px;
 }
 
 .project-card .row-drag-handle {
@@ -1577,8 +1577,10 @@ table.project-table tbody tr:hover td {
     opacity: 1;
 }
 
+/* Left column of the footer. Client and Logs are usually empty on a new
+   project and fill in later, so they keep their place rather than being
+   hidden - the card's shape shouldn't change as a project gets used. */
 .project-card-meta {
-    text-align: right;
     font-size: 11px;
     color: var(--text-faint);
     line-height: 1.6;
@@ -1604,47 +1606,51 @@ table.project-table tbody tr:hover td {
 
 .project-card-foot {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
+    gap: 12px;
     padding-top: 10px;
     border-top: 1px solid var(--border-soft);
 }
 
-.project-card-status-group {
-    display: flex;
+/* Status reads once, as a pill on the title's line where the eye already
+   is - not as a third small grey word along the bottom edge competing
+   with the two real numbers down there. */
+.project-card-status {
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11.5px;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 3px 9px 3px 7px;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
 }
 
-.project-card-status {
-    font-weight: 500;
+.project-card-status::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
 .project-card.status-active .project-card-status {
-    color: #b9791e;
+    background: rgba(240, 168, 72, 0.22);
+    color: #8a5a12;
 }
 
 .project-card.status-completed .project-card-status {
-    color: #22c55e;
-}
-
-.project-card-sep {
-    color: var(--border);
-}
-
-.project-card-paid {
-    color: var(--text-faint);
-}
-
-.project-card-paid.is-paid {
-    color: var(--text-muted);
+    background: rgba(34, 197, 94, 0.16);
+    color: #1d7a42;
 }
 
 .project-card-sum {
     text-align: right;
 }
 
+/* Paid state is the label on the money it describes, rather than a
+   separate word elsewhere on the card that you have to relate back. */
 .project-card-sum-label {
     font-size: 9.5px;
     font-weight: 500;
@@ -1652,6 +1658,10 @@ table.project-table tbody tr:hover td {
     color: var(--text-faint);
     display: block;
     margin-bottom: 1px;
+}
+
+.project-card-sum-label.is-paid {
+    color: #1d7a42;
 }
 
 .project-card-sum-value {
@@ -1707,6 +1717,15 @@ table.project-table tbody tr:hover td {
 
 /* ---------- Project detail modal ---------- */
 
+/* The one place in the app that animates. Page switching happens dozens
+   of times a day and stays instant - a transition on something that
+   frequent is a tax you pay all day. A modal is occasional, and a hard
+   cut reads as the page being replaced rather than covered.
+
+   No JS involved: backdrops open by flipping display:none -> flex, and a
+   CSS animation restarts every time an element becomes displayed. Entry
+   only - closing is the user's own action with their eye already on the
+   button, so an instant close costs nothing an entry animation buys. */
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -1716,6 +1735,28 @@ table.project-table tbody tr:hover td {
     justify-content: center;
     padding: 24px;
     z-index: 100;
+    animation: modal-backdrop-in 0.2s ease-out;
+}
+
+.modal-backdrop > .modal {
+    animation: modal-in 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes modal-backdrop-in {
+    from { opacity: 0; }
+}
+
+/* 0.97, never 0 - nothing in the world appears out of nothing. */
+@keyframes modal-in {
+    from { opacity: 0; transform: scale(0.97) translateY(6px); }
+}
+
+/* Fewer and gentler, not none: the fade still says a layer arrived, the
+   movement that causes trouble is what goes. */
+@media (prefers-reduced-motion: reduce) {
+    .modal-backdrop > .modal {
+        animation: modal-backdrop-in 0.15s ease-out;
+    }
 }
 
 .modal {
@@ -2674,8 +2715,11 @@ input.kanban-col-title-input:focus {
     column-gap: 16px;
 }
 
+/* Colorless cards take the light tone: the grid now sits on a
+   --panel-alt panel, and a card in the panel's own color is no card at
+   all. The inline background from notes.js wins whenever one is set. */
 .note-card {
-    background: var(--panel-alt);
+    background: var(--panel);
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-lg);
     padding: 14px;
@@ -3109,6 +3153,43 @@ input.qc-input {
     margin: 0;
 }
 
+/* Shared empty state: an empty panel is when you are most likely to want
+   the missing thing, so it offers the action rather than only reporting
+   the absence. Same ghost-card language as To Do's .kanban-col-new, which
+   the app already had - this spreads that pattern instead of adding one. */
+.empty-action {
+    display: block;
+    width: 100%;
+    font-family: inherit;
+    font-size: 12.5px;
+    text-align: center;
+    color: var(--text-faint);
+    background: rgba(40, 40, 40, 0.03);
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.empty-action:hover {
+    color: var(--text-muted);
+    background: rgba(40, 40, 40, 0.07);
+}
+
+.empty-action:focus-visible {
+    outline: 2px solid var(--accent-green, #5C8C74);
+    outline-offset: 2px;
+}
+
+.task-table-empty-cell {
+    padding: 10px 10px 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .empty-action { transition: none; }
+}
+
 /* Today's Focus */
 .focus-row {
     display: flex;
@@ -3459,4 +3540,163 @@ input.qc-input {
     font-size: 11px;
     color: var(--text-faint);
     pointer-events: none;
+}
+
+
+/* ---------- Date field (see enhanceDateField in nav.js) ----------
+   The native input stays in the DOM as the source of truth and is only
+   hidden, so every existing `.value =` assignment and `change` listener
+   keeps working; this styles what replaced it on screen. */
+
+.date-field {
+    position: relative;
+    display: inline-flex;
+}
+
+.date-field-native {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    padding: 0;
+    border: none;
+}
+
+.date-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--panel-alt);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 7px 12px 7px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s ease;
+}
+
+.date-trigger:hover { border-color: var(--border); }
+.date-trigger:focus-visible { outline: 2px solid #5C8C74; outline-offset: 1px; }
+.date-trigger.is-empty .date-trigger-text { color: var(--text-faint); }
+
+.date-trigger svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+}
+
+/* .popover-panel is display:none by default and each popover type has to
+   declare its own open state - .open alone does nothing (only
+   .color-preset-popover.open sets a display). Without this the calendar
+   renders, answers queries and even accepts scripted clicks while being
+   completely invisible. */
+.date-popover.open {
+    display: block;
+}
+
+.date-popover {
+    width: 244px;
+    padding: 10px;
+}
+
+.date-pop-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.date-pop-month {
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+.date-nav {
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 3px 8px 5px;
+    cursor: pointer;
+}
+
+.date-nav:hover { background: rgba(40, 40, 40, 0.07); color: var(--text); }
+
+.date-dow,
+.date-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.date-dow {
+    margin-bottom: 4px;
+}
+
+.date-dow span {
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    text-align: center;
+}
+
+.date-cell {
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    aspect-ratio: 1;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+}
+
+.date-cell.is-blank { cursor: default; }
+.date-cell:not(.is-blank):hover { background: rgba(40, 40, 40, 0.08); }
+
+/* Today is an outline, the selected day is a fill - so both can show at
+   once without one hiding the other. */
+.date-cell.is-today { box-shadow: inset 0 0 0 1px var(--border); }
+
+.date-cell.is-selected {
+    background: #5C8C74;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.date-cell.is-selected:hover { background: #4e7b64; }
+
+.date-pop-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.date-pop-action {
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.date-pop-action:hover { background: rgba(40, 40, 40, 0.07); color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+    .date-trigger { transition: none; }
 }
