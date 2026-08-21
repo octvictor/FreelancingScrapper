@@ -84,14 +84,22 @@ function dueDateMeta(dateStr) {
 // A second constraint pins the values down further, and pulls against the
 // first: whatever makes a color survive both grounds (mid luminance) also
 // makes text on it weak, because neither ink is far from it. Every swatch
-// here is tuned to clear 4.5:1 against the ink colorNeedsDarkText picks
-// for it, which cost the eight hues about 12% of their value. Keep that
-// check if these are ever retuned - and keep every hue clear of luma 0.55,
-// where the ink flips and both inks are equally poor.
+// here clears 4.5:1 against the ink colorNeedsDarkText picks for it. Keep
+// that check if these are ever retuned - and keep every hue clear of luma
+// 0.55, where the ink flips and both inks are equally poor.
+//
+// Saturation is the one axis that moves freely here. These sit at 1.5x
+// the chroma of the first, more muted tuning, raised at FIXED relative
+// luminance - which is the trick worth keeping: both rules above are
+// functions of luminance alone, so holding it still preserves them for
+// free. Vibrancy can be dialled up or down the same way without
+// re-deriving anything; only a change that moves luminance needs the
+// contrast pass run again. (Rust is the one exception - at 1.5x it
+// landed on 4.4969:1, so it took a hair less lightness to clear 4.5.)
 
 const COLOR_PRESETS = [
-    ["#A35C52", "#946642", "#7E6E3C", "#4F7864", "#45787B"],
-    ["#527295", "#6F6A97", "#8E6281", "#6A6A6A", "#9A9A9A"],
+    ["#B94E3E", "#9F5E2B", "#836D28", "#417B5E", "#337A7E"],
+    ["#4272A7", "#6E67A7", "#9D5989", "#6A6A6A", "#9A9A9A"],
 ];
 
 let _colorPresetPopover = null;

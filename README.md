@@ -476,6 +476,12 @@ The pale tints the picker used to hold (`#C2E0CE`, `#88A8BF`) fail rule
 one badly on charcoal. Colors already stored on existing rows still
 render - they just are not offered any more.
 
+Saturation, usefully, is free. Both rules are functions of relative
+luminance alone, so chroma can be raised or dropped at fixed luminance and
+neither check needs re-deriving - which is how the set went from muted to
+its current 1.5x without another contrast pass. Only a change that moves
+luminance needs the numbers run again.
+
 **The dark greys are neutral, and that was a correction.** They shipped
 warm first, mirroring the light theme's yellow-biased paper, on the theory
 that the app should read as the same app with the lights off. In use it
