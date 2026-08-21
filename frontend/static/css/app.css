@@ -3375,3 +3375,41 @@ input.qc-input {
 .due-soon-toast-link:hover {
     color: #2f6084;
 }
+
+/* ---------- Nexus (graph home page) ---------- */
+/* The stage fills the content card and the canvas fills the stage - the
+   graph is the page, not a panel sitting on it, so it gets no --panel
+   card treatment of its own. Height is viewport-derived rather than
+   content-derived: a canvas has no intrinsic size, so it would collapse
+   to zero against a content-sized parent. */
+.nexus-stage {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 190px);
+    min-height: 380px;
+}
+
+/* touch-action:none is load-bearing on trackpads and touch screens -
+   without it the browser claims the gesture for page scrolling before
+   the pointermove handlers ever see it, and drag/pan silently dies. */
+#nexus-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+}
+
+#nexus-canvas:active {
+    cursor: grabbing;
+}
+
+.nexus-hint {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-faint);
+    pointer-events: none;
+}

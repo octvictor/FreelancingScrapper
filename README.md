@@ -11,7 +11,7 @@ right. Below that, a permanent sidebar sits next to the page content
 and never shrinks, collapses, or hides; every row carries a Lucide icon
 plus its label, no background of its own at rest, and the open page's
 row gets a plain white card with a soft shadow, grouped under
-"Workspace" (Command Center, Project Manager, Studio Logs),
+"Workspace" (Nexus, Command Center, Project Manager, Studio Logs),
 "Personal" (To Do, Notes), and "Finances" (Calculator, shown under its
 own group heading rather than living inside "Personal"). The content
 field sits flush
@@ -19,7 +19,22 @@ against the header's bottom border with square corners on every side
 (no radius, no gap) - only its left edge, against the sidebar, keeps a
 border - and bleeds to the window's right and bottom edges rather than
 floating with a margin all around. Command Center is the home page and
-the default on launch, reached through the sidebar like any other page.
+the default on launch, reached through the sidebar like any other page;
+Nexus sits above it as the first Workspace row.
+
+- **Nexus** - the whole database drawn as one Obsidian-style graph, on
+  a canvas. Four unconnected roots (Project Manager, To Do, Notes,
+  Calculator) each hold their own contents as children: projects under
+  Project Manager with Personal Projects nested as its own child, lists
+  under To Do and tasks under their list, notes hanging flat off Notes,
+  and Calculator's tables (not their rows). Studio Logs is left out.
+  Nodes take the item's own color when it has one and their tool's color
+  otherwise; size grows with how many things connect to them. Hovering a
+  node lights its immediate neighbours and dims everything else, so one
+  branch reads clearly out of the whole; clicking one opens that exact
+  item in its real editor - the same modals the rest of the app uses -
+  and clicking a root navigates to that page. Scroll to zoom, drag the
+  background to pan, drag a node to move it.
 
 - **Command Center** (shown as such, internally still "Overview") - the
   app's home page, its "Full Board" layout (one of three combinations
@@ -406,36 +421,66 @@ executable), shared across every tool:
 - `finance_rows` - table_id, title, value, color, active, created_at,
   updated_at. A table's own rows - Title, Value, an optional row color,
   and the on/off toggle are fixed columns on the row itself.
-- `finance_columns` / `finance_cells` - leftover tables from a removed
-  freeform-column feature (an extra column per table, with per-row
-  values in `finance_cells` as an EAV side table). Nothing can create
-  rows in either anymore; they're only kept, and still cleaned up on
-  table/row delete, so a pre-existing local database with old column
-  data doesn't error out.
+- `finance_columns` / `finance_cells` - **dropped.** These backed a
+  freeform-column feature (an extra column per table, with per-row values
+  in `finance_cells` as an EAV side table) that was removed, leaving them
+  unreachable. `init_db()` now drops both on startup, so an older local
+  database cleans itself up on first run.
+
+## How Nexus is drawn
+
+`GET /api/nexus/graph` (`get_nexus_graph` in `storage/db.py`) returns the
+hierarchy as `nodes` + `edges` straight from the DB. Each node carries
+`id`, `label`, `kind`, `tool`, `parent`, a `ref` back to the real row, and
+a `meta` bag of whatever it might be colored or filtered by (project
+status/paid/deadline, list and note color, task completion, table
+currency). The relationship is expressed twice on purpose - `parent` on
+the node and a matching entry in `edges` - because a tree/radial layout
+wants the parent pointer while the force-directed one wants an edge list.
+Roots are deliberately unconnected, so it's a forest, not one tree.
+
+`frontend/static/js/nexus.js` lays it out with a force simulation on a 2D
+canvas. The pieces that matter if you touch it:
+
+- **Barnes-Hut quadtree repulsion.** Every node pushes every other node
+  apart, which is O(n²) done directly. The quadtree treats a distant
+  cluster as one averaged body, taking it to O(n log n) - the difference
+  between a graph that works at a few hundred nodes and one that works at
+  thousands.
+- **A center pull, because it's a forest.** With four roots and no links
+  between them, nothing else stops them repelling each other to infinity.
+- **Alpha cooling that actually stops.** The simulation cools toward zero
+  and, once settled, `nexusFrame` returns without re-scheduling itself
+  instead of idling at 60fps forever. Interaction calls `nexusStart()`
+  again. This is the single biggest thing keeping the page cheap - a
+  settled graph costs nothing at all.
+- **`prefers-reduced-motion`** runs the whole simulation headlessly to
+  convergence and draws the settled result once, no visible motion.
+- **Auto-fit that yields.** The camera lerps to frame the graph while it
+  settles, then gets out of the way permanently the moment you pan or
+  zoom (`nexusUserAdjusted`). It frames to mean ± 3σ rather than the raw
+  bounding box, so a couple of far-flung stragglers can't shove the mass
+  of the graph into a corner.
+- **Labels in screen space, after `ctx.restore()`.** They stay a constant
+  11px whatever the zoom. Which ones get drawn is decided by a real
+  collision test in priority order (roots, then the hovered
+  neighbourhood, then by degree) rather than a zoom threshold, so density
+  thins out on its own. Below ~0.5 zoom they fade out entirely - both
+  because they're unmappable to a node at that density, and because the
+  label pass is the most expensive part of a frame exactly when there are
+  the most nodes.
+
+Measured on this machine at 1440x900, per frame while settling: 500 nodes
+3.5ms, 2000 nodes 8.3ms, 5000 nodes 19ms - and zero once settled.
 
 ## Roadmap / not built yet
 
-- Replace Command Center's "Full Board" layout with a node/graph system,
-  renamed **Nexus**. An Obsidian-style graph reflecting the real DB
-  hierarchy: Project Manager as a root node with its projects as
-  children (Personal Projects nested as Project Manager's own child);
-  To Do as a root with lists as children and tasks under their list;
-  Notes as a flat root (notes as direct children, no nesting); Finances
-  as a root with its tables as children (no individual rows). Studio
-  Logs excluded from the graph entirely. **The data layer for this is
-  built**: `GET /api/nexus/graph` (see `get_nexus_graph` in
-  storage/db.py) returns that hierarchy as `nodes` + `edges` straight
-  from the DB. Each node carries `id`, `label`, `kind`, `tool`, `parent`,
-  a `ref` back to the real row, and a `meta` bag of whatever it might be
-  colored or filtered by (project status/paid/deadline, list and note
-  color, task completion, table currency). The relationship is expressed
-  twice on purpose - `parent` on the node and a matching entry in `edges`
-  - because a tree/radial layout wants the parent pointer while a
-  force-directed one wants an edge list, and which Nexus uses isn't
-  settled. Roots are deliberately unconnected, so it's a forest, not one
-  tree. Still to be decided: how it's rendered (Canvas vs SVG), the
-  layout (force-directed vs deterministic radial/tree), what clicking a
-  node does, and the filtering/coloring model.
+- **Nexus is built** (see its bullet at the top and "How Nexus is drawn"
+  below), but two things about it are still open: whether Command
+  Center's "Full Board" layout should be retired now that Nexus exists -
+  the two currently live side by side - and a filtering/coloring model,
+  so you can ask the graph a question (only what's overdue, only one
+  project's subtree) instead of only reading it.
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
