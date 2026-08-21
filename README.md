@@ -422,9 +422,20 @@ executable), shared across every tool:
   To Do as a root with lists as children and tasks under their list;
   Notes as a flat root (notes as direct children, no nesting); Finances
   as a root with its tables as children (no individual rows). Studio
-  Logs excluded from the graph entirely. Redesigned appearance,
-  filtering/coloring, and interaction model still to be worked out -
-  not yet designed in detail.
+  Logs excluded from the graph entirely. **The data layer for this is
+  built**: `GET /api/nexus/graph` (see `get_nexus_graph` in
+  storage/db.py) returns that hierarchy as `nodes` + `edges` straight
+  from the DB. Each node carries `id`, `label`, `kind`, `tool`, `parent`,
+  a `ref` back to the real row, and a `meta` bag of whatever it might be
+  colored or filtered by (project status/paid/deadline, list and note
+  color, task completion, table currency). The relationship is expressed
+  twice on purpose - `parent` on the node and a matching entry in `edges`
+  - because a tree/radial layout wants the parent pointer while a
+  force-directed one wants an edge list, and which Nexus uses isn't
+  settled. Roots are deliberately unconnected, so it's a forest, not one
+  tree. Still to be decided: how it's rendered (Canvas vs SVG), the
+  layout (force-directed vs deterministic radial/tree), what clicking a
+  node does, and the filtering/coloring model.
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
