@@ -307,7 +307,7 @@ async function saveTodoStep(stepId, updates) {
 
 // Keeps the card behind the modal in step with Steps add/remove/check
 // edits, without waiting for the modal to close - same live-sync
-// pattern used for Project Manager's Logs/SUM stat.
+// pattern used for Projects's Logs/SUM stat.
 async function refreshActiveTodoTaskStepsBadge() {
     if (activeTodoTaskId === null) return;
     const resp = await fetch(`/api/todo/lists/${activeTodoTaskListId}/tasks/${activeTodoTaskId}`);

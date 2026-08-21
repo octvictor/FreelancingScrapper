@@ -162,7 +162,7 @@ function renderProjectTable() {
 // hidden (or would be, if expanded) so the caller can size its "Show N
 // more" button consistently either way. Returns 0 harmlessly if the
 // page is currently display:none (e.g. the very first render, before
-// Project Manager has ever been opened) - a hidden container gives
+// Projects has ever been opened) - a hidden container gives
 // every card the same offsetTop, so no row boundary is found and
 // nothing is hidden; onProjectPageShown() re-runs this once the page
 // becomes visible to correct that.
@@ -199,7 +199,7 @@ function applyProjectRowCap(expanded) {
     return overflowCards.length;
 }
 
-// Called by nav.js when Project Manager becomes the visible page, and on
+// Called by nav.js when Projects becomes the visible page, and on
 // window resize while it's visible - both change how many cards fit per
 // row and how many rows clear the bottom edge.
 function onProjectPageShown() {

@@ -980,7 +980,7 @@ def get_overview_stats() -> dict:
     three of those badges - the hub deliberately repeats them, nothing is
     computed twice), upcoming project deadlines, the most recently touched
     notes, incomplete to-dos, active projects, and a small preview of the
-    newest notes for Command Center's Full Board layout."""
+    newest notes for Overview's Full Board layout."""
     with get_connection() as conn:
         active_projects = conn.execute(
             "SELECT COUNT(*) FROM projects WHERE status='Active'"
@@ -992,12 +992,18 @@ def get_overview_stats() -> dict:
         notes_count = conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
         finance_tables_count = conn.execute("SELECT COUNT(*) FROM finance_tables").fetchone()[0]
 
+        # Tasks with a due date, soonest first. Projects have deadlines too,
+        # but a project deadline is weeks out and a task's is the thing that
+        # decides what you do today - which is what this panel is for.
+        # Overdue sorts to the top for free, since it is just an earlier date.
         due_soon = [
             dict(row)
             for row in conn.execute(
-                "SELECT id, title, deadline FROM projects "
-                "WHERE status='Active' AND deadline IS NOT NULL AND deadline != '' "
-                "ORDER BY deadline ASC LIMIT 5"
+                "SELECT t.id, t.title, t.due_date, t.list_id, "
+                "tl.title AS list_title, tl.color AS list_color "
+                "FROM todo_tasks t JOIN todo_lists tl ON tl.id = t.list_id "
+                "WHERE t.completed = 0 AND t.due_date IS NOT NULL AND t.due_date != '' "
+                "ORDER BY t.due_date ASC LIMIT 5"
             ).fetchall()
         ]
 

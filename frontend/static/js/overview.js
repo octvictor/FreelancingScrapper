@@ -1,4 +1,4 @@
-// Command Center - the app's home page, reached through the permanent
+// Overview - the app's home page, reached through the permanent
 // sidebar like any other page: greeting, a quick-capture line straight
 // into Notes, Today's Focus + Due Soon, Active Projects + Recent Notes,
 // and a small visual strip of the newest notes ("Full Board" - approved
@@ -17,7 +17,7 @@ const OVERVIEW_TYPE_META = {
     note: { icon: "&#9998;", label: "Note", page: "notes" },
 };
 
-// ---------- Command Center content ----------
+// ---------- Overview content ----------
 
 function ccGreeting() {
     const hour = new Date().getHours();
@@ -49,10 +49,10 @@ function ccNoteLabel(n) {
     return "Empty note";
 }
 
-function ccRowHtml(role, id, titleText, subLabel, dotClass) {
+function ccRowHtml(role, id, titleText, subLabel, dotClass, extraAttrs = "") {
     const dot = dotClass ? `<span class="cc-dot ${dotClass}"></span>` : "";
     return `
-        <div class="cc-row" data-role="${role}" data-id="${id}">
+        <div class="cc-row" data-role="${role}" data-id="${id}"${extraAttrs}>
             ${dot}
             <span class="cc-row-title">${titleText}</span>
             <span class="cc-row-sub">${subLabel}</span>
@@ -126,11 +126,12 @@ async function refreshOverview() {
 
     const dueSoon = data.due_soon || [];
     $("cc-due-soon").innerHTML = dueSoon.length
-        ? dueSoon.map((p) => {
-            const meta = dueDateMeta(p.deadline);
-            return ccRowHtml("cc-project", p.id, escapeAttr(p.title) || "Untitled project", meta.label, `cc-dot-${meta.urgency}`);
+        ? dueSoon.map((t) => {
+            const meta = dueDateMeta(t.due_date);
+            return ccRowHtml("cc-task", t.id, escapeAttr(t.title) || "Untitled task",
+                meta.label, `cc-dot-${meta.urgency}`, ` data-list-id="${t.list_id}"`);
         }).join("")
-        : ccEmptyHtml("+ Set a deadline on a project", "tracker");
+        : ccEmptyHtml("+ Set a due date on a task", "todo");
 
     const activeProjects = data.active_projects || [];
     $("cc-active-projects").innerHTML = activeProjects.length
@@ -191,6 +192,12 @@ function ccBindOpenOnClick(containerId) {
         if (empty) {
             if (empty.dataset.goto === "quick-capture") $("qc-input").focus();
             else navigateTo(empty.dataset.goto);
+            return;
+        }
+        const taskRow = e.target.closest("[data-role='cc-task']");
+        if (taskRow) {
+            navigateTo("todo");
+            openTodoTaskModal(Number(taskRow.dataset.listId), Number(taskRow.dataset.id));
             return;
         }
         const projectRow = e.target.closest("[data-role='cc-project']");

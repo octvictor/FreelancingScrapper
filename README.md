@@ -7,17 +7,17 @@ mode returns later as a toggle), set in Google Sans Flex.
 
 All the navigation lives in one permanent 247px rail down the left -
 there is no header. The rail holds the asterisk icon + "vaio" wordmark,
-the app's single search box beneath it, then six rows: Command Center,
-Project Manager and Studio Logs, a hairline, then To Do, Notes and
+the app's single search box beneath it, then six rows: Overview,
+Projects and Studio Logs, a hairline, then To Do, Notes and
 Calculator. Every row carries a Lucide icon plus its label and no
 background of its own at rest; the open page's row gets a plain white
 card with a soft shadow. The rail never shrinks, collapses, or hides.
 The content field takes everything else, square on every side with no
 radius and no gap - only its left edge, against the rail, keeps a border
-- and bleeds to the window's top, right and bottom edges. Command Center is the home page and
+- and bleeds to the window's top, right and bottom edges. Overview is the home page and
 the default on launch, reached through the sidebar like any other page.
 
-- **Command Center** (shown as such, internally still "Overview") - the
+- **Overview** (shown as such, internally still "Overview") - the
   app's home page, its "Full Board" layout (one of three combinations
   mocked up and compared side by side before shipping). A greeting
   ("Good morning/afternoon/evening", time-of-day driven) and today's
@@ -40,7 +40,7 @@ the default on launch, reached through the sidebar like any other page.
   a result jumps to that tool and, where a detail view exists, opens it
   directly (a studio result just lands on Studio Logs, which has no
   per-row detail view).
-- **Tracker** (shown as "Project Manager") - the panel wrapping the grid
+- **Tracker** (shown as "Projects") - the panel wrapping the grid
   (and the Personal Projects panel below it) uses the darker `#e6e5e1`
   tone with no outline, so the lighter cards/fields inside stand out
   against it - the same panel/card relationship To Do's boards already
@@ -163,7 +163,7 @@ the default on launch, reached through the sidebar like any other page.
   alike since they're the same row markup), with "+ Add item" for more,
   and can also be checked off straight from the card preview without
   opening the modal. Since there's no title, both the card
-  preview and any place Notes show up elsewhere (Command Center's rows
+  preview and any place Notes show up elsewhere (Overview's rows
   and strip, search results) derive a short label from the body's first
   line, or a list's first item text. Cards flow into a responsive
   masonry grid (CSS columns, so it reflows its own column count as the
@@ -180,7 +180,7 @@ the default on launch, reached through the sidebar like any other page.
   themed confirm dialog).
 - **Calculator** - shown under its own **Finances** sidebar group rather
   than inside "Personal". The active table's panel uses the same darker
-  `#e6e5e1`/no-outline treatment as Project Manager and Studio Logs; the
+  `#e6e5e1`/no-outline treatment as Projects and Studio Logs; the
   tab bar above the panel is unaffected, since it isn't part of the
   panel itself. Browser-tab-style, holding any number of independent
   ledgers ("tables"). A tab bar lists every table as a plain button
@@ -240,7 +240,7 @@ the default on launch, reached through the sidebar like any other page.
   it, being plain addition under the hood, and the Sum still counts
   every visible-and-active row even the ones collapsed behind "Show
   more" (rows past the 7th on a table cap there, same pattern as
-  Project Manager's list). A dashed "+ Add row" card - matching Notes'
+  Projects's list). A dashed "+ Add row" card - matching Notes'
   add-note tile rather than a plain text link - creates a new one.
 
 Everything lands in a shared local SQLite database (`data/vaio.db`)
@@ -341,7 +341,7 @@ into a venv from before that change - the fix is on both scripts now.
 - `frontend/static/js/gatherer.js`, `frontend/static/js/tracker.js`,
   `frontend/static/js/todo.js` - one file per tool, no shared state
   between them beyond `nav.js`'s `$()`.
-- `frontend/static/js/overview.js` - Command Center's Full Board
+- `frontend/static/js/overview.js` - Overview's Full Board
   rendering (quick capture, Today's Focus, Due Soon, Active Projects,
   Recent Notes, Notes preview) and the header search bar's logic;
   reuses `openProjectModal`/`selectTodoList`+`openTodoTaskModal`/
@@ -456,7 +456,7 @@ The band it returns is on the axis that is actually scarce: every page
 that overflowed in the fit work overflowed vertically, never
 horizontally. The fit helpers picked the 77px up on their own - Studio
 Logs went from 11 rows to 13 at 1280x800, Notes from 12 to 15 - and it
-took Command Center from 106% of that window to 96%, which is the
+took Overview from 106% of that window to 96%, which is the
 overflow the fit work could not reach.
 
 Two things to know if you touch the shell again: `.body-row` is what makes
@@ -521,7 +521,7 @@ native control while every other date in the app shows the custom one.
 state: a ghost button in To Do's `.kanban-col-new` language (faint text on
 a barely-there tint, brightening on hover). An empty panel is the moment a
 user is most likely to want the missing thing, so it hands them the way to
-make it rather than only reporting the absence. Command Center's four
+make it rather than only reporting the absence. Overview's four
 panels and the project modal's Log all use it. Don't ship a bare grey
 sentence as an empty state.
 
@@ -559,7 +559,7 @@ already on the button. Never `scale(0)`; reduced motion keeps the fade and
 drops the movement.
 
 **A page takes a panel wrapper unless its contents already carry the panel
-tone.** Project Manager, Studio Logs, Calculator and Notes wrap their
+tone.** Projects, Studio Logs, Calculator and Notes wrap their
 contents in `.panel` (`--panel-alt`, contents light inside). To Do does
 not, and shouldn't: its `.kanban-col` already *is* that layer, so a
 wrapper would make three levels (wrapper / column / card) out of a
@@ -618,13 +618,13 @@ rest of the app instead of drifting:
   mixed-weight/mixed-color glyphs on some letters. Page titles
   (`.page-title`) are 22px/400, matching `.cc-greeting` exactly.
 - **Panel is the dark tone, contents are the light tone.** The container
-  that wraps a page's board/table/grid (`.panel` in Project Manager,
+  that wraps a page's board/table/grid (`.panel` in Projects,
   Studio Logs, and Calculator; `.kanban-col` in To Do) uses `--panel-alt`
   (`#e6e5e1`) with no border, and everything inside it that reads as a
   discrete card, field, or button - cards, `.cell-input`, dropdowns/
   pills on hover or focus, non-text buttons - uses `--panel` (`#fafafa`)
   instead, standing out against the darker wrapper rather than blending
-  into a light one behind an outline. Project Manager's Personal
+  into a light one behind an outline. Projects's Personal
   Projects section is a direct-child `.panel` of the same page, so it
   picks this up automatically rather than needing its own rule. This is
   the default for any new page or panel going forward - match it rather

@@ -44,7 +44,7 @@ function colorNeedsDarkText(hex) {
 }
 
 // Shared urgency + relative-label convention for any due date in the app
-// (Command Center's Due Soon row, a To Do task's due date) - red for
+// (Overview's Due Soon row, a To Do task's due date) - red for
 // overdue/today, amber for this week, blue for later - so a date never
 // grows its own one-off color language.
 function dueDateMeta(dateStr) {

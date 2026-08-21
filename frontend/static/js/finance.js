@@ -12,7 +12,7 @@
 // next to the title, same USD/EUR/GBP/BRL set as Tracker's Day rate)
 // rather than per-row, so the SUM is always a single coherent total.
 // Rows beyond FINANCE_ROW_LIMIT collapse behind a "Show more" button,
-// same pattern as Project Manager's list. $()/confirmDialog/
+// same pattern as Projects's list. $()/confirmDialog/
 // enhanceSelect/refreshCustomSelect/openColorPresetPopover/
 // colorNeedsDarkText come from nav.js, escapeAttr from gatherer.js.
 

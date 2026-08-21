@@ -547,7 +547,7 @@ table.gatherer-table td:nth-child(2) {
 }
 
 /* Ledger cards - approved via mockup ("Option B"), reusing the same
-   card language Project Manager's project cards and To Do's kcards
+   card language Projects's project cards and To Do's kcards
    already use on this dark panel: light fill, soft shadow, no border,
    stacked with a gap instead of a continuous divided list. */
 .finance-rows {
@@ -2536,7 +2536,7 @@ input.kanban-col-title-input:focus {
 }
 
 /* Compact task card - the accent stripe is that task's list color,
-   matching the Project Manager card's accent-stripe language and the
+   matching the Projects card's accent-stripe language and the
    Kanban mockup's colored label stripe. */
 .kcard {
     background: var(--panel);
@@ -3025,7 +3025,7 @@ input.overview-search-input {
     margin: 0;
 }
 
-/* ---------- Command Center: "Full Board" ---------- */
+/* ---------- Overview: "Full Board" ---------- */
 /* Greeting, a quick-capture line that drops straight into Notes, then
    two paired rows (Today's Focus + Due Soon, Active Projects + Recent
    Notes) and a small visual strip of the newest notes. Every value

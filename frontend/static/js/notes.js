@@ -12,7 +12,7 @@
 // for full editing) or immediately after creating one, with two quick
 // actions available straight from the card without opening it: checking
 // a list item, and changing the color. Cards can be dragged by a grip
-// handle to reorder, same pattern as Project Manager's rows generalized
+// handle to reorder, same pattern as Projects's rows generalized
 // from a table row to a card div. $()/confirmDialog come from nav.js,
 // escapeAttr from gatherer.js.
 
@@ -467,7 +467,7 @@ $("note-modal-add-item-btn").addEventListener("click", async () => {
 
 // Re-fetches and re-renders the whole grid - called once at load and
 // again every time nav.js switches to the Notes page (see showPage),
-// so a note created elsewhere (Command Center's quick capture, which
+// so a note created elsewhere (Overview's quick capture, which
 // doesn't go through this file at all) shows up instead of the grid
 // staying frozen at whatever it looked like on first load.
 async function refreshNotes() {
