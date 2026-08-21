@@ -3,22 +3,18 @@
 A personal-use suite of tools for freelance 3D artist work: a FastAPI
 backend + a hand-built HTML/CSS/JS frontend (no Node/React build step -
 plain static files, so nothing extra to install). Light theme (dark
-mode returns later as a toggle), set in Google Sans Flex. A full-width
-header spans the top of the app - an asterisk icon + the "vaio"
-wordmark on the left, a single search box centered on the whole width,
-a theme-toggle icon (sun-moon, drawn but not wired up yet) at the far
-right. Below that, a permanent sidebar sits next to the page content
-and never shrinks, collapses, or hides; every row carries a Lucide icon
-plus its label, no background of its own at rest, and the open page's
-row gets a plain white card with a soft shadow, grouped under
-"Workspace" (Command Center, Project Manager, Studio Logs),
-"Personal" (To Do, Notes), and "Finances" (Calculator, shown under its
-own group heading rather than living inside "Personal"). The content
-field sits flush
-against the header's bottom border with square corners on every side
-(no radius, no gap) - only its left edge, against the sidebar, keeps a
-border - and bleeds to the window's right and bottom edges rather than
-floating with a margin all around. Command Center is the home page and
+mode returns later as a toggle), set in Google Sans Flex.
+
+All the navigation lives in one permanent 247px rail down the left -
+there is no header. The rail holds the asterisk icon + "vaio" wordmark,
+the app's single search box beneath it, then six rows: Command Center,
+Project Manager and Studio Logs, a hairline, then To Do, Notes and
+Calculator. Every row carries a Lucide icon plus its label and no
+background of its own at rest; the open page's row gets a plain white
+card with a soft shadow. The rail never shrinks, collapses, or hides.
+The content field takes everything else, square on every side with no
+radius and no gap - only its left edge, against the rail, keeps a border
+- and bleeds to the window's top, right and bottom edges. Command Center is the home page and
 the default on launch, reached through the sidebar like any other page.
 
 - **Command Center** (shown as such, internally still "Overview") - the
@@ -444,6 +440,31 @@ executable), shared across every tool:
     Manager's rows instead of a flat table.
 
 ## Design system notes
+
+**One rail, no header.** The app used to carry two pieces of navigation
+furniture. Measured, the pair took 27% of a 1280x800 window and 30% of a
+1120x720 one - and the smaller the window, the worse, because both bands
+were a fixed size. The header held three things: a wordmark (in a
+personal tool you launched yourself, in its own window, the least
+informative row of pixels on screen), a 527px search box sized like a web
+app's global search, and a theme toggle with no listener behind it. The
+first two moved into the rail and the third was deleted rather than left
+as a control that does nothing. Chrome is now 19% at 1280x800, 22% at
+1120x720.
+
+The band it returns is on the axis that is actually scarce: every page
+that overflowed in the fit work overflowed vertically, never
+horizontally. The fit helpers picked the 77px up on their own - Studio
+Logs went from 11 rows to 13 at 1280x800, Notes from 12 to 15 - and it
+took Command Center from 106% of that window to 96%, which is the
+overflow the fit work could not reach.
+
+Two things to know if you touch the shell again: `.body-row` is what makes
+the rail and the content field sit side by side, so deleting header CSS
+around it silently stacks them vertically; and the search results panel is
+deliberately wider (330px) than the 247px rail that holds it, breaking out
+over the content field, because a rail-width dropdown cannot show a result
+title.
 
 **Long lists are capped to what fits the window, not to a number.** Every
 tool whose data grows without bound shows a window onto it with a "Show N

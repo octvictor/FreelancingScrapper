@@ -304,7 +304,7 @@ $("overview-search-results").addEventListener("click", async (e) => {
 });
 
 document.addEventListener("click", (e) => {
-    if (!e.target.closest(".top-strip-search")) closeOverviewSearchResults();
+    if (!e.target.closest(".sb-search")) closeOverviewSearchResults();
 });
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeOverviewSearchResults();
