@@ -3514,51 +3514,6 @@ input.qc-input {
     color: #2f6084;
 }
 
-/* ---------- Nexus (graph home page) ---------- */
-/* Nexus is the page rather than content sitting on it, so it cancels the
-   content field's own gap and runs to its edges - otherwise a node
-   dragged toward a side disappears under the gap while the canvas it
-   belongs to has already ended. Height is viewport-derived (the 77px is
-   the header plus its border) rather than content-derived: a canvas has
-   no intrinsic size, so it collapses to zero against a content-sized
-   parent. */
-#page-nexus {
-    margin: -34px calc(var(--ct-pad-x) * -1) -40px;
-}
-
-.nexus-stage {
-    position: relative;
-    width: 100%;
-    height: calc(100vh - 77px);
-    min-height: 380px;
-}
-
-/* touch-action:none is load-bearing on trackpads and touch screens -
-   without it the browser claims the gesture for page scrolling before
-   the pointermove handlers ever see it, and drag/pan silently dies. */
-#nexus-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    cursor: grab;
-    touch-action: none;
-}
-
-#nexus-canvas:active {
-    cursor: grabbing;
-}
-
-.nexus-hint {
-    position: absolute;
-    left: 22px;
-    bottom: 18px;
-    margin: 0;
-    font-size: 11px;
-    color: var(--text-faint);
-    pointer-events: none;
-}
-
-
 /* ---------- Date field (see enhanceDateField in nav.js) ----------
    The native input stays in the DOM as the source of truth and is only
    hidden, so every existing `.value =` assignment and `change` listener

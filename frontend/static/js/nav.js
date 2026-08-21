@@ -139,7 +139,7 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
     });
 }
 
-const PAGE_IDS = ["nexus", "overview", "tracker", "gatherer", "todo", "notes", "finance"];
+const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
 // A permanent .sb sits beside .ct-card on every page - it never shrinks
 // or hides, so switching pages only ever swaps which section is visible
@@ -152,10 +152,6 @@ function showPage(page) {
     document.querySelectorAll(".sb-item").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.page === page);
     });
-    // Nexus sizes its canvas from the element's real box, which is 0x0
-    // while the section is display:none - so it can only measure after
-    // being shown, never on load.
-    if (page === "nexus" && typeof refreshNexus === "function") refreshNexus();
     if (page === "overview" && typeof refreshOverview === "function") refreshOverview();
     if (page === "notes" && typeof refreshNotes === "function") refreshNotes();
     if (page === "todo" && typeof refreshTodoBoard === "function") refreshTodoBoard();

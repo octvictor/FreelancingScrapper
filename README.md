@@ -11,7 +11,7 @@ right. Below that, a permanent sidebar sits next to the page content
 and never shrinks, collapses, or hides; every row carries a Lucide icon
 plus its label, no background of its own at rest, and the open page's
 row gets a plain white card with a soft shadow, grouped under
-"Workspace" (Nexus, Command Center, Project Manager, Studio Logs),
+"Workspace" (Command Center, Project Manager, Studio Logs),
 "Personal" (To Do, Notes), and "Finances" (Calculator, shown under its
 own group heading rather than living inside "Personal"). The content
 field sits flush
@@ -19,27 +19,7 @@ against the header's bottom border with square corners on every side
 (no radius, no gap) - only its left edge, against the sidebar, keeps a
 border - and bleeds to the window's right and bottom edges rather than
 floating with a margin all around. Command Center is the home page and
-the default on launch, reached through the sidebar like any other page;
-Nexus sits above it as the first Workspace row.
-
-- **Nexus** - the whole database drawn as one Obsidian-style graph, on
-  a canvas. Four unconnected roots (Project Manager, To Do, Notes,
-  Calculator) each hold their own contents as children: projects under
-  Project Manager with Personal Projects nested as its own child, lists
-  under To Do and tasks under their list, notes hanging flat off Notes,
-  and Calculator's tables (not their rows). Studio Logs is left out.
-  Nodes take the item's own color when it has one and their tool's color
-  otherwise; size grows with how many things connect to them. Labels are
-  cut to 28 characters - a note or task can carry a whole sentence, and
-  drawn in full it runs across the graph and swamps everything near it.
-  Hovering a node grows it and lights its immediate neighbours while
-  everything else dims, so one branch reads clearly out of the whole;
-  clicking one opens that exact
-  item in its real editor - the same modals the rest of the app uses -
-  and clicking a root navigates to that page. Scroll to zoom, drag the
-  background to pan, drag a node to move it. The page cancels the content
-  field's side gap and runs to its edges, so a node dragged toward a side
-  isn't clipped by a margin the canvas has already ended before.
+the default on launch, reached through the sidebar like any other page.
 
 - **Command Center** (shown as such, internally still "Overview") - the
   app's home page, its "Full Board" layout (one of three combinations
@@ -432,60 +412,8 @@ executable), shared across every tool:
   unreachable. `init_db()` now drops both on startup, so an older local
   database cleans itself up on first run.
 
-## How Nexus is drawn
-
-`GET /api/nexus/graph` (`get_nexus_graph` in `storage/db.py`) returns the
-hierarchy as `nodes` + `edges` straight from the DB. Each node carries
-`id`, `label`, `kind`, `tool`, `parent`, a `ref` back to the real row, and
-a `meta` bag of whatever it might be colored or filtered by (project
-status/paid/deadline, list and note color, task completion, table
-currency). The relationship is expressed twice on purpose - `parent` on
-the node and a matching entry in `edges` - because a tree/radial layout
-wants the parent pointer while the force-directed one wants an edge list.
-Roots are deliberately unconnected, so it's a forest, not one tree.
-
-`frontend/static/js/nexus.js` lays it out with a force simulation on a 2D
-canvas. The pieces that matter if you touch it:
-
-- **Barnes-Hut quadtree repulsion.** Every node pushes every other node
-  apart, which is O(n²) done directly. The quadtree treats a distant
-  cluster as one averaged body, taking it to O(n log n) - the difference
-  between a graph that works at a few hundred nodes and one that works at
-  thousands.
-- **A center pull, because it's a forest.** With four roots and no links
-  between them, nothing else stops them repelling each other to infinity.
-- **Alpha cooling that actually stops.** The simulation cools toward zero
-  and, once settled, `nexusFrame` returns without re-scheduling itself
-  instead of idling at 60fps forever. Interaction calls `nexusStart()`
-  again. This is the single biggest thing keeping the page cheap - a
-  settled graph costs nothing at all.
-- **`prefers-reduced-motion`** runs the whole simulation headlessly to
-  convergence and draws the settled result once, no visible motion.
-- **Auto-fit that yields.** The camera lerps to frame the graph while it
-  settles, then gets out of the way permanently the moment you pan or
-  zoom (`nexusUserAdjusted`). It frames to mean ± 3σ rather than the raw
-  bounding box, so a couple of far-flung stragglers can't shove the mass
-  of the graph into a corner.
-- **Labels in screen space, after `ctx.restore()`.** They stay a constant
-  11px whatever the zoom. Which ones get drawn is decided by a real
-  collision test in priority order (roots, then the hovered
-  neighbourhood, then by degree) rather than a zoom threshold, so density
-  thins out on its own. Below ~0.5 zoom they fade out entirely - both
-  because they're unmappable to a node at that density, and because the
-  label pass is the most expensive part of a frame exactly when there are
-  the most nodes.
-
-Measured on this machine at 1440x900, per frame while settling: 500 nodes
-3.5ms, 2000 nodes 8.3ms, 5000 nodes 19ms - and zero once settled.
-
 ## Roadmap / not built yet
 
-- **Nexus is built** (see its bullet at the top and "How Nexus is drawn"
-  below), but two things about it are still open: whether Command
-  Center's "Full Board" layout should be retired now that Nexus exists -
-  the two currently live side by side - and a filtering/coloring model,
-  so you can ask the graph a question (only what's overdue, only one
-  project's subtree) instead of only reading it.
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
@@ -626,9 +554,9 @@ there, capped at 180px. It was a flat `10%` before, which took the same
 cut at every size - a windowed app lost the room its tables needed and
 started scrolling sideways, content that fit fine before the gap existed
 no longer did. This app is meant to be run windowed, so the narrow end is
-the case that has to be right. A page that wants the full field cancels
-the gap with `margin-inline: calc(var(--ct-pad-x) * -1)` (see
-`#page-nexus`) rather than by overriding the padding.
+the case that has to be right. A page that wants the full field can cancel
+the gap with `margin-inline: calc(var(--ct-pad-x) * -1)` rather than by
+overriding the padding.
 
 **A kanban board is allowed to scroll sideways.** `.kanban-col` is
 `flex: 0 0 230px` on purpose - past a certain number of lists no window
