@@ -190,10 +190,13 @@ the default on launch, reached through the sidebar like any other page.
   table's panel, next to a small currency pill (USD/EUR/GBP/BRL) - the
   tab it belongs to just displays whatever the title field currently
   holds. That title field, and a row's own Title below it, are both
-  read-only until double-clicked - there's no hover state to discover
-  them by any more, so the table title carries a permanent faint tint
-  at rest (no outline in either state) to read as a field at all, and
-  both auto-size to their own text rather than sitting in a fixed-width
+  read-only until double-clicked (no outline in either state). A row's
+  Title has its own pill to read as a field; the table title has
+  nothing at rest - a panel under a heading reads as chrome - and
+  advertises itself on hover instead, with the app's --ink-07 wash and
+  a text cursor, gated behind `(hover: hover) and (pointer: fine)` so a
+  tap on a touch screen doesn't flash a hint at someone who can't
+  double-click anyway. Both auto-size to their own text rather than sitting in a fixed-width
   box (a hidden same-font mirror span drives the width - see
   autoSizeTitleField in nav.js). The table title field's left edge
   lines up with the row card's own left edge below it (not the row's

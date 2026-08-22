@@ -1243,16 +1243,31 @@ input.finance-table-title-input {
     line-height: 1.5;
     letter-spacing: -0.01em;
     padding: 13px 14px;
+    transition: background-color 120ms ease;
 }
 
 /* No resting background in either theme - the title is just the title.
-   It carried an --ink-14 tint before, to mark it as an editable field
-   in the absence of a hover state, but a panel under a heading reads as
-   chrome and the tint is the loudest thing in the panel. Renaming is
-   still a double-click (wired in finance.js); nothing signals that at
-   rest, which is the accepted cost of the plainer heading. */
+   It carried an --ink-14 tint before, to mark it as an editable field,
+   but a panel under a heading reads as chrome and that tint was the
+   loudest thing in the panel. */
 input.finance-table-title-input:read-only {
     cursor: default;
+}
+
+/* The affordance the resting tint used to carry, moved onto hover: at
+   rest the heading is bare, and it only advertises itself under the
+   pointer. --ink-07 is the app's hover wash (the date popover's rows use
+   it), half the strength of the tint it replaces - it only has to be
+   noticed where the cursor already is. :read-only scopes it to the
+   locked state, so nothing tints while you are actually typing, and
+   text is an honest cursor here because a double-click does hand you a
+   text field. Gated behind a real pointer: on touch, hover fires on tap
+   and would flash the tint at someone who cannot double-click anyway. */
+@media (hover: hover) and (pointer: fine) {
+    input.finance-table-title-input:read-only:hover {
+        background: var(--ink-07);
+        cursor: text;
+    }
 }
 
 input.finance-table-title-input:focus {
