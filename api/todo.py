@@ -34,6 +34,10 @@ class TodoStepUpdate(BaseModel):
     checked: bool | None = None
 
 
+class ReorderPayload(BaseModel):
+    ids: list[int]
+
+
 @router.get("/lists")
 def list_lists():
     return {"lists": db.list_todo_lists()}
@@ -42,6 +46,24 @@ def list_lists():
 @router.get("/due-soon")
 def due_soon():
     return {"tasks": db.list_due_soon_todo_tasks()}
+
+
+@router.put("/lists/reorder")
+def reorder_lists(payload: ReorderPayload):
+    """Declared above /lists/{list_id} on purpose: FastAPI matches routes in
+    definition order, so with these the other way round "reorder" would be
+    parsed as a list_id and rejected as a bad int."""
+    db.reorder_todo_lists(payload.ids)
+    return {"ok": True}
+
+
+@router.put("/lists/{list_id}/tasks/reorder")
+def reorder_tasks(list_id: int, payload: ReorderPayload):
+    """ids are the tasks that should now be in this list, in order. A card
+    dragged in from another column is included, and moves lists as part of
+    the same call - see db.reorder_todo_tasks."""
+    db.reorder_todo_tasks(list_id, payload.ids)
+    return {"ok": True}
 
 
 @router.post("/lists")

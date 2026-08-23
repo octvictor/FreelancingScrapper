@@ -168,6 +168,80 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
     });
 }
 
+// ---------- Reordering: FLIP ----------
+// Native HTML5 drag moves an item by calling insertBefore, which is
+// instant - every other item in the list teleports to its new slot with
+// nothing to follow. FLIP bridges that: measure where things are (First),
+// let the DOM change (Last), put everything back where it started with a
+// transform (Invert), then release the transform and let CSS animate it
+// home (Play).
+//
+// It runs on the reorder, not on the drag. dragover fires on every mouse
+// move, but insertBefore only actually changes anything when the pointer
+// crosses an item's midpoint, so wrapping the mutation - rather than the
+// event - is what keeps this from thrashing.
+
+const FLIP_MS = 200;
+
+function flipReorder(items, mutate, { skip = null } = {}) {
+    // Reduced motion: do the move, skip the choreography.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        mutate();
+        return;
+    }
+    const moving = items.filter((el) => el !== skip);
+    const first = new Map();
+    moving.forEach((el) => first.set(el, el.getBoundingClientRect()));
+
+    mutate();
+
+    const shifted = [];
+    moving.forEach((el) => {
+        const a = first.get(el);
+        const b = el.getBoundingClientRect();
+        const dx = a.left - b.left;
+        const dy = a.top - b.top;
+        if (!dx && !dy) return;
+        // Invert with no transition, so this frame looks identical to the
+        // one before it and the DOM change is invisible.
+        el.classList.remove("flipping");
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        shifted.push(el);
+    });
+    if (!shifted.length) return;
+
+    // Two frames, not one: the first commits the inverted position, the
+    // second releases it. Collapsing these into a single rAF lets the
+    // browser coalesce both style changes and nothing animates at all.
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            shifted.forEach((el) => {
+                el.classList.add("flipping");
+                el.style.transform = "";
+                const done = () => {
+                    el.classList.remove("flipping");
+                    el.removeEventListener("transitionend", done);
+                };
+                el.addEventListener("transitionend", done);
+                // Same backstop as the modal exit: a transition that never
+                // reports finishing must not leave .flipping stuck on, or
+                // the next drag animates from the wrong place.
+                setTimeout(done, FLIP_MS + 60);
+            });
+        });
+    });
+}
+
+// The two halves of a drag-and-drop reorder that every tool shares:
+// which siblings can move, and moving one of them with FLIP applied.
+function flipInsert(dragged, reference, before) {
+    const parent = reference.parentNode;
+    const items = Array.from(parent.children);
+    flipReorder(items, () => {
+        parent.insertBefore(dragged, before ? reference : reference.nextSibling);
+    }, { skip: dragged });
+}
+
 // ---------- Modal close ----------
 // The entrance was CSS-only from the start; the exit needs JS because
 // nothing can animate an element that is already display:none. .closing

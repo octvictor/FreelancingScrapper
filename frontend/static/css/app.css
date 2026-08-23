@@ -1927,8 +1927,58 @@ table.project-table td.project-row-desc {
     cursor: pointer;
 }
 
-table.project-table tr.dragging {
-    opacity: 0.4;
+/* ---------- Reordering ----------
+   The item being dragged stays fully opaque. It used to fade to 0.4, which
+   read as "this is disabled" rather than "you are holding this" - and it is
+   the one element on screen you are actually looking at, so dimming it is
+   backwards. The lift does the job instead: a shadow and a hair of scale,
+   the same language as picking something up off a desk. */
+table.project-table tr.dragging,
+.project-card.dragging,
+.note-card.dragging,
+.kcard.dragging,
+.kanban-col.dragging {
+    opacity: 1;
+    box-shadow: var(--shadow-pop);
+    transform: scale(1.02);
+    cursor: grabbing;
+}
+
+/* The column header is the column's drag handle, so it says so. The card
+   itself keeps `pointer`: opening a task is the commoner action, and a
+   grab cursor on something you mostly click reads as the wrong promise.
+   Both switch to `grabbing` mid-drag via .dragging above. */
+.kanban-col-head {
+    cursor: grab;
+}
+
+.kanban-col-head input,
+.kanban-col-head button {
+    cursor: auto;
+}
+
+.kanban-col-head button {
+    cursor: pointer;
+}
+
+/* Applied by flipReorder (nav.js) only while an item is travelling to its
+   new slot, then removed. ease-in-out because this is movement across the
+   screen, not something entering or leaving it. */
+.flipping {
+    transition: transform 200ms var(--ease-in-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flipping {
+        transition: none;
+    }
+    table.project-table tr.dragging,
+    .project-card.dragging,
+    .note-card.dragging,
+    .kcard.dragging,
+    .kanban-col.dragging {
+        transform: none;
+    }
 }
 
 /* Rows read as a flat list with only the base table CSS (a 1px hairline
@@ -2025,9 +2075,7 @@ table.project-table tbody tr:hover td {
     border-left-color: var(--green);
 }
 
-.project-card.dragging {
-    opacity: 0.4;
-}
+
 
 .project-card-top {
     display: flex;
@@ -3292,9 +3340,7 @@ input.kanban-col-title-input:focus {
     cursor: pointer;
 }
 
-.note-card.dragging {
-    opacity: 0.4;
-}
+
 
 /* The "+" tile that starts a new note - always the first card in the
    grid (rendered by JS ahead of the real notes on every render), a

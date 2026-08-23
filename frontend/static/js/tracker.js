@@ -238,11 +238,7 @@ function wireRowDrag(tr, persistFn) {
         if (!draggedRow || draggedRow === tr) return;
         const rect = tr.getBoundingClientRect();
         const midpoint = rect.top + rect.height / 2;
-        if (e.clientY < midpoint) {
-            tr.parentNode.insertBefore(draggedRow, tr);
-        } else {
-            tr.parentNode.insertBefore(draggedRow, tr.nextSibling);
-        }
+        flipInsert(draggedRow, tr, e.clientY < midpoint);
     });
 
     tr.addEventListener("dragend", () => {

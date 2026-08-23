@@ -73,7 +73,12 @@ function renderTodoBoard() {
     container.innerHTML = todoLists.map(todoColumnHtml).join("") +
         `<button class="kanban-col-new" id="todo-list-add-btn" type="button">+ New list</button>`;
 
-    container.querySelectorAll(".kanban-col").forEach(wireTodoColumn);
+    container.querySelectorAll(".kanban-col").forEach((col) => {
+        wireTodoColumn(col);
+        wireTodoColumnDrag(col);
+        wireTodoTasksDropZone(col);
+        col.querySelectorAll(".kcard").forEach(wireTodoCardDrag);
+    });
     wireTodoAddListBtn();
 }
 
@@ -360,3 +365,150 @@ onRowFitResize(() => {
     const page = $("page-todo");
     if (page && page.style.display !== "none") applyTodoBoardFit();
 });
+
+// ---------- Reordering the board ----------
+// Two drags on one surface: cards inside and between columns, and the
+// columns themselves. Both go through flipInsert (nav.js), so everything
+// that is not the thing in your hand slides to its new slot.
+//
+// Cards drag by their whole body, which is the Kanban convention - a grip
+// handle like the Projects table uses would be wrong here, because a card
+// IS the handle. The checkbox is the one exception: starting a drag from
+// it would mean you could never tick anything near the edge of the card.
+//
+// Columns drag by their header only, since the header is the sole part
+// with no editable field or button spanning it - and dragging a column by
+// its task area would fight the cards inside it for the same gesture.
+
+let draggedCard = null;
+let draggedCardOrigin = null;
+let draggedCol = null;
+
+function todoColumnOf(el) {
+    return el.closest(".kanban-col");
+}
+
+function wireTodoCardDrag(card) {
+    card.draggable = true;
+
+    card.addEventListener("dragstart", (e) => {
+        if (e.target.closest(".todo-task-checkbox")) {
+            e.preventDefault();
+            return;
+        }
+        draggedCard = card;
+        draggedCardOrigin = todoColumnOf(card);
+        card.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.stopPropagation();
+    });
+
+    card.addEventListener("dragover", (e) => {
+        if (!draggedCard || draggedCard === card) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = card.getBoundingClientRect();
+        flipInsert(draggedCard, card, e.clientY < rect.top + rect.height / 2);
+    });
+
+    card.addEventListener("dragend", () => {
+        card.classList.remove("dragging");
+        if (draggedCard !== card) return;
+        const from = draggedCardOrigin;
+        const to = todoColumnOf(card);
+        draggedCard = null;
+        draggedCardOrigin = null;
+        persistTodoCardMove(from, to);
+    });
+}
+
+// The column's task area is its own drop target, which is what makes an
+// empty column reachable at all - with no cards in it there is nothing
+// else to drop onto.
+function wireTodoTasksDropZone(col) {
+    const zone = col.querySelector("[data-role='tasks']");
+    zone.addEventListener("dragover", (e) => {
+        if (!draggedCard) return;
+        e.preventDefault();
+        if (zone.contains(draggedCard)) return;
+        const cards = Array.from(zone.querySelectorAll(".kcard"));
+        const below = cards.find((c) => e.clientY < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2);
+        if (below) {
+            flipInsert(draggedCard, below, true);
+        } else {
+            const items = Array.from(zone.children);
+            flipReorder(items, () => zone.appendChild(draggedCard), { skip: draggedCard });
+        }
+    });
+}
+
+function wireTodoColumnDrag(col) {
+    const head = col.querySelector(".kanban-col-head");
+
+    // Same trick the Projects table uses: draggable goes on only for the
+    // duration of a drag started from the header, so the title input keeps
+    // its own text selection and the buttons stay clickable.
+    head.addEventListener("mousedown", (e) => {
+        if (e.target.closest("input, button")) return;
+        col.draggable = true;
+    });
+    head.addEventListener("mouseup", () => {
+        col.draggable = false;
+    });
+
+    col.addEventListener("dragstart", (e) => {
+        if (draggedCard) return;
+        draggedCol = col;
+        col.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+    });
+
+    col.addEventListener("dragover", (e) => {
+        if (!draggedCol || draggedCol === col) return;
+        e.preventDefault();
+        const rect = col.getBoundingClientRect();
+        flipInsert(draggedCol, col, e.clientX < rect.left + rect.width / 2);
+    });
+
+    col.addEventListener("dragend", () => {
+        col.draggable = false;
+        col.classList.remove("dragging");
+        if (draggedCol !== col) return;
+        draggedCol = null;
+        persistTodoColumnOrder();
+    });
+}
+
+function todoCardIdsIn(col) {
+    return Array.from(col.querySelectorAll(".kcard")).map((c) => parseInt(c.dataset.id, 10));
+}
+
+// A cross-column move rewrites both columns: the destination call carries
+// the list_id change (see db.reorder_todo_tasks), and the source needs its
+// remaining cards renumbered so a later insert does not collide with a
+// position the moved card left behind.
+async function persistTodoCardMove(fromCol, toCol) {
+    if (!toCol) return;
+    const targets = fromCol && fromCol !== toCol ? [toCol, fromCol] : [toCol];
+    await Promise.all(targets.map((col) =>
+        fetch(`/api/todo/lists/${col.dataset.id}/tasks/reorder`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: todoCardIdsIn(col) }),
+        })
+    ));
+    // Re-render rather than patch: a card that changed column also changes
+    // its stripe color, and both columns' counts and empty states move.
+    await refreshTodoBoard();
+}
+
+async function persistTodoColumnOrder() {
+    const ids = Array.from(document.querySelectorAll("#todo-board .kanban-col"))
+        .map((c) => parseInt(c.dataset.id, 10));
+    await fetch("/api/todo/lists/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+    });
+    todoLists = ids.map((id) => todoLists.find((l) => l.id === id)).filter(Boolean);
+}

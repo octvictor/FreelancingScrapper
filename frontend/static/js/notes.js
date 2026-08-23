@@ -232,11 +232,9 @@ function wireNoteDrag(card) {
         if (!draggedNote || draggedNote === card) return;
         const rect = card.getBoundingClientRect();
         const midpoint = rect.top + rect.height / 2;
-        if (e.clientY < midpoint) {
-            card.parentNode.insertBefore(draggedNote, card);
-        } else {
-            card.parentNode.insertBefore(draggedNote, card.nextSibling);
-        }
+        // flipInsert (nav.js) does the same insertBefore, wrapped so every
+        // other card slides to its new place instead of jumping there.
+        flipInsert(draggedNote, card, e.clientY < midpoint);
     });
 
     card.addEventListener("dragend", () => {

@@ -209,6 +209,15 @@ def init_db() -> None:
             conn.execute("ALTER TABLE todo_lists ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
         if "color" not in todo_list_columns:
             conn.execute("ALTER TABLE todo_lists ADD COLUMN color TEXT")
+        # ...and before columns could be dragged into an order at all. Seed
+        # from the id order the board was already displaying, so an existing
+        # board looks identical the first time it runs with this column.
+        if "position" not in todo_list_columns:
+            conn.execute("ALTER TABLE todo_lists ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
+            for position, row in enumerate(
+                conn.execute("SELECT id FROM todo_lists ORDER BY id").fetchall()
+            ):
+                conn.execute("UPDATE todo_lists SET position=? WHERE id=?", (position, row["id"]))
 
         # `todo_tasks` shipped before `due_date` existed - same story.
         todo_task_columns = {row["name"] for row in conn.execute("PRAGMA table_info(todo_tasks)")}
@@ -590,9 +599,28 @@ def list_todo_lists() -> list[dict]:
         rows = conn.execute(
             "SELECT tl.*, "
             "(SELECT COUNT(*) FROM todo_tasks t WHERE t.list_id = tl.id AND t.completed = 0) AS open_count "
-            "FROM todo_lists tl ORDER BY tl.id"
+            "FROM todo_lists tl ORDER BY tl.position ASC, tl.id ASC"
         ).fetchall()
         return [dict(row) for row in rows]
+
+
+def reorder_todo_lists(ids: list[int]) -> None:
+    with get_connection() as conn:
+        for position, list_id in enumerate(ids):
+            conn.execute("UPDATE todo_lists SET position=? WHERE id=?", (position, list_id))
+
+
+def reorder_todo_tasks(list_id: int, ids: list[int]) -> None:
+    """Positions every task in `ids` inside `list_id`, and moves any that
+    belonged to a different list. One statement does both, because on a
+    Kanban board dropping a card into another column IS the reorder - the
+    two are never separate operations from the board's point of view."""
+    with get_connection() as conn:
+        for position, task_id in enumerate(ids):
+            conn.execute(
+                "UPDATE todo_tasks SET position=?, list_id=?, updated_at=? WHERE id=?",
+                (position, list_id, _now(), task_id),
+            )
 
 
 def create_todo_list() -> dict:

@@ -444,6 +444,44 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**Reordering is FLIP, and the thing in your hand is not dimmed.** Native
+HTML5 drag reorders by calling `insertBefore`, which is instant - every
+item that is not being dragged teleports to its new slot. `flipReorder` /
+`flipInsert` in nav.js bridge that: measure (First), let the DOM change
+(Last), put everything back with a transform (Invert), release it and let
+CSS carry it home (Play). Notes, Projects, Personal Projects and both To Do
+drags share the one helper.
+
+Two details in there are easy to get wrong. It wraps the *mutation*, not
+the `dragover` event - dragover fires on every mouse move, while
+insertBefore only changes anything when the pointer crosses a midpoint, so
+wrapping the event instead would thrash. And the release needs **two**
+nested `requestAnimationFrame`s: with one, the browser coalesces the invert
+and the release into a single style recalculation and nothing animates.
+
+The dragged item stays at `opacity: 1`. It used to fade to `0.4`, which
+reads as "disabled" rather than "you are holding this" - and it is the one
+element on screen you are actually watching. A shadow and `scale(1.02)`
+carry it instead, the same language as picking something up off a desk.
+
+**The To Do board reorders in three directions**, which is why
+`reorder_todo_tasks` takes a list id *and* the ids: on a Kanban board,
+dropping a card into another column IS the reorder, so position and
+`list_id` are written in the same statement rather than as two operations.
+A cross-column drop writes both columns - the source needs its remaining
+cards renumbered or a later insert collides with the gap the moved card
+left. Columns drag by their header only (the sole part with no field or
+button spanning it) and cards drag by their whole body, minus the checkbox,
+which would otherwise be undraggable-over and untickable near the edges.
+
+`todo_lists` gained `position` by the same additive migration `favorite`
+and `color` used, seeded from the id order the board was already showing,
+so an existing board looks identical the first time it runs.
+
+One route-ordering trap: `/lists/reorder` must be declared **above**
+`/lists/{list_id}`. FastAPI matches in definition order, so the other way
+round "reorder" is parsed as a list id and rejected as a bad int.
+
 **Motion has a token block too, and the same rule.** `--ease-out`,
 `--ease-in-out`, the `--dur-*` tier list and the two `--press-scale`
 values live beside the colors; no curve or duration literal belongs
