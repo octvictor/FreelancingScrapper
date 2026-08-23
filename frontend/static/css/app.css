@@ -127,6 +127,32 @@
     --shadow-pop: 0 12px 28px rgba(40, 40, 40, 0.18);
     --overlay: rgba(0, 0, 0, 0.5);
 
+    /* ---------- Motion ----------
+       cubic-bezier(0.23, 1, 0.32, 1) was already hand-typed in two places
+       before this existed; it is the strong ease-out the built-in keyword
+       is too weak to give. Same rule as the colors: no curve or duration
+       literal outside this block.
+
+       The durations are a tier list, not a scale to interpolate. Press is
+       the fastest because it has to feel like the click itself; exit is
+       deliberately quicker than enter, because on the way in the user is
+       waiting to see something and on the way out they have already
+       decided. Nothing here is allowed past 300ms. */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+    --dur-press: 120ms;
+    --dur-hover: 120ms;
+    --dur-pop: 150ms;
+    --dur-modal-in: 200ms;
+    --dur-modal-out: 150ms;
+
+    /* scale() is relative, so one value cannot serve a 120px button and a
+       22px icon - the small tier presses harder to read at all. Tokens
+       rather than literals so reduced motion is a single switch below. */
+    --press-scale: 0.97;
+    --press-scale-sm: 0.9;
+
     --font-sans: "Google Sans Flex", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
@@ -315,6 +341,186 @@ button, input, select, textarea {
     color: inherit;
 }
 
+/* ---------- Tactility: hover fades and press feedback ----------
+   Both lists are explicit rather than a blanket `button` or `*` selector.
+   A stylesheet-wide transition is the same mistake as `transition: all`,
+   one level up: it animates things nobody chose to animate, and the cost
+   shows up somewhere unrelated later.
+
+   These rules sit here, near the top, on purpose. Every selector below
+   has the same specificity as its own component rule further down the
+   file, so any component that wants different timing just declares its
+   own `transition` and wins on source order - see .sb-item, which keeps
+   its 0.15s box-shadow, and the Calculator title, which keeps its own.
+
+   Measured before this existed: 53 of 56 hover rules in the file were
+   hard cuts, and the whole stylesheet contained exactly one :active rule
+   (a `cursor: grabbing`, which is not press feedback). */
+
+.btn,
+.btn-danger,
+.btn-text,
+.btn-danger-text,
+.cell-select,
+.header-filter,
+.url-open-link,
+.color-preset-swatch,
+.note-color-btn,
+.custom-select-option,
+.custom-select-trigger,
+.date-cell,
+.date-nav,
+.date-pop-action,
+.doc-delete-btn,
+.doc-name,
+.due-soon-toast-close,
+.due-soon-toast-link,
+.finance-add-row-card,
+.finance-add-tab-btn,
+.finance-card-delete,
+.finance-card-toggle,
+.finance-tab,
+.kanban-add-task,
+.kanban-col-delete,
+.kanban-col-new,
+input.kanban-col-title-input,
+.modal-close,
+.modal-description-input,
+.modal-side-tab,
+.modal-title-input,
+.note-add-card,
+.note-delete-btn,
+.note-drag-handle,
+.note-modal-toggle-btn,
+.overview-search-result,
+.personal-projects-header,
+.row-delete-btn,
+.row-drag-handle,
+.view-toggle-btn,
+table.project-table tbody td {
+    transition: background-color var(--dur-hover) ease,
+                color var(--dur-hover) ease,
+                border-color var(--dur-hover) ease,
+                box-shadow var(--dur-hover) ease,
+                opacity var(--dur-hover) ease;
+}
+
+/* The one hover that moves rather than recolors: the color dot grows.
+   Width and height are layout properties and normally the wrong thing to
+   animate, but this is a 10px dot with no siblings depending on its size,
+   so the reflow is the element itself and nothing else. */
+.color-dot-btn {
+    transition: width var(--dur-hover) ease, height var(--dur-hover) ease;
+}
+
+/* Press. scale() is relative, so one value cannot serve both a 120px
+   button and a 22px swatch - 0.97 on a 22px control is two thirds of a
+   pixel, which is not feedback, it is nothing. Hence two tiers, split by
+   how big the thing being pressed actually is.
+
+   Not on this list, deliberately: table rows and the content cards
+   (project, note, Calculator row). They contain their own buttons and
+   inputs, so pressing a delete icon would scale its whole card, and a
+   scaled table row breaks its own column alignment. */
+.btn,
+.btn-danger,
+.btn-text,
+.btn-danger-text,
+.sb-item,
+.view-toggle-btn,
+.finance-tab,
+.finance-add-tab-btn,
+.finance-add-row-card,
+.kanban-add-task,
+.kanban-col-new,
+.note-add-card,
+.note-modal-toggle-btn,
+.modal-side-tab,
+.empty-action,
+.overview-search-result,
+.expand-btn,
+.header-filter,
+.date-nav,
+.date-pop-action,
+.date-cell:not(.is-blank),
+.custom-select-trigger {
+    transition: transform var(--dur-press) var(--ease-out),
+                background-color var(--dur-hover) ease,
+                color var(--dur-hover) ease,
+                border-color var(--dur-hover) ease,
+                box-shadow var(--dur-hover) ease;
+}
+
+.btn:active,
+.btn-danger:active,
+.btn-text:active,
+.btn-danger-text:active,
+.sb-item:active,
+.view-toggle-btn:active,
+.finance-tab:active,
+.finance-add-tab-btn:active,
+.finance-add-row-card:active,
+.kanban-add-task:active,
+.kanban-col-new:active,
+.note-add-card:active,
+.note-modal-toggle-btn:active,
+.modal-side-tab:active,
+.empty-action:active,
+.overview-search-result:active,
+.expand-btn:active,
+.header-filter:active,
+.date-nav:active,
+.date-pop-action:active,
+.date-cell:not(.is-blank):active,
+.custom-select-trigger:active {
+    transform: scale(var(--press-scale));
+}
+
+/* The small tier: icon buttons, swatches, dots. */
+.modal-close:active,
+.row-delete-btn:active,
+.note-delete-btn:active,
+.doc-delete-btn:active,
+.kanban-col-delete:active,
+.finance-card-delete:active,
+.finance-card-toggle:active,
+.due-soon-toast-close:active,
+.color-preset-swatch:active,
+.note-color-btn:active,
+.color-dot-btn:active,
+.url-open-link:active {
+    transform: scale(var(--press-scale-sm));
+}
+
+.modal-close,
+.row-delete-btn,
+.note-delete-btn,
+.doc-delete-btn,
+.kanban-col-delete,
+.finance-card-delete,
+.finance-card-toggle,
+.due-soon-toast-close,
+.color-preset-swatch,
+.note-color-btn,
+.url-open-link {
+    transition: transform var(--dur-press) var(--ease-out),
+                background-color var(--dur-hover) ease,
+                color var(--dur-hover) ease,
+                box-shadow var(--dur-hover) ease,
+                opacity var(--dur-hover) ease;
+}
+
+/* Reduced motion keeps the color fades - they aid comprehension and
+   nothing moves - and drops only the scale, which is movement. Flipping
+   the two tokens does it in one place; a blanket [class]:active override
+   would be the same overreach these rules avoid everywhere else. */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --press-scale: 1;
+        --press-scale-sm: 1;
+    }
+}
+
 .app-shell {
     display: flex;
     flex-direction: column;
@@ -446,8 +652,8 @@ button, input, select, textarea {
 .sb-theme-icons svg {
     position: absolute;
     inset: 0;
-    transition: opacity 180ms cubic-bezier(0.23, 1, 0.32, 1),
-                transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+    transition: opacity 180ms var(--ease-out),
+                transform 180ms var(--ease-out);
 }
 
 /* The icon shown is the one you are switching TO, matching the label.
@@ -2015,7 +2221,7 @@ table.project-table tbody tr:hover td {
 }
 
 .modal-backdrop > .modal {
-    animation: modal-in 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    animation: modal-in var(--dur-modal-in) var(--ease-out);
 }
 
 @keyframes modal-backdrop-in {
@@ -2027,11 +2233,38 @@ table.project-table tbody tr:hover td {
     from { opacity: 0; transform: scale(0.97) translateY(6px); }
 }
 
+/* The way out, added after the way in had existed alone for a while: the
+   modal faded and scaled in, then vanished on a display:none. Exit is
+   150ms against the entrance's 200ms - on the way in you are waiting to
+   see something, on the way out you have already decided, so the same
+   duration in both directions feels slow leaving. Keyframes rather than
+   transitions here because a modal cannot be triggered rapidly enough to
+   need retargeting; closeModalAnimated in nav.js adds .closing, waits,
+   then hides. */
+.modal-backdrop.closing {
+    animation: modal-backdrop-out var(--dur-modal-out) ease-out forwards;
+}
+
+.modal-backdrop.closing > .modal {
+    animation: modal-out var(--dur-modal-out) ease-out forwards;
+}
+
+@keyframes modal-backdrop-out {
+    to { opacity: 0; }
+}
+
+@keyframes modal-out {
+    to { opacity: 0; transform: scale(0.98) translateY(4px); }
+}
+
 /* Fewer and gentler, not none: the fade still says a layer arrived, the
    movement that causes trouble is what goes. */
 @media (prefers-reduced-motion: reduce) {
     .modal-backdrop > .modal {
         animation: modal-backdrop-in 0.15s ease-out;
+    }
+    .modal-backdrop.closing > .modal {
+        animation: modal-backdrop-out var(--dur-modal-out) ease-out forwards;
     }
 }
 
@@ -2787,6 +3020,54 @@ input.kanban-col-title-input:focus {
 .color-preset-popover {
     flex-direction: column;
     gap: 6px;
+}
+
+
+/* ---------- Popover entrances ----------
+   Both popovers are created by JS and inserted into the DOM already
+   carrying .open, so they are new elements on first paint rather than
+   something transitioning out of display:none - which is what lets
+   @starting-style work here without transition-behavior: allow-discrete.
+
+   transform-origin is top left because openColorPresetPopover and
+   enhanceDateField both position the panel at the trigger's bottom-left
+   corner (rect.left, rect.bottom + 6). The panel therefore grows out of
+   the swatch that opened it instead of out of its own middle. Modals are
+   the deliberate exception to this and stay centered - they are not
+   anchored to any trigger.
+
+   Where @starting-style is unsupported the popover simply appears, which
+   is exactly today's behaviour, so this degrades to nothing. */
+
+.color-preset-popover.open,
+.date-popover.open {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: top left;
+    transition: opacity var(--dur-pop) var(--ease-out),
+                transform var(--dur-pop) var(--ease-out);
+}
+
+/* 0.96, not 0 - a panel that grows from nothing reads as a glitch. */
+@starting-style {
+    .color-preset-popover.open,
+    .date-popover.open {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .color-preset-popover.open,
+    .date-popover.open {
+        transition: opacity var(--dur-pop) ease;
+    }
+    @starting-style {
+        .color-preset-popover.open,
+        .date-popover.open {
+            transform: scale(1);
+        }
+    }
 }
 
 .color-preset-popover.open {

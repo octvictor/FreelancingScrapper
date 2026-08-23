@@ -205,7 +205,7 @@ async function openTodoTaskModal(listId, id) {
 }
 
 function closeTodoTaskModal() {
-    $("todo-modal-backdrop").style.display = "none";
+    closeModalAnimated($("todo-modal-backdrop"));
     activeTodoTaskId = null;
     activeTodoTaskListId = null;
 }

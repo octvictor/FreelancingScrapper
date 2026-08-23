@@ -168,6 +168,57 @@ function openColorPresetPopover(triggerBtn, currentColor, { onChange, onClear })
     });
 }
 
+// ---------- Modal close ----------
+// The entrance was CSS-only from the start; the exit needs JS because
+// nothing can animate an element that is already display:none. .closing
+// runs the out keyframes, then the element is hidden for real once they
+// finish. animationend rather than a setTimeout so the two never drift
+// apart if the duration in app.css changes.
+//
+// The guard matters: closing an already-closing modal (Escape twice, or
+// Escape plus a backdrop click) would otherwise stack listeners and hide
+// it mid-animation.
+
+// Read from the stylesheet rather than repeated here: the fallback timer
+// below must always outlast the real animation, and a hardcoded copy would
+// silently start cutting the exit short the first time --dur-modal-out
+// changed in app.css.
+function modalOutMs() {
+    const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue("--dur-modal-out").trim();
+    const ms = raw.endsWith("ms") ? parseFloat(raw)
+        : raw.endsWith("s") ? parseFloat(raw) * 1000 : NaN;
+    return Number.isFinite(ms) ? ms : 150;
+}
+
+function closeModalAnimated(backdrop, done) {
+    if (!backdrop || backdrop.style.display === "none" || backdrop.classList.contains("closing")) return;
+    let settled = false;
+    const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        backdrop.removeEventListener("animationend", onEnd);
+        backdrop.classList.remove("closing");
+        backdrop.style.display = "none";
+        if (typeof done === "function") done();
+    };
+    // animationend bubbles, and the panel inside the backdrop is running its
+    // own out keyframes - without this check the child's event would close
+    // the modal, which happens to look the same today only because both
+    // animations share a duration.
+    const onEnd = (e) => {
+        if (e.target === backdrop) finish();
+    };
+    // The modal must end up hidden even if the animation never reports
+    // finishing - no animation support, a background tab, the element
+    // detached mid-flight. Losing the exit animation is a blemish; a modal
+    // that will not close is a broken app.
+    const timer = setTimeout(finish, modalOutMs() + 80);
+    backdrop.classList.add("closing");
+    backdrop.addEventListener("animationend", onEnd);
+}
+
 const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
 
 // A permanent .sb sits beside .ct-card on every page - it never shrinks
@@ -443,7 +494,9 @@ function confirmDialog(message, { title = "Are you sure?", confirmText = "Delete
 
         function finish(result) {
             document.removeEventListener("keydown", onKeydown);
-            backdrop.remove();
+            // Same exit as every other modal, then drop the node entirely -
+            // this one is created per call rather than living in index.html.
+            closeModalAnimated(backdrop, () => backdrop.remove());
             resolve(result);
         }
 

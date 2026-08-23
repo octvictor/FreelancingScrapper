@@ -444,6 +444,50 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**Motion has a token block too, and the same rule.** `--ease-out`,
+`--ease-in-out`, the `--dur-*` tier list and the two `--press-scale`
+values live beside the colors; no curve or duration literal belongs
+anywhere else. `cubic-bezier(0.23, 1, 0.32, 1)` was hand-typed in three
+places before this existed - it is the strong ease-out that the built-in
+keyword is too weak to give, and it is now named once.
+
+Two decisions in there are worth not undoing. The durations are a tier
+list rather than a scale: press is fastest because it has to feel like the
+click itself, and exit is deliberately quicker than enter, because on the
+way in you are waiting to see something and on the way out you have
+already decided. And `--press-scale` is a token rather than a literal
+purely so `prefers-reduced-motion` can flip it to `1` in one place -
+reduced motion drops the movement and keeps the color fades, which is the
+"fewer and gentler, not none" reading.
+
+The two tactility rules near the top of `app.css` are explicit selector
+lists on purpose. A blanket `button` or `*` transition is `transition: all`
+one level up: it animates things nobody chose to animate and the cost
+surfaces somewhere unrelated later. They sit early in the file so any
+component wanting different timing just declares its own `transition` and
+wins on source order - `.sb-item` and the Calculator title both do.
+
+Two things that were measured before any of it was written: 53 of the
+file's 56 hover rules were hard cuts, and the whole stylesheet held
+exactly one `:active` rule, which was a `cursor: grabbing`. If either
+number creeps back up, the app is drifting back to feeling flat.
+
+`scale()` is relative, so one press value cannot serve a 120px button and
+a 22px icon - 0.97 on a 22px control is two thirds of a pixel. Hence two
+tiers. Content cards and table rows are deliberately not pressable: they
+contain their own buttons, so pressing a delete icon would scale its whole
+card, and a scaled table row breaks its own column alignment.
+
+Closing a modal needs JS (`closeModalAnimated`, nav.js) because nothing
+can animate an element that is already `display: none`. Three details in
+there are load-bearing: `animationend` bubbles, so the handler checks
+`e.target === backdrop` or the inner panel's own animation closes the
+modal; a timeout backstop guarantees the modal ends up hidden even if the
+animation never reports finishing, because losing an exit animation is a
+blemish while a modal that will not close is a broken app; and that
+timeout reads `--dur-modal-out` from the stylesheet rather than repeating
+it, so it cannot start cutting the exit short when the CSS changes.
+
 **Two themes, one rule: no color literal outside the token block.** Every
 color in `app.css` is a named token defined twice - once on `:root` (light,
 warm paper) and once on `:root[data-theme="dark"]` (warm charcoal). Adding

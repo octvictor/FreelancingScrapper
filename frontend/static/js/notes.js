@@ -318,7 +318,7 @@ function openNoteModal(noteId) {
 async function closeNoteModal() {
     const noteId = activeNoteId;
     activeNoteId = null;
-    $("note-modal-backdrop").style.display = "none";
+    closeModalAnimated($("note-modal-backdrop"));
     if (noteId === null) return;
 
     const note = notes.find((n) => n.id === noteId);
@@ -353,6 +353,19 @@ async function closeNoteModal() {
 $("note-modal-close").addEventListener("click", closeNoteModal);
 $("note-modal-backdrop").addEventListener("click", (e) => {
     if (e.target.id === "note-modal-backdrop") closeNoteModal();
+});
+
+// Escape closes it, the same as the Project, Personal Project and To Do
+// modals - this one was the odd one out and had no keyboard exit at all.
+// The popover guard is why it is not a straight copy of theirs: Notes is
+// the only modal containing a color picker, and that picker registers its
+// own Escape handler on document. Without this, one press would close the
+// picker and the note behind it.
+document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if ($("note-modal-backdrop").style.display === "none") return;
+    if (document.querySelector(".popover-panel.open")) return;
+    closeNoteModal();
 });
 
 // Switches the open note between text and list mode, carrying content
@@ -410,7 +423,7 @@ $("note-modal-delete-btn").addEventListener("click", async () => {
     await fetch(`/api/notes/${noteId}`, { method: "DELETE" });
     notes = notes.filter((n) => n.id !== noteId);
     activeNoteId = null;
-    $("note-modal-backdrop").style.display = "none";
+    closeModalAnimated($("note-modal-backdrop"));
     document.querySelector(`#notes-grid .note-card[data-id="${noteId}"]`)?.remove();
 });
 

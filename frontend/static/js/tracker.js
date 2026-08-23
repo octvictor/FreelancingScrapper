@@ -502,7 +502,7 @@ async function openProjectModal(id) {
 }
 
 function closeProjectModal() {
-    $("project-modal-backdrop").style.display = "none";
+    closeModalAnimated($("project-modal-backdrop"));
     activeProjectId = null;
 }
 
@@ -783,7 +783,7 @@ async function openPersonalProjectModal(id) {
 }
 
 function closePersonalProjectModal() {
-    $("personal-modal-backdrop").style.display = "none";
+    closeModalAnimated($("personal-modal-backdrop"));
     activePersonalProjectId = null;
 }
 
