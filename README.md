@@ -459,10 +459,29 @@ wrapping the event instead would thrash. And the release needs **two**
 nested `requestAnimationFrame`s: with one, the browser coalesces the invert
 and the release into a single style recalculation and nothing animates.
 
-The dragged item stays at `opacity: 1`. It used to fade to `0.4`, which
-reads as "disabled" rather than "you are holding this" - and it is the one
-element on screen you are actually watching. A shadow and `scale(1.02)`
-carry it instead, the same language as picking something up off a desk.
+**The app does not use native HTML5 drag, and the reason is worth keeping
+written down.** The item that follows the cursor in an HTML5 drag is a
+snapshot drawn by the browser's compositor, and it is composited
+translucent. It is not the source element, so no CSS in the page reaches
+it - setting `opacity: 1` on what you grabbed does nothing, because that is
+not the thing you are looking at. The only way to hold a solid item is to
+draw it yourself.
+
+So `startPointerDrag` (nav.js) runs the whole gesture on pointer events:
+`.drag-ghost` is a real cloned node following the pointer at full opacity
+with a shadow, and `.drag-source` is the original left in the list, faded
+to `0.35` as a slot showing where it will land. A 4px threshold before the
+drag begins is what keeps a plain click on a card still opening it.
+
+Two traps in there. `body > .drag-ghost` needs the child combinator: the
+ghost is a clone and carries its original's classes, and `.note-card`,
+`.kcard` and `.kanban-col` all set `position: relative` in rules further
+down the file. At equal specificity source order wins, so a plain
+`.drag-ghost { position: fixed }` lost and the ghost was laid out in flow
+hundreds of pixels down the page, invisible while every measurement said
+it existed. And a To Do column is dragged by a **grip**, not its header -
+the header was tried first and the title input is `flex: 1`, so "the header
+minus its controls" left a few pixels of target.
 
 **The To Do board reorders in three directions**, which is why
 `reorder_todo_tasks` takes a list id *and* the ids: on a Kanban board,

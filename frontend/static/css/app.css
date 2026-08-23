@@ -1928,37 +1928,50 @@ table.project-table td.project-row-desc {
 }
 
 /* ---------- Reordering ----------
-   The item being dragged stays fully opaque. It used to fade to 0.4, which
-   read as "this is disabled" rather than "you are holding this" - and it is
-   the one element on screen you are actually looking at, so dimming it is
-   backwards. The lift does the job instead: a shadow and a hair of scale,
-   the same language as picking something up off a desk. */
-table.project-table tr.dragging,
-.project-card.dragging,
-.note-card.dragging,
-.kcard.dragging,
-.kanban-col.dragging {
+   Two elements, two jobs. .drag-ghost is the clone that follows the
+   pointer - the item you are actually holding, at full opacity, lifted by
+   a shadow and a hair of scale. .drag-source is the original left behind
+   in the list, faded down to a slot that shows where it will land.
+
+   This split is why the app stopped using native HTML5 drag. There, the
+   thing following the cursor is a compositor-drawn snapshot, composited
+   translucent by the browser, and no CSS in the page can reach it. Drawing
+   it as a real node is the only way it can be solid. */
+/* `body > ` is load-bearing, not decoration. The ghost is a clone, so it
+   carries its original's classes - and .note-card, .kcard and .kanban-col
+   all set `position: relative` in rules that come later in this file. At
+   equal specificity source order wins, so a plain `.drag-ghost` lost, and
+   the ghost was laid out in flow, hundreds of pixels down the page,
+   invisible. The child combinator outranks them without !important, and
+   it is honest: startPointerDrag appends the ghost to <body>. */
+body > .drag-ghost {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 500;
+    margin: 0;
     opacity: 1;
+    pointer-events: none;
     box-shadow: var(--shadow-pop);
-    transform: scale(1.02);
+    transform-origin: top left;
     cursor: grabbing;
+    /* No transition: this follows the pointer every frame, and easing a
+       value that is being reassigned continuously only adds lag. */
 }
 
-/* The column header is the column's drag handle, so it says so. The card
-   itself keeps `pointer`: opening a task is the commoner action, and a
-   grab cursor on something you mostly click reads as the wrong promise.
-   Both switch to `grabbing` mid-drag via .dragging above. */
-.kanban-col-head {
-    cursor: grab;
+.drag-source {
+    opacity: 0.35;
 }
 
-.kanban-col-head input,
-.kanban-col-head button {
-    cursor: auto;
+/* The pointer is holding something, so nothing underneath should offer a
+   hover state or start selecting text on the way past. */
+body.is-dragging {
+    cursor: grabbing;
+    user-select: none;
 }
 
-.kanban-col-head button {
-    cursor: pointer;
+body.is-dragging * {
+    cursor: grabbing !important;
 }
 
 /* Applied by flipReorder (nav.js) only while an item is travelling to its
@@ -2871,6 +2884,30 @@ table.project-table tbody tr:hover td {
     align-items: center;
     gap: 8px;
     margin-bottom: 10px;
+}
+
+/* The column's grip, reusing .row-drag-handle's look so a Projects row, a
+   Notes card and a column all offer the same affordance. It stays out of
+   the way until the column is hovered - the same reveal a note card's
+   grip uses - because a header with four permanent controls in it starts
+   reading as a toolbar. */
+.kanban-col-grip {
+    flex-shrink: 0;
+    margin-left: -4px;
+    opacity: 0;
+    transition: opacity var(--dur-hover) ease;
+}
+
+.kanban-col:hover .kanban-col-grip,
+.kanban-col-grip:focus-visible {
+    opacity: 1;
+}
+
+/* Never hidden mid-drag: the pointer is holding this column, and the grip
+   vanishing the moment the cursor leaves the header reads as a glitch. */
+.kanban-col.drag-source .kanban-col-grip,
+body > .drag-ghost .kanban-col-grip {
+    opacity: 1;
 }
 
 /* Qualified with the element type (not just the class) so this ties the

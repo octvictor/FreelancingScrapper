@@ -216,34 +216,16 @@ async function setNoteColor(noteId, color) {
 // ---------- Drag-to-reorder ----------
 
 function wireNoteDrag(card) {
-    const handle = card.querySelector(".note-drag-handle");
-    handle.addEventListener("mousedown", () => {
-        card.draggable = true;
-    });
-
-    card.addEventListener("dragstart", (e) => {
-        draggedNote = card;
-        card.classList.add("dragging");
-        e.dataTransfer.effectAllowed = "move";
-    });
-
-    card.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        if (!draggedNote || draggedNote === card) return;
-        const rect = card.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        // flipInsert (nav.js) does the same insertBefore, wrapped so every
-        // other card slides to its new place instead of jumping there.
-        flipInsert(draggedNote, card, e.clientY < midpoint);
-    });
-
-    card.addEventListener("dragend", () => {
-        card.draggable = false;
-        card.classList.remove("dragging");
-        if (draggedNote === card) {
-            draggedNote = null;
-            persistNoteOrder();
-        }
+    // From the grip only: a note card opens on click, so a whole-body drag
+    // would be competing with the commoner gesture. startPointerDrag
+    // (nav.js) carries a real clone at full opacity - the note there
+    // explains why this is not native HTML5 drag.
+    card.querySelector(".note-drag-handle").addEventListener("pointerdown", (e) => {
+        startPointerDrag(e, card, {
+            zones: () => [document.getElementById("notes-grid")],
+            itemsIn: (zone) => Array.from(zone.querySelectorAll(".note-card:not(.note-add-card)")),
+            onDrop: () => persistNoteOrder(),
+        });
     });
 }
 

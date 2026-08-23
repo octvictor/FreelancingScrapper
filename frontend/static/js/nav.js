@@ -242,6 +242,117 @@ function flipInsert(dragged, reference, before) {
     }, { skip: dragged });
 }
 
+// ---------- Pointer drag ----------
+// Native HTML5 drag was replaced here for one reason: the ghost that
+// follows the cursor is drawn by the browser's compositor, not the page,
+// and it is composited translucent. No CSS reaches it - setting opacity
+// on the source element does nothing to it, because it is not the source
+// element, it is a snapshot. The only way to hold a solid item is to draw
+// the item yourself.
+//
+// So: the source stays put as a slot showing where the thing will land,
+// and a real cloned node follows the pointer at full opacity. Everything
+// else (reordering, FLIP, persistence) is unchanged from the HTML5
+// version - only the transport differs.
+//
+// opts:
+//   zones()        -> containers that accept this item, in DOM order
+//   itemsIn(zone)  -> the reorderable children of a zone
+//   axis           -> "y" (default) or "x", which edge decides before/after
+//   onDrop(source, fromZone, toZone) -> persist; not called if nothing moved
+
+const DRAG_THRESHOLD_PX = 4;
+
+function startPointerDrag(downEvent, source, opts) {
+    if (downEvent.button !== 0) return;
+    const { zones, itemsIn, axis = "y", onDrop } = opts;
+    const startX = downEvent.clientX;
+    const startY = downEvent.clientY;
+    const fromZone = source.parentNode;
+    let ghost = null;
+    let grabX = 0;
+    let grabY = 0;
+    let moved = false;
+
+    const begin = () => {
+        const rect = source.getBoundingClientRect();
+        grabX = startX - rect.left;
+        grabY = startY - rect.top;
+        ghost = source.cloneNode(true);
+        ghost.classList.add("drag-ghost");
+        // Locked to the original's measured box: a clone pulled out of a
+        // grid or a table row has no layout of its own to size it.
+        ghost.style.width = rect.width + "px";
+        ghost.style.height = rect.height + "px";
+        document.body.appendChild(ghost);
+        source.classList.add("drag-source");
+        document.body.classList.add("is-dragging");
+        moveGhost(startX, startY);
+    };
+
+    const moveGhost = (x, y) => {
+        ghost.style.transform = `translate(${x - grabX}px, ${y - grabY}px)`;
+    };
+
+    const onMove = (e) => {
+        if (!moved) {
+            if (Math.abs(e.clientX - startX) < DRAG_THRESHOLD_PX &&
+                Math.abs(e.clientY - startY) < DRAG_THRESHOLD_PX) return;
+            // Only now is this a drag rather than a click, which is what
+            // keeps a card openable and a title field selectable.
+            moved = true;
+            begin();
+        }
+        e.preventDefault();
+        moveGhost(e.clientX, e.clientY);
+
+        // The ghost is pointer-events:none, so this reads what is under it.
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        if (!under) return;
+        const zone = zones().find((z) => z === under || z.contains(under));
+        if (!zone) return;
+
+        const items = itemsIn(zone).filter((el) => el !== source);
+        const target = items.find((el) => el === under || el.contains(under));
+        if (target) {
+            const r = target.getBoundingClientRect();
+            const before = axis === "x"
+                ? e.clientX < r.left + r.width / 2
+                : e.clientY < r.top + r.height / 2;
+            flipInsert(source, target, before);
+        } else if (!zone.contains(source)) {
+            // Over the zone but not over any item: an empty column, or the
+            // gap under the last card. Append, so an empty zone is reachable.
+            flipReorder(Array.from(zone.children), () => zone.appendChild(source), { skip: source });
+        }
+    };
+
+    const finish = (cancelled) => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        document.removeEventListener("keydown", onKey, true);
+        if (!moved) return;
+        if (ghost) ghost.remove();
+        source.classList.remove("drag-source");
+        document.body.classList.remove("is-dragging");
+        if (!cancelled) onDrop(source, fromZone, source.parentNode);
+    };
+
+    const onUp = () => finish(false);
+    const onKey = (e) => {
+        if (e.key !== "Escape" || !moved) return;
+        // Escape drops it where it currently sits rather than unwinding the
+        // whole drag: the reorder already happened in the DOM on the way
+        // here, and inventing an undo would be a second source of truth.
+        e.stopImmediatePropagation();
+        finish(false);
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("keydown", onKey, true);
+}
+
 // ---------- Modal close ----------
 // The entrance was CSS-only from the start; the exit needs JS because
 // nothing can animate an element that is already display:none. .closing

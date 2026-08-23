@@ -46,6 +46,7 @@ function todoColumnHtml(list) {
     return `
         <div class="kanban-col" data-id="${list.id}">
             <div class="kanban-col-head">
+                <span class="row-drag-handle kanban-col-grip" title="Drag to reorder">&#8942;</span>
                 <button class="color-dot-btn" data-role="color" type="button" title="List color" style="--dot-color:${list.color || "var(--border)"};">
                     <span class="color-dot"></span>
                 </button>
@@ -76,7 +77,6 @@ function renderTodoBoard() {
     container.querySelectorAll(".kanban-col").forEach((col) => {
         wireTodoColumn(col);
         wireTodoColumnDrag(col);
-        wireTodoTasksDropZone(col);
         col.querySelectorAll(".kcard").forEach(wireTodoCardDrag);
     });
     wireTodoAddListBtn();
@@ -380,102 +380,41 @@ onRowFitResize(() => {
 // with no editable field or button spanning it - and dragging a column by
 // its task area would fight the cards inside it for the same gesture.
 
-let draggedCard = null;
-let draggedCardOrigin = null;
-let draggedCol = null;
-
 function todoColumnOf(el) {
     return el.closest(".kanban-col");
 }
 
+const todoColumns = () => Array.from(document.querySelectorAll("#todo-board .kanban-col"));
+const todoTaskZones = () => Array.from(document.querySelectorAll("#todo-board [data-role='tasks']"));
+
+// Cards drag by their whole body, which is the Kanban convention - a card
+// IS its own handle. Anything interactive inside it is excluded, or you
+// could never tick a checkbox near the card's edge.
 function wireTodoCardDrag(card) {
-    card.draggable = true;
-
-    card.addEventListener("dragstart", (e) => {
-        if (e.target.closest(".todo-task-checkbox")) {
-            e.preventDefault();
-            return;
-        }
-        draggedCard = card;
-        draggedCardOrigin = todoColumnOf(card);
-        card.classList.add("dragging");
-        e.dataTransfer.effectAllowed = "move";
-        e.stopPropagation();
-    });
-
-    card.addEventListener("dragover", (e) => {
-        if (!draggedCard || draggedCard === card) return;
-        e.preventDefault();
-        e.stopPropagation();
-        const rect = card.getBoundingClientRect();
-        flipInsert(draggedCard, card, e.clientY < rect.top + rect.height / 2);
-    });
-
-    card.addEventListener("dragend", () => {
-        card.classList.remove("dragging");
-        if (draggedCard !== card) return;
-        const from = draggedCardOrigin;
-        const to = todoColumnOf(card);
-        draggedCard = null;
-        draggedCardOrigin = null;
-        persistTodoCardMove(from, to);
+    card.addEventListener("pointerdown", (e) => {
+        if (e.target.closest("button, input, textarea, a")) return;
+        const from = todoColumnOf(card);
+        startPointerDrag(e, card, {
+            zones: todoTaskZones,
+            itemsIn: (zone) => Array.from(zone.querySelectorAll(".kcard")),
+            onDrop: (source) => persistTodoCardMove(from, todoColumnOf(source)),
+        });
     });
 }
 
-// The column's task area is its own drop target, which is what makes an
-// empty column reachable at all - with no cards in it there is nothing
-// else to drop onto.
-function wireTodoTasksDropZone(col) {
-    const zone = col.querySelector("[data-role='tasks']");
-    zone.addEventListener("dragover", (e) => {
-        if (!draggedCard) return;
-        e.preventDefault();
-        if (zone.contains(draggedCard)) return;
-        const cards = Array.from(zone.querySelectorAll(".kcard"));
-        const below = cards.find((c) => e.clientY < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2);
-        if (below) {
-            flipInsert(draggedCard, below, true);
-        } else {
-            const items = Array.from(zone.children);
-            flipReorder(items, () => zone.appendChild(draggedCard), { skip: draggedCard });
-        }
-    });
-}
-
+// Columns drag by a grip in their header, the same affordance Notes cards
+// and Projects rows use. The header itself was tried first and does not
+// work: the title input is flex:1 and fills nearly all of it, so "header
+// minus its controls" left a few pixels of target. Horizontal axis,
+// because columns sit side by side.
 function wireTodoColumnDrag(col) {
-    const head = col.querySelector(".kanban-col-head");
-
-    // Same trick the Projects table uses: draggable goes on only for the
-    // duration of a drag started from the header, so the title input keeps
-    // its own text selection and the buttons stay clickable.
-    head.addEventListener("mousedown", (e) => {
-        if (e.target.closest("input, button")) return;
-        col.draggable = true;
-    });
-    head.addEventListener("mouseup", () => {
-        col.draggable = false;
-    });
-
-    col.addEventListener("dragstart", (e) => {
-        if (draggedCard) return;
-        draggedCol = col;
-        col.classList.add("dragging");
-        e.dataTransfer.effectAllowed = "move";
-    });
-
-    col.addEventListener("dragover", (e) => {
-        if (!draggedCol || draggedCol === col) return;
-        e.preventDefault();
-        const rect = col.getBoundingClientRect();
-        flipInsert(draggedCol, col, e.clientX < rect.left + rect.width / 2);
-    });
-
-    col.addEventListener("dragend", () => {
-        col.draggable = false;
-        col.classList.remove("dragging");
-        if (draggedCol !== col) return;
-        draggedCol = null;
-        persistTodoColumnOrder();
+    col.querySelector(".kanban-col-grip").addEventListener("pointerdown", (e) => {
+        startPointerDrag(e, col, {
+            zones: () => [col.parentNode],
+            itemsIn: (zone) => Array.from(zone.querySelectorAll(".kanban-col")),
+            axis: "x",
+            onDrop: () => persistTodoColumnOrder(),
+        });
     });
 }
 

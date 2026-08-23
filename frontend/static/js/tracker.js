@@ -215,39 +215,23 @@ window.addEventListener("resize", () => {
 });
 
 // ---------- Drag-to-reorder ----------
-// Native HTML5 drag-and-drop, but only armed from the grip handle (not
-// the whole row) - mousedown on the handle flips the row's `draggable`
-// on, dragend flips it back off.
-
-let draggedRow = null;
+// Started from the grip handle only, not the whole row: a project card
+// carries a status pill, a client field and its own click-to-open, and
+// any of those would fight a whole-body drag for the same gesture.
+// startPointerDrag (nav.js) carries a real clone at full opacity - see
+// the note there on why this is not native HTML5 drag.
+//
+// Siblings are identified by data-id rather than a class, because this
+// same function serves both the <tr> rows and the .project-card grid.
 
 function wireRowDrag(tr, persistFn) {
     const handle = tr.querySelector(".row-drag-handle");
-    handle.addEventListener("mousedown", () => {
-        tr.draggable = true;
-    });
-
-    tr.addEventListener("dragstart", (e) => {
-        draggedRow = tr;
-        tr.classList.add("dragging");
-        e.dataTransfer.effectAllowed = "move";
-    });
-
-    tr.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        if (!draggedRow || draggedRow === tr) return;
-        const rect = tr.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        flipInsert(draggedRow, tr, e.clientY < midpoint);
-    });
-
-    tr.addEventListener("dragend", () => {
-        tr.draggable = false;
-        tr.classList.remove("dragging");
-        if (draggedRow === tr) {
-            draggedRow = null;
-            persistFn();
-        }
+    handle.addEventListener("pointerdown", (e) => {
+        startPointerDrag(e, tr, {
+            zones: () => [tr.parentNode],
+            itemsIn: (zone) => Array.from(zone.children).filter((el) => el.dataset && el.dataset.id),
+            onDrop: () => persistFn(),
+        });
     });
 }
 
