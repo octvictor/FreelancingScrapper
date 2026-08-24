@@ -522,6 +522,7 @@ function showPage(page) {
     if (page === "notes" && typeof applyNotesFit === "function") applyNotesFit();
     if (page === "todo" && typeof applyTodoBoardFit === "function") applyTodoBoardFit();
     if (page === "documents" && typeof refreshDocuments === "function") refreshDocuments();
+    if (page === "documents" && typeof refreshInvoices === "function") refreshInvoices();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page

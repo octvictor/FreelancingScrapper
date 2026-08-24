@@ -567,6 +567,9 @@ async function openSettingsModal() {
         paintSettingsPreview(entry.kind, entry.preview);
     });
     _settingsDirty.clear();
+    // The Invoices group lives in invoices.js but shares this one modal, so
+    // opening Settings has to fill it too - it has no open event of its own.
+    if (typeof loadInvoiceDefaults === "function") loadInvoiceDefaults();
     $("settings-modal-backdrop").style.display = "flex";
 }
 

@@ -157,6 +157,46 @@ CREATE TABLE IF NOT EXISTS document_files (
     UNIQUE (kind, path)
 );
 
+/* An invoice the user typed, as opposed to a PDF found on disk. Every
+   field is free text on purpose: the source invoice this was modelled on
+   writes "1 / 2" days and "$300,00" and "April 09/10", and the point is to
+   reproduce what the user types, not to impose a number format on it. The
+   one thing the app computes is nothing at all. */
+CREATE TABLE IF NOT EXISTS invoices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL DEFAULT '',
+    bill_from TEXT,
+    bill_to TEXT,
+    project_number TEXT,
+    invoice_number TEXT,
+    invoice_date TEXT,
+    due_date TEXT,
+    project_label TEXT,
+    summary_label TEXT,
+    summary_year TEXT,
+    total_text TEXT,
+    notes TEXT,
+    contact TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS invoice_rows (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 0,
+    project_title TEXT,
+    project_desc TEXT,
+    client TEXT,
+    agency TEXT,
+    dates TEXT,
+    day_rate TEXT,
+    days_worked TEXT,
+    total TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoice_rows_invoice ON invoice_rows(invoice_id, position);
+
 CREATE TABLE IF NOT EXISTS document_tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
@@ -1420,6 +1460,124 @@ def clear_document_index(kind: str | None = None) -> None:
             conn.execute("DELETE FROM document_files")
         else:
             conn.execute("DELETE FROM document_files WHERE kind=?", (kind,))
+
+
+# ---------- Invoices ----------
+# Written by the user rather than found on disk (that is document_files),
+# and every column is TEXT: see the schema comment. Nothing here totals,
+# rounds or reformats anything.
+
+INVOICE_FIELDS = (
+    "title", "bill_from", "bill_to", "project_number", "invoice_number",
+    "invoice_date", "due_date", "project_label", "summary_label",
+    "summary_year", "total_text", "notes", "contact",
+)
+
+INVOICE_ROW_FIELDS = (
+    "project_title", "project_desc", "client", "agency",
+    "dates", "day_rate", "days_worked", "total",
+)
+
+
+def _invoice_with_rows(conn, row) -> dict:
+    invoice = dict(row)
+    invoice["rows"] = [
+        dict(r) for r in conn.execute(
+            "SELECT * FROM invoice_rows WHERE invoice_id=? ORDER BY position, id",
+            (invoice["id"],),
+        )
+    ]
+    return invoice
+
+
+def list_invoices() -> list[dict]:
+    """Newest first, and without their rows - the list only shows a name and
+    a date, and pulling every row of every invoice to render that would be
+    work thrown away."""
+    with get_connection() as conn:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM invoices ORDER BY id DESC"
+        )]
+
+
+def get_invoice(invoice_id: int) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM invoices WHERE id=?", (invoice_id,)).fetchone()
+        return _invoice_with_rows(conn, row) if row else None
+
+
+def create_invoice(**fields) -> dict:
+    now = _now()
+    cols = [f for f in INVOICE_FIELDS if f in fields]
+    with get_connection() as conn:
+        cur = conn.execute(
+            f"INSERT INTO invoices ({', '.join(cols + ['created_at', 'updated_at'])}) "
+            f"VALUES ({', '.join('?' * (len(cols) + 2))})",
+            [fields[c] for c in cols] + [now, now],
+        )
+        row = conn.execute("SELECT * FROM invoices WHERE id=?", (cur.lastrowid,)).fetchone()
+        return _invoice_with_rows(conn, row)
+
+
+def update_invoice(invoice_id: int, **fields) -> dict | None:
+    cols = [f for f in INVOICE_FIELDS if f in fields]
+    with get_connection() as conn:
+        if cols:
+            conn.execute(
+                f"UPDATE invoices SET {', '.join(c + '=?' for c in cols)}, updated_at=? WHERE id=?",
+                [fields[c] for c in cols] + [_now(), invoice_id],
+            )
+        row = conn.execute("SELECT * FROM invoices WHERE id=?", (invoice_id,)).fetchone()
+        return _invoice_with_rows(conn, row) if row else None
+
+
+def delete_invoice(invoice_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM invoice_rows WHERE invoice_id=?", (invoice_id,))
+        conn.execute("DELETE FROM invoices WHERE id=?", (invoice_id,))
+
+
+def add_invoice_row(invoice_id: int, **fields) -> dict:
+    cols = [f for f in INVOICE_ROW_FIELDS if f in fields]
+    with get_connection() as conn:
+        nxt = conn.execute(
+            "SELECT COALESCE(MAX(position), -1) + 1 FROM invoice_rows WHERE invoice_id=?",
+            (invoice_id,),
+        ).fetchone()[0]
+        cur = conn.execute(
+            f"INSERT INTO invoice_rows (invoice_id, position{''.join(', ' + c for c in cols)}) "
+            f"VALUES ({', '.join('?' * (len(cols) + 2))})",
+            [invoice_id, nxt] + [fields[c] for c in cols],
+        )
+        return dict(conn.execute(
+            "SELECT * FROM invoice_rows WHERE id=?", (cur.lastrowid,)
+        ).fetchone())
+
+
+def update_invoice_row(row_id: int, **fields) -> dict | None:
+    cols = [f for f in INVOICE_ROW_FIELDS if f in fields]
+    with get_connection() as conn:
+        if cols:
+            conn.execute(
+                f"UPDATE invoice_rows SET {', '.join(c + '=?' for c in cols)} WHERE id=?",
+                [fields[c] for c in cols] + [row_id],
+            )
+        row = conn.execute("SELECT * FROM invoice_rows WHERE id=?", (row_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_invoice_row(row_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM invoice_rows WHERE id=?", (row_id,))
+
+
+def reorder_invoice_rows(invoice_id: int, row_ids: list[int]) -> None:
+    with get_connection() as conn:
+        for position, row_id in enumerate(row_ids):
+            conn.execute(
+                "UPDATE invoice_rows SET position=? WHERE id=? AND invoice_id=?",
+                (position, row_id, invoice_id),
+            )
 
 
 # ---------- Document tags ----------

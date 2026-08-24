@@ -262,8 +262,17 @@
             <section id="page-documents" style="display:none;">
                 <div class="doc-head">
                     <h1 class="page-title">Documents</h1>
-                    <button class="btn doc-rescan-btn" type="button" id="doc-rescan-btn">Rescan</button>
+                    <div class="doc-head-actions">
+                        <button class="btn" type="button" id="invoice-new-btn">+ New Invoice</button>
+                        <button class="btn doc-rescan-btn" type="button" id="doc-rescan-btn">Rescan</button>
+                    </div>
                 </div>
+
+                <!-- Invoices written in the app, above the two sections that
+                     index PDFs already on disk. Same disclosure shell, so
+                     the three read as one page rather than two features
+                     sharing a tab. -->
+                <div id="invoice-drafts"></div>
 
                 <!-- One .doc-section per kind, built by documents.js from a
                      single template so Invoices and NFs cannot drift apart.
@@ -502,8 +511,136 @@
                     </div>
                 </div>
             </div>
+
+            <div class="settings-group">
+                <button class="settings-group-head" type="button" id="settings-invoice-toggle"
+                        aria-expanded="false" aria-controls="settings-invoice-body">
+                    <span class="settings-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span>
+                    <span class="settings-group-title">Invoices</span>
+                    <span class="settings-group-hint">Your details and payment info</span>
+                </button>
+                <div class="settings-group-body" id="settings-invoice-body">
+                    <div class="settings-group-inner">
+                        <div id="settings-invoice-fields">
+                            <p class="settings-hint">What every new invoice starts with. Changing these does not touch invoices you already made &mdash; each one keeps the details it was written with.</p>
+
+                            <div class="settings-field">
+                                <label class="settings-label" for="settings-invoice-from">Invoice from</label>
+                                <textarea id="settings-invoice-from" class="settings-input settings-textarea" rows="4" spellcheck="false" placeholder="Your name&#10;Street&#10;City, State, Postcode&#10;Country"></textarea>
+                            </div>
+
+                            <div class="settings-field">
+                                <label class="settings-label" for="settings-invoice-notes">Payment notes</label>
+                                <textarea id="settings-invoice-notes" class="settings-input settings-textarea" rows="8" spellcheck="false" placeholder="Bank, account, routing number, currency&#8230;"></textarea>
+                            </div>
+
+                            <div class="settings-field">
+                                <label class="settings-label" for="settings-invoice-contact">Contact</label>
+                                <textarea id="settings-invoice-contact" class="settings-input settings-textarea" rows="2" spellcheck="false" placeholder="Name&#10;Email - phone"></textarea>
+                            </div>
+
+                            <div class="settings-field">
+                                <label class="settings-label">Payment image</label>
+                                <p class="settings-hint">A Wise card, a QR code, anything you want printed beside the payment notes.</p>
+                                <div class="settings-image-row">
+                                    <img id="settings-invoice-image" alt="" style="display:none;">
+                                    <input type="file" id="settings-invoice-image-input" accept="image/*" style="display:none;">
+                                    <button class="btn" type="button" id="settings-invoice-image-btn">Choose image</button>
+                                    <button class="btn-text btn-danger-text" type="button" id="settings-invoice-image-clear" style="display:none;">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div class="modal-backdrop" id="invoice-modal-backdrop" style="display:none;">
+        <div class="modal modal-wide invoice-modal">
+            <button class="modal-close" id="invoice-modal-close" type="button" title="Close">&times;</button>
+
+            <input type="text" class="modal-title-input" id="inv-title" data-field="title" placeholder="MASSIVE X DISCORD: INVOICE">
+
+            <div class="inv-party-row">
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-bill-from">Invoice from</label>
+                    <textarea id="inv-bill-from" class="settings-input settings-textarea" data-field="bill_from" rows="4" spellcheck="false"></textarea>
+                </div>
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-bill-to">Invoice to</label>
+                    <textarea id="inv-bill-to" class="settings-input settings-textarea" data-field="bill_to" rows="4" spellcheck="false" placeholder="Company&#10;&#10;Street&#10;City, State, Postcode"></textarea>
+                </div>
+            </div>
+
+            <div class="inv-meta-row">
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-project-number">Project number</label>
+                    <input type="text" id="inv-project-number" class="settings-input" data-field="project_number" placeholder="0001">
+                </div>
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-invoice-number">Invoice number</label>
+                    <input type="text" id="inv-invoice-number" class="settings-input" data-field="invoice_number" placeholder="0001">
+                </div>
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-invoice-date">Invoice date</label>
+                    <input type="text" id="inv-invoice-date" class="settings-input" data-field="invoice_date" placeholder="April 15, 2026">
+                </div>
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-due-date">Due date</label>
+                    <input type="text" id="inv-due-date" class="settings-input" data-field="due_date" placeholder="April 30, 2026">
+                </div>
+            </div>
+
+            <h3 class="page-section-title inv-section-title">Project</h3>
+            <div class="settings-field inv-project-label-field">
+                <label class="settings-label" for="inv-project-label">Project banner</label>
+                <input type="text" id="inv-project-label" class="settings-input" data-field="project_label" placeholder="MASSIVE X DISCORD">
+            </div>
+
+            <div class="inv-rows-head">
+                <span>Project</span><span>Client</span><span>Agency</span><span>Dates</span>
+                <span>Day rate</span><span>Days worked</span><span>Total</span><span></span>
+            </div>
+            <div id="inv-rows"></div>
+            <button class="btn btn-text" type="button" id="inv-add-row-btn">+ Add row</button>
+
+            <div class="inv-total-row">
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-summary-label">Summary</label>
+                    <input type="text" id="inv-summary-label" class="settings-input" data-field="summary_label" placeholder="MA March 31 ~ April 10">
+                </div>
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-summary-year">Year</label>
+                    <input type="text" id="inv-summary-year" class="settings-input" data-field="summary_year" placeholder="2026">
+                </div>
+                <div class="settings-field">
+                    <label class="settings-label" for="inv-total-text">Total</label>
+                    <input type="text" id="inv-total-text" class="settings-input inv-total-input" data-field="total_text" placeholder="USD 2 700.00">
+                </div>
+            </div>
+
+            <h3 class="page-section-title inv-section-title">Second page</h3>
+            <div class="settings-field">
+                <label class="settings-label" for="inv-notes">Notes</label>
+                <textarea id="inv-notes" class="settings-input settings-textarea" data-field="notes" rows="10" spellcheck="false"></textarea>
+            </div>
+            <div class="settings-field">
+                <label class="settings-label" for="inv-contact">Contact</label>
+                <textarea id="inv-contact" class="settings-input settings-textarea" data-field="contact" rows="2" spellcheck="false"></textarea>
+            </div>
+
+            <div class="modal-footer inv-footer">
+                <button class="btn btn-danger-text" id="inv-delete-btn" type="button">Delete invoice</button>
+                <button class="btn" id="inv-export-btn" type="button">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- The printed invoice. Hidden on screen and revealed only by the
+         print stylesheet, so Export is window.print() over a layout the
+         browser has already laid out rather than a second renderer. -->
+    <div id="invoice-print" aria-hidden="true"></div>
 
     <script src="/static/js/nav.js"></script>
     <script src="/static/js/gatherer.js"></script>
@@ -513,5 +650,6 @@
     <script src="/static/js/finance.js"></script>
     <script src="/static/js/overview.js"></script>
     <script src="/static/js/documents.js"></script>
+    <script src="/static/js/invoices.js"></script>
 </body>
 </html>

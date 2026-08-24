@@ -530,6 +530,30 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**The invoice editor holds no numbers, only text.** Every field on an
+invoice is a TEXT column and nothing anywhere totals, rounds or reformats.
+The invoice this was built from writes `1 / 2` days, `$300,00` rates,
+`April 09/10` dates and a total the user decides; a form that insisted on
+numbers would fight all of that and win nothing. The grand total is a field
+like any other.
+
+**Export is `window.print()` over a hidden layout, not a second renderer.**
+`#invoice-print` is rendered from the invoice, `body` gets
+`.printing-invoice`, and the print stylesheet hides everything that is not
+that element. No new dependency, and the print preview is the output.
+
+Two traps in there. `#invoice-print` is positioned off-screen rather than
+`display: none` - a hidden element has no layout, so the browser has
+nothing to paginate and the print comes out blank. And Export blurs the
+focused field first: the blur handler is what saves, so exporting straight
+after typing would otherwise print the value from before the last edit.
+
+**Settings holds defaults, not a live include.** A new invoice copies the
+"invoice from" block, the payment notes and the contact line out of
+Settings; editing them later changes the next invoice, never one already
+written. An invoice is a record of what was sent, so a bank detail changing
+today must not rewrite what a client received last year.
+
 **A textarea cannot hold a link, so the note body is two elements.** The
 modal keeps `#note-modal-body` as the only editor and puts
 `#note-modal-view` in front of it - a div rendering the same text with real

@@ -5028,3 +5028,323 @@ input.settings-input:focus {
         transition: none;
     }
 }
+
+/* ---------- Invoices: editor ---------- */
+/* An invoice is a lot of fields, so the modal borrows the app's existing
+   settings-field/settings-input pair rather than inventing a second form
+   vocabulary. Only the arrangement is new. */
+
+.doc-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+textarea.settings-textarea {
+    resize: none;
+    overflow: hidden;
+    line-height: 1.5;
+    min-height: 38px;
+}
+
+.settings-image-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+#settings-invoice-image {
+    max-width: 120px;
+    max-height: 150px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+#settings-invoice-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 2px 14px 16px;
+}
+
+.invoice-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.inv-section-title {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 500;
+}
+
+.inv-party-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.inv-meta-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.inv-project-label-field {
+    max-width: 360px;
+}
+
+/* The row grid is declared once and shared by the header strip and every
+   row, which is what keeps the labels sitting over their own columns - two
+   separate declarations drift the moment one column width changes. */
+.inv-rows-head,
+.inv-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) 60px minmax(0, 1fr) minmax(0, 1fr) 90px minmax(0, 1fr) 26px;
+    gap: 10px;
+    align-items: start;
+}
+
+.inv-rows-head {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 0 4px 6px;
+}
+
+.inv-row {
+    padding: 8px 4px;
+}
+
+.inv-row + .inv-row {
+    box-shadow: inset 0 1px 0 var(--ink-08);
+}
+
+.inv-row-project {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+textarea.inv-cell {
+    resize: none;
+    overflow: hidden;
+    line-height: 1.45;
+}
+
+textarea.inv-cell-strong {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.inv-row .row-delete-btn {
+    align-self: center;
+}
+
+.inv-total-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) 90px minmax(0, 1fr);
+    gap: 14px;
+    align-items: end;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-soft);
+}
+
+input.inv-total-input {
+    font-size: 15px;
+    font-weight: 500;
+    text-align: right;
+}
+
+.inv-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+/* ---------- Invoices: the printed page ---------- */
+/* #invoice-print is off-screen rather than display:none. A hidden element
+   has no layout, so the browser would have nothing to paginate and the
+   print would come out blank. */
+
+#invoice-print {
+    position: absolute;
+    left: -10000px;
+    top: 0;
+    width: 210mm;
+}
+
+.pr-page {
+    box-sizing: border-box;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 16mm;
+    background: #ffffff;
+    color: #111111;
+    font-size: 9.5pt;
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+}
+
+.pr-title {
+    font-size: 20pt;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 10mm 0;
+    text-transform: uppercase;
+}
+
+.pr-parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8mm;
+    margin-bottom: 10mm;
+}
+
+.pr-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #666666;
+    margin-bottom: 2mm;
+}
+
+.pr-line {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.pr-meta {
+    text-align: right;
+}
+
+.pr-project-banner {
+    margin-bottom: 4mm;
+}
+
+.pr-banner-value {
+    font-size: 12pt;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.pr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+}
+
+.pr-table th {
+    text-align: left;
+    font-size: 7.5pt;
+    font-weight: 400;
+    color: #666666;
+    padding: 0 2mm 2mm 0;
+    border-bottom: 0.4pt solid #cccccc;
+}
+
+.pr-table td {
+    vertical-align: top;
+    padding: 2.5mm 2mm 2.5mm 0;
+    border-bottom: 0.4pt solid #eeeeee;
+}
+
+.pr-table .pr-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pr-project {
+    width: 44%;
+}
+
+.pr-project-title {
+    font-weight: 700;
+}
+
+.pr-project-desc {
+    color: #444444;
+}
+
+.pr-foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10mm;
+    margin-top: auto;
+    padding-top: 8mm;
+}
+
+.pr-summary-year {
+    color: #666666;
+}
+
+.pr-total {
+    text-align: right;
+}
+
+.pr-total-value {
+    font-size: 14pt;
+    font-weight: 700;
+}
+
+.pr-notes,
+.pr-contact {
+    margin-bottom: 8mm;
+}
+
+.pr-notes-label {
+    font-weight: 700;
+    margin-bottom: 2mm;
+}
+
+.pr-payment-image {
+    max-width: 60mm;
+    height: auto;
+    margin-top: auto;
+    align-self: flex-start;
+}
+
+/* Export = window.print() with this class on <body>. Everything that is not
+   the invoice is taken out of the flow, and the invoice is brought back
+   from its off-screen position. */
+@media print {
+    body.printing-invoice > *:not(#invoice-print) {
+        display: none !important;
+    }
+
+    body.printing-invoice #invoice-print {
+        position: static;
+        left: auto;
+        width: auto;
+    }
+
+    body.printing-invoice .pr-page {
+        width: auto;
+        min-height: auto;
+        padding: 0;
+        break-after: page;
+    }
+
+    body.printing-invoice .pr-page:last-child {
+        break-after: auto;
+    }
+
+    @page {
+        size: A4;
+        margin: 16mm;
+    }
+}
