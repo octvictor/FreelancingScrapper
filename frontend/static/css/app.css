@@ -3349,9 +3349,22 @@ input.kanban-col-title-input:focus {
    column count. Each card sizes to its own content (real masonry,
    not a uniform grid), and break-inside:avoid stops a card being
    split across a column boundary. */
+/* A grid, not CSS multi-column. Multi-column fills column-major - all the
+   way down column one, then down column two - so a new note landed under
+   the first card while the space to its right sat empty, and the reading
+   order on screen did not match the order the notes are actually in. A
+   grid fills row-major, which is the order anyone reads in and the order
+   the drag-reorder writes back.
+
+   align-items: start is what keeps the masonry feel: without it every card
+   stretches to its row's height, and a two-line note next to a checklist
+   becomes a tall empty box. With it each card keeps its own height and the
+   row is simply as tall as its tallest card. */
 .notes-grid {
-    column-width: 240px;
-    column-gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    align-items: start;
 }
 
 .notes-foot {
@@ -3368,8 +3381,7 @@ input.kanban-col-title-input:focus {
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-lg);
     padding: 14px;
-    margin: 0 0 16px;
-    break-inside: avoid;
+    margin: 0;
     position: relative;
     cursor: pointer;
 }

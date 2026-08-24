@@ -444,6 +444,21 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**Notes is a grid, not CSS multi-column, and that is about reading order.**
+Multi-column fills column-major - all the way down column one, then down
+column two - so a new note appeared beneath the first card while the space
+to its right sat empty, and what you read on screen did not match the order
+the notes are actually in (or the order drag-reorder writes back). A grid
+with `repeat(auto-fill, minmax(240px, 1fr))` fills row-major instead.
+
+`align-items: start` is the line that keeps the masonry feel. Without it
+every card stretches to its row's height, so a two-line note beside a
+checklist becomes a tall empty box. With it each card keeps its own height
+and a row is simply as tall as its tallest card. The card's old
+`margin-bottom` had to go at the same time - that was the multi-column
+layout's row gap, and leaving it alongside the grid's `gap` doubles the
+space between rows.
+
 **Show a modal before you fill it, not after.** `openNoteModal` set
 `display: flex` as its last statement, after building the content - and a
 list note's items are `<textarea rows="1">` grown to their own
