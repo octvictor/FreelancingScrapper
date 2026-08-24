@@ -282,6 +282,13 @@ function openNoteModal(noteId) {
     $("note-modal-type-toggle").classList.toggle("active", note.type === "list");
     $("note-modal-type-toggle").title = note.type === "list" ? "Switch to text" : "Switch to list";
 
+    // Shown BEFORE the content is built, not after. renderNoteModalItems
+    // auto-grows each list item to its own scrollHeight, and an element
+    // inside a display:none parent measures zero - so every textarea came
+    // out collapsed and its text clipped. Nothing paints between these
+    // statements, so there is no flash of the previous note.
+    $("note-modal-backdrop").style.display = "flex";
+
     if (note.type === "list") {
         $("note-modal-body").style.display = "none";
         $("note-modal-items-wrap").style.display = "";
@@ -291,8 +298,6 @@ function openNoteModal(noteId) {
         $("note-modal-body").value = note.body || "";
         $("note-modal-items-wrap").style.display = "none";
     }
-
-    $("note-modal-backdrop").style.display = "flex";
 }
 
 async function closeNoteModal() {

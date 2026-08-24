@@ -444,6 +444,16 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**Show a modal before you fill it, not after.** `openNoteModal` set
+`display: flex` as its last statement, after building the content - and a
+list note's items are `<textarea rows="1">` grown to their own
+`scrollHeight` by `autoGrowChecklistText`. An element inside a
+`display: none` parent measures zero, so every item collapsed and its text
+came out clipped. The modal is shown first now; nothing paints between two
+JavaScript statements, so there is no flash of the previous note. This is
+the same trap the fit-to-window caps hit, in a different place - anything
+that measures itself has to run after its container is laid out.
+
 **Reordering is FLIP, and the thing in your hand is not dimmed.** Native
 HTML5 drag reorders by calling `insertBefore`, which is instant - every
 item that is not being dragged teleports to its new slot. `flipReorder` /

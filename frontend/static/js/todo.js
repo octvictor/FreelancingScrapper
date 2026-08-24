@@ -46,18 +46,20 @@ function todoColumnHtml(list) {
     return `
         <div class="kanban-col" data-id="${list.id}">
             <div class="kanban-col-head">
-                <span class="row-drag-handle kanban-col-grip" title="Drag to reorder">&#8942;</span>
                 <button class="color-dot-btn" data-role="color" type="button" title="List color" style="--dot-color:${list.color || "var(--border)"};">
                     <span class="color-dot"></span>
                 </button>
                 <input type="text" class="kanban-col-title-input" data-role="title" value="${escapeAttr(list.title)}" placeholder="List name">
                 <span class="kanban-col-count">${tasks.length}</span>
-                <button class="kanban-col-delete" data-role="delete" type="button" title="Delete list">&times;</button>
+                <span class="row-drag-handle kanban-col-grip" title="Drag to reorder">&#8942;</span>
             </div>
             <div class="kanban-col-tasks" data-role="tasks">
                 ${tasks.length ? tasks.map((t) => todoCardHtml(t, list.color)).join("") : `<p class="todo-empty-state">No tasks yet.</p>`}
             </div>
             <button class="kanban-add-task" data-role="add-task" type="button">+ Add task</button>
+            <div class="kanban-col-foot">
+                <button class="btn-danger-text kanban-col-delete" data-role="delete" type="button">Delete</button>
+            </div>
         </div>
     `;
 }

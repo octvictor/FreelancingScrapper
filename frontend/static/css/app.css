@@ -455,6 +455,7 @@ table.project-table tbody td {
 .btn-danger:active,
 .btn-text:active,
 .btn-danger-text:active,
+.kanban-col-delete:active,
 .sb-item:active,
 .view-toggle-btn:active,
 .finance-tab:active,
@@ -481,7 +482,6 @@ table.project-table tbody td {
 .row-delete-btn:active,
 .note-delete-btn:active,
 .doc-delete-btn:active,
-.kanban-col-delete:active,
 .finance-card-delete:active,
 .finance-card-toggle:active,
 .due-soon-toast-close:active,
@@ -496,7 +496,6 @@ table.project-table tbody td {
 .row-delete-btn,
 .note-delete-btn,
 .doc-delete-btn,
-.kanban-col-delete,
 .finance-card-delete,
 .finance-card-toggle,
 .due-soon-toast-close,
@@ -2893,7 +2892,7 @@ table.project-table tbody tr:hover td {
    reading as a toolbar. */
 .kanban-col-grip {
     flex-shrink: 0;
-    margin-left: -4px;
+    margin-right: -4px;
     opacity: 0;
     transition: opacity var(--dur-hover) ease;
 }
@@ -2948,26 +2947,24 @@ input.kanban-col-title-input:focus {
     flex-shrink: 0;
 }
 
-.kanban-col-delete {
-    background: none;
-    border: none;
-    color: var(--text-faint);
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: var(--radius-sm);
-    flex-shrink: 0;
-    opacity: 0;
+/* Delete moved out of the header and down here, as red text rather than
+   an icon - the same treatment the Calculator's table Delete uses, and
+   always visible instead of appearing on hover. A destructive action that
+   only exists while the pointer happens to be over the column is harder
+   to find than one that is simply there, and the header had four controls
+   competing in it. */
+.kanban-col-foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
 }
 
-.kanban-col:hover .kanban-col-delete {
-    opacity: 1;
+.kanban-col-delete {
+    font-size: 12px;
 }
 
 .kanban-col-delete:hover {
-    color: var(--danger-text);
-    background: var(--panel);
+    text-decoration: underline;
 }
 
 .kanban-col-tasks {
