@@ -583,22 +583,26 @@ reappeared in it on every scan - which both reported a forever-growing
 "N missing" in the status line and gave the rename check four candidate
 sources where there was one.
 
-**Group chrome only appears when there is more than one group.** A file's
-group is the first folder above it that is neither a bare year nor named
-after a search term, so files sitting loose in the folder you nominated
-resolve to none at all. With a single group the list grew an "UNGROUPED"
-header over every row and an "Ungrouped" chip beside "All" that filtered
-nothing. `docIsGrouped()` gates both, and `docVisibleFiles` ignores a stale
-group selection when it returns false - otherwise a rescan that flattens a
-tree empties the list with no chip left on screen to explain why.
+**The list is flat; grouping lives in the filter chips.** A file's group is
+the first folder above it that is neither a bare year nor named after a
+search term. That is a decent guess at "which client", and a poor one at
+"what deserves a heading": a tree with one file per folder turned into a
+header above every single row. So no group headers, in any view. Files
+still arrive sorted by group, so one client's files stay adjacent - they
+are just not fenced off from each other, and the chips narrow to one
+group when you want that.
+
+The chips themselves only appear when there is more than one group, since
+files sitting loose in the folder you nominated resolve to no group at all
+and a lone "Ungrouped" chip beside "All" filters nothing. `docIsGrouped()`
+gates them, and `docVisibleFiles` ignores a stale group selection when it
+returns false - otherwise a rescan that flattens a tree empties the list
+with no chip left on screen to explain why.
 
 **The list caps at a fixed 10, not at what fits the window.** Every other
 long list here uses `applyRowFit`; two stacked sections have no single
 "what fits" answer, and a list whose length changes when you resize the
-window is worse than one you can predict. Group headers count the whole
-group rather than the rows the cap left visible - "ATLAS 15" over ten rows
-says there are five more behind Show more, where "ATLAS 10" would claim the
-list is complete.
+window is worse than one you can predict.
 
 **One icon size, one delete icon.** Every small icon button in the app is
 a 16px Lucide glyph centred in a 24px box: `.row-delete-btn`,

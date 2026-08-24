@@ -4567,33 +4567,6 @@ input.date-field-native {
     min-height: 14px;
 }
 
-.doc-group + .doc-group {
-    margin-top: 14px;
-}
-
-/* The folder a file came from, as a quiet label rather than a heading -
-   it is orientation, not a section title competing with the filenames. */
-.doc-group-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-faint);
-    padding: 0 4px 6px;
-}
-
-.doc-group-count {
-    font-size: 10.5px;
-    letter-spacing: 0;
-    color: var(--text-faint);
-    background: var(--ink-06);
-    border-radius: var(--radius-pill);
-    padding: 1px 7px;
-}
-
 /* The date column is a fixed width, not auto: each row is its own grid, so
    an auto column sized to its own content would put every row's date at a
    different x and the column would wobble down the page as tag counts

@@ -207,35 +207,13 @@ function renderDocList(kind) {
     const shown = view.expanded ? files : files.slice(0, DOC_PAGE_SIZE);
     const hidden = files.length - shown.length;
 
-    // Grouped only when there is something to group by, and only while no
-    // group filter is active - once you have picked one client, a single
-    // header above the whole list says nothing either.
-    if (view.group === "All" && docIsGrouped(kind)) {
-        // A group's header counts every file it matched, not the subset the
-        // cap left visible: "ATLAS 15" above ten rows says there are five
-        // more behind Show more, where "ATLAS 10" would claim the list is
-        // complete when it is not.
-        const totals = new Map();
-        files.forEach((f) => {
-            const key = f.group_name || "Ungrouped";
-            totals.set(key, (totals.get(key) || 0) + 1);
-        });
-        const groups = new Map();
-        shown.forEach((f) => {
-            const key = f.group_name || "Ungrouped";
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key).push(f);
-        });
-        list.innerHTML = Array.from(groups.entries())
-            .map(([name, rows]) => `
-                <div class="doc-group">
-                    <div class="doc-group-head">${escapeAttr(name)}<span class="doc-group-count">${totals.get(name)}</span></div>
-                    ${rows.map(docRowHtml).join("")}
-                </div>
-            `).join("");
-    } else {
-        list.innerHTML = shown.map(docRowHtml).join("");
-    }
+    // Always one flat list. Grouping lives in the filter chips instead: the
+    // headers only ever appeared under "All", which is exactly the view
+    // where you are scanning every file at once, and a folder tree that
+    // happens to hold one file per folder turned that into a header above
+    // every single row. Files still arrive sorted by group, so a client's
+    // files stay adjacent - they just are not fenced off from each other.
+    list.innerHTML = shown.map(docRowHtml).join("");
 
     expandBtn.style.display = hidden > 0 || view.expanded ? "" : "none";
     expandBtn.textContent = view.expanded ? "Show less" : `Show ${hidden} more`;
