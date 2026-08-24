@@ -4623,6 +4623,17 @@ input.date-field-native {
     margin-left: auto;
 }
 
+/* Sort is last, past the years. The gap separates "which files" (search,
+   group, year) from "in what order", which are different questions and
+   should not read as one strip of chips. */
+.doc-sort {
+    padding-left: 10px;
+}
+
+.doc-sort .view-toggle-btn {
+    font-variant-numeric: tabular-nums;
+}
+
 .doc-filters .view-toggle-btn {
     font-size: 12px;
     padding: 5px 11px;

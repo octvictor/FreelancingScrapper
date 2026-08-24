@@ -497,10 +497,14 @@ executable), shared across every tool:
 Open threads on things that already exist, roughly in the order they are
 worth doing:
 
-- **Match the invoice layout to the real one.** The exported invoice
-  reproduces the structure of the source PDF but not its visual design -
-  the sandbox it was built in has no PDF rasterizer, so the layout was
-  written from the extracted text and the typography is the app's own.
+- **Save an exported invoice into the Invoices folder automatically.**
+  Blocked on producing PDF bytes without a person in the loop: the browser
+  can only make a PDF through its own print dialog, and JavaScript cannot
+  choose a destination folder. Doing it properly means a server-side
+  headless renderer (Playwright, which this app used to depend on and
+  which would print the same HTML through the same Chromium) at the cost
+  of a browser download on first run. Until then the export names itself
+  correctly and the browser remembers the last folder.
 - **Invoice row reorder.** `reorder_invoice_rows` and
   `PUT /rows/reorder` exist and work; nothing in the editor calls them.
   Needs a grip and `flipReorder`, the same pattern Notes and Projects use.

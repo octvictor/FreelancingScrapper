@@ -39,6 +39,11 @@ function docViewFor(kind) {
             // looking for; the first is the one you came for.
             open: kind === "invoice",
             status: "",
+            // "name" reproduces the order the scanner already produced -
+            // grouped, then natural-sorted - so this defaults to what the
+            // list looked like before sorting existed.
+            sort: "name",
+            sortDesc: false,
         };
     }
     return docView[kind];
@@ -77,6 +82,29 @@ function docIsGrouped(kind) {
     return docGroupsOf(kind).length > 1;
 }
 
+// Natural order for names (the scanner already stored a zero-padded
+// sort_key, so "Invoice 2" precedes "Invoice 10"), mtime for dates. Group
+// still leads the name sort: a client's files staying together is the
+// thing the flat list would otherwise lose entirely.
+function docSortedFiles(kind, files) {
+    const view = docViewFor(kind);
+    const sorted = files.slice();
+    if (view.sort === "date") {
+        sorted.sort((a, b) => a.mtime - b.mtime);
+    } else {
+        sorted.sort((a, b) => {
+            const ga = (a.group_name || "").toLowerCase();
+            const gb = (b.group_name || "").toLowerCase();
+            if (ga !== gb) return ga < gb ? -1 : 1;
+            return a.sort_key < b.sort_key ? -1 : a.sort_key > b.sort_key ? 1 : 0;
+        });
+    }
+    // Descending is the same order reversed rather than a second
+    // comparator, so the two directions can never disagree about ties.
+    if (view.sortDesc) sorted.reverse();
+    return sorted;
+}
+
 function docVisibleFiles(kind) {
     const view = docViewFor(kind);
     const q = view.query.trim().toLowerCase();
@@ -85,11 +113,12 @@ function docVisibleFiles(kind) {
     // selection would then match nothing and empty the list with no chip
     // left on screen to explain why.
     const grouped = docIsGrouped(kind);
-    return docFilesOfKind(kind).filter((f) =>
+    const matched = docFilesOfKind(kind).filter((f) =>
         docMatchesQuery(f, q) &&
         (!grouped || view.group === "All" || (f.group_name || "Ungrouped") === view.group) &&
         (view.year === "All" || String(f.year) === view.year)
     );
+    return docSortedFiles(kind, matched);
 }
 
 function docTagChipsHtml(file) {
@@ -147,6 +176,7 @@ function docSectionHtml(kind, label) {
                             </div>
                             <div class="doc-filters" id="doc-group-filters-${kind}"></div>
                             <div class="doc-filters doc-filters-right" id="doc-year-filters-${kind}"></div>
+                            <div class="doc-filters doc-sort" id="doc-sort-${kind}"></div>
                         </div>
                         <p class="doc-status" id="doc-status-${kind}"></p>
                         <div class="doc-list" id="doc-list-${kind}"></div>
@@ -230,6 +260,23 @@ function renderDocList(kind) {
     expandBtn.textContent = view.expanded ? "Show less" : `Show ${hidden} more`;
 }
 
+const SORT_CARET = { asc: "\u2191", desc: "\u2193" };
+
+function renderDocSort(kind) {
+    const view = docViewFor(kind);
+    const host = $(`doc-sort-${kind}`);
+    if (!host) return;
+    // Hidden until there is something to reorder. One row cannot be sorted,
+    // and a control that does nothing is worse than no control.
+    if (docFilesOfKind(kind).length < 2) { host.innerHTML = ""; return; }
+    host.innerHTML = [["name", "Name"], ["date", "Date"]].map(([key, label]) => {
+        const active = view.sort === key;
+        const caret = active ? ` ${SORT_CARET[view.sortDesc ? "desc" : "asc"]}` : "";
+        return `<button type="button" class="view-toggle-btn ${active ? "active" : ""}" data-sort="${key}"
+                        title="Sort by ${label.toLowerCase()}">${label}${caret}</button>`;
+    }).join("");
+}
+
 function renderDocFilters(kind) {
     const view = docViewFor(kind);
     const files = docFilesOfKind(kind);
@@ -246,6 +293,7 @@ function renderDocFilters(kind) {
 
 function renderDocKind(kind) {
     renderDocFilters(kind);
+    renderDocSort(kind);
     renderDocList(kind);
     $(`doc-status-${kind}`).textContent = docViewFor(kind).status;
 }
@@ -298,6 +346,25 @@ $("doc-sections").addEventListener("click", async (e) => {
         if (!view.expanded) {
             window.scrollTo({ top: documentTopOf($(`doc-list-${kind}`)) - 90, behavior: "smooth" });
         }
+        renderDocList(kind);
+        return;
+    }
+
+    const sortBtn = e.target.closest("[data-sort]");
+    if (sortBtn) {
+        // Clicking the chip you are already sorted by reverses it, which is
+        // the only place a second direction can live without a third chip.
+        if (view.sort === sortBtn.dataset.sort) {
+            view.sortDesc = !view.sortDesc;
+        } else {
+            view.sort = sortBtn.dataset.sort;
+            // Dates want newest first and names want A to Z, so the default
+            // direction follows the key rather than persisting across a
+            // switch and showing the oldest file at the top.
+            view.sortDesc = sortBtn.dataset.sort === "date";
+        }
+        view.expanded = false;
+        renderDocSort(kind);
         renderDocList(kind);
         return;
     }

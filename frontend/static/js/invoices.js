@@ -370,6 +370,18 @@ function renderInvoicePrint(inv) {
     `;
 }
 
+// Slashes and colons are not legal in a filename on every platform, and a
+// browser silently mangles them rather than telling you. Everything else a
+// user might type is left alone.
+function invoiceFileName(inv) {
+    const parts = [
+        inv.invoice_number ? `Invoice ${inv.invoice_number}` : "",
+        (inv.bill_to || "").split("\n")[0].trim(),
+    ].filter(Boolean);
+    const name = (parts.join(" - ") || invoiceLabel(inv)).replace(/[\\/:*?"<>|]/g, "-").trim();
+    return name || "Invoice";
+}
+
 $("inv-export-btn").addEventListener("click", () => {
     if (!activeInvoice) return;
     // The focused field's blur handler is what saves it, so an Export
@@ -379,7 +391,14 @@ $("inv-export-btn").addEventListener("click", () => {
     setTimeout(() => {
         renderInvoicePrint(activeInvoice);
         document.body.classList.add("printing-invoice");
+        // Chrome's "Save as PDF" takes its default filename from the page
+        // title, so setting it here is the difference between saving
+        // "VAIO.pdf" and "Invoice 0001 - Massive Assembly Inc.pdf". Restored
+        // afterwards, since this is the whole app's title, not the modal's.
+        const pageTitle = document.title;
+        document.title = invoiceFileName(activeInvoice);
         window.print();
+        document.title = pageTitle;
     }, 60);
 });
 
