@@ -404,7 +404,7 @@ function closeModalAnimated(backdrop, done) {
     backdrop.addEventListener("animationend", onEnd);
 }
 
-const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance"];
+const PAGE_IDS = ["overview", "tracker", "gatherer", "todo", "notes", "finance", "documents"];
 
 // A permanent .sb sits beside .ct-card on every page - it never shrinks
 // or hides, so switching pages only ever swaps which section is visible
@@ -433,6 +433,7 @@ function showPage(page) {
     if (page === "finance" && typeof renderFinanceTable === "function") renderFinanceTable();
     if (page === "notes" && typeof applyNotesFit === "function") applyNotesFit();
     if (page === "todo" && typeof applyTodoBoardFit === "function") applyTodoBoardFit();
+    if (page === "documents" && typeof refreshDocuments === "function") refreshDocuments();
 }
 
 // Shared by the sidebar rows and any other control that jumps to a page

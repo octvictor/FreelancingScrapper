@@ -129,6 +129,44 @@ CREATE TABLE IF NOT EXISTS note_items (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS document_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path TEXT NOT NULL UNIQUE,
+    filename TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    sort_key TEXT NOT NULL,
+    folder TEXT NOT NULL,
+    group_name TEXT,
+    size_bytes INTEGER NOT NULL,
+    mtime REAL NOT NULL,
+    year INTEGER,
+    content_hash TEXT NOT NULL,
+    missing INTEGER NOT NULL DEFAULT 0,
+    indexed_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS document_tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    color TEXT
+);
+
+/* Keyed to the file's bytes, not its id or path: rename or move an invoice
+   outside the app and the tag still finds it. */
+CREATE TABLE IF NOT EXISTS document_file_tags (
+    content_hash TEXT NOT NULL,
+    tag_id INTEGER NOT NULL REFERENCES document_tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (content_hash, tag_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_files_hash ON document_files(content_hash);
+
 CREATE TABLE IF NOT EXISTS finance_tables (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL DEFAULT '',
@@ -1133,3 +1171,171 @@ def search_all(query: str, limit_per_type: int = 6) -> list[dict]:
         ):
             results.append({"type": "note", "id": row["id"], "title": _note_label(row["body"], row["matched_item_text"])})
     return results
+
+
+# ---------- Settings ----------
+# One key/value table rather than a column per setting, so the next setting
+# is an INSERT and not a migration.
+
+def get_setting(key: str, default: str | None = None) -> str | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT value FROM app_settings WHERE key=?", (key,)).fetchone()
+        return row["value"] if row else default
+
+
+def get_settings(keys: list[str]) -> dict[str, str | None]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            f"SELECT key, value FROM app_settings WHERE key IN ({','.join('?' * len(keys))})",
+            keys,
+        ).fetchall()
+        found = {row["key"]: row["value"] for row in rows}
+        return {key: found.get(key) for key in keys}
+
+
+def set_setting(key: str, value: str | None) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO app_settings (key, value, updated_at) VALUES (?,?,?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
+            (key, value, _now()),
+        )
+
+
+# ---------- Documents index ----------
+# Everything here describes files that live on the user's own disk. Nothing
+# in this module ever writes to them - the index is a read-only mirror, and
+# the only rows deleted are ones for files that are gone.
+
+def replace_document_index(records: list[dict]) -> dict:
+    """Swaps the whole index for a fresh scan in one transaction.
+
+    Files that vanished are marked missing rather than deleted, so tags
+    keyed to their hash survive a file that comes back later. Returns what
+    changed so the UI can report it without diffing the list itself.
+    """
+    now = _now()
+    with get_connection() as conn:
+        before = {row["path"] for row in conn.execute("SELECT path FROM document_files")}
+        seen = {rec["path"] for rec in records}
+
+        for rec in records:
+            conn.execute(
+                "INSERT INTO document_files "
+                "(path, filename, display_name, sort_key, folder, group_name, "
+                " size_bytes, mtime, year, content_hash, missing, indexed_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,0,?) "
+                "ON CONFLICT(path) DO UPDATE SET "
+                "  filename=excluded.filename, display_name=excluded.display_name, "
+                "  sort_key=excluded.sort_key, folder=excluded.folder, "
+                "  group_name=excluded.group_name, size_bytes=excluded.size_bytes, "
+                "  mtime=excluded.mtime, year=excluded.year, "
+                "  content_hash=excluded.content_hash, missing=0, indexed_at=excluded.indexed_at",
+                (rec["path"], rec["filename"], rec["display_name"], rec["sort_key"],
+                 rec["folder"], rec["group_name"], rec["size_bytes"], rec["mtime"],
+                 rec["year"], rec["content_hash"], now),
+            )
+
+        gone = before - seen
+        for path in gone:
+            conn.execute("UPDATE document_files SET missing=1 WHERE path=?", (path,))
+
+        return {"indexed": len(records), "added": len(seen - before), "missing": len(gone)}
+
+
+def known_document_files() -> dict[str, dict]:
+    """path -> {mtime, size_bytes, content_hash}, so a rescan can skip
+    hashing anything whose mtime and size are unchanged."""
+    with get_connection() as conn:
+        return {
+            row["path"]: dict(row)
+            for row in conn.execute(
+                "SELECT path, mtime, size_bytes, content_hash FROM document_files"
+            )
+        }
+
+
+def list_document_files(include_missing: bool = False) -> list[dict]:
+    with get_connection() as conn:
+        where = "" if include_missing else " WHERE missing = 0"
+        rows = conn.execute(
+            f"SELECT * FROM document_files{where} ORDER BY group_name IS NULL, "
+            "group_name COLLATE NOCASE, sort_key"
+        ).fetchall()
+        files = [dict(row) for row in rows]
+
+        tags: dict[str, list[dict]] = {}
+        for row in conn.execute(
+            "SELECT ft.content_hash, t.id, t.name, t.color FROM document_file_tags ft "
+            "JOIN document_tags t ON t.id = ft.tag_id ORDER BY t.name COLLATE NOCASE"
+        ):
+            tags.setdefault(row["content_hash"], []).append(
+                {"id": row["id"], "name": row["name"], "color": row["color"]}
+            )
+        for f in files:
+            f["tags"] = tags.get(f["content_hash"], [])
+        return files
+
+
+def get_document_file(file_id: int) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM document_files WHERE id=?", (file_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def clear_document_index() -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM document_files")
+
+
+# ---------- Document tags ----------
+
+def list_document_tags() -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT t.*, (SELECT COUNT(*) FROM document_file_tags ft WHERE ft.tag_id = t.id) "
+            "AS file_count FROM document_tags t ORDER BY t.name COLLATE NOCASE"
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def create_document_tag(name: str, color: str | None = None) -> dict:
+    """Reuses an existing tag whose name differs only in case. The UNIQUE
+    index is case-sensitive, so without this "Paid" typed over an existing
+    "paid" quietly becomes a second tag that means the same thing - and the
+    two then sit side by side on the same file."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM document_tags WHERE name = ? COLLATE NOCASE", (name,)
+        ).fetchone()
+        if row is None:
+            conn.execute("INSERT INTO document_tags (name, color) VALUES (?,?)", (name, color))
+        elif color is not None:
+            conn.execute("UPDATE document_tags SET color=? WHERE id=?", (color, row["id"]))
+        row = conn.execute(
+            "SELECT * FROM document_tags WHERE name = ? COLLATE NOCASE", (name,)
+        ).fetchone()
+        return dict(row)
+
+
+def set_document_tag_color(tag_id: int, color: str | None) -> dict | None:
+    with get_connection() as conn:
+        conn.execute("UPDATE document_tags SET color=? WHERE id=?", (color, tag_id))
+        row = conn.execute("SELECT * FROM document_tags WHERE id=?", (tag_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_document_tag(tag_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM document_file_tags WHERE tag_id=?", (tag_id,))
+        conn.execute("DELETE FROM document_tags WHERE id=?", (tag_id,))
+
+
+def set_document_file_tags(content_hash: str, tag_ids: list[int]) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM document_file_tags WHERE content_hash=?", (content_hash,))
+        for tag_id in tag_ids:
+            conn.execute(
+                "INSERT OR IGNORE INTO document_file_tags (content_hash, tag_id) VALUES (?,?)",
+                (content_hash, tag_id),
+            )

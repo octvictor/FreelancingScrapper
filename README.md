@@ -7,11 +7,14 @@ mode returns later as a toggle), set in Google Sans Flex.
 
 All the navigation lives in one permanent 247px rail down the left -
 there is no header. The rail holds the asterisk icon + "vaio" wordmark,
-the app's single search box beneath it, then six rows: Overview,
-Projects and Studio Logs, a hairline, then To Do, Notes and
-Calculator. Every row carries a Lucide icon plus its label and no
+the app's single search box beneath it, then seven rows: Overview,
+Projects and Studio Logs, a hairline, then To Do, Notes, Calculator
+and Documents. Every row carries a Lucide icon plus its label and no
 background of its own at rest; the open page's row gets a plain white
-card with a soft shadow. The rail never shrinks, collapses, or hides.
+card with a soft shadow. Two rows sit apart at the rail's foot - the
+theme toggle and Settings - reusing the same geometry but never taking
+the active treatment, because they are switches and a dialog rather
+than destinations. The rail never shrinks, collapses, or hides.
 The content field takes everything else, square on every side with no
 radius and no gap - only its left edge, against the rail, keeps a border
 - and bleeds to the window's top, right and bottom edges. Overview is the home page and
@@ -245,6 +248,51 @@ the default on launch, reached through the sidebar like any other page.
   more" (rows past the 7th on a table cap there, same pattern as
   Projects's list). A dashed "+ Add row" card - matching Notes'
   add-note tile rather than a plain text link - creates a new one.
+- **Documents** - a browser over a folder of PDFs somewhere on the
+  computer, aimed squarely at invoices. Two fields in Settings drive
+  it: **Documents path** (a folder) and **Search for** (comma-separated
+  terms, e.g. `Invoice, Fatura`). VAIO walks that folder's whole tree -
+  every level, not just the top - and indexes each `.pdf` whose own
+  filename *or* any folder above it contains one of the terms. Either
+  half matters: folder-only would miss a loose `Invoice 7.pdf`,
+  filename-only would miss `fatura_003.pdf` sitting inside an
+  `Invoices/` folder.
+
+  **VAIO never writes to that folder.** Nothing under the Documents
+  path is created, moved, renamed or deleted, ever - the folder tree
+  stays the system of record and this page is a lens over it. The only
+  bytes read are the first 64KB of each file, for a content hash. It is
+  also not a PDF reader: clicking a row hands the file to the operating
+  system's own viewer, and the ↗ button reveals it in Finder/Explorer
+  instead.
+
+  The result is a flat list, because flattening is the entire point -
+  every invoice from every client in one column, narrowed by typing
+  rather than by walking a tree. Rows are grouped under the client (or
+  project) they belong to, sorted naturally so `Invoice 2` comes before
+  `Invoice 10`, and the date column uses tabular figures at a fixed
+  width so it reads as one straight edge. The search box filters the
+  already-loaded index in memory and never touches the disk - the only
+  thing that reads the folder is an explicit **Rescan**, or closing
+  Settings after changing the path or terms. Filter chips for the
+  groups and (when there is more than one) the years sit beside it, and
+  the list caps to what fits the window with a "Show *n* more", the
+  same pattern Projects and Calculator use.
+
+  Tags are the manual layer on top: any row can carry any number of
+  them, created inline in the row's ☆ popover and colored from the
+  app's one color picker. **Tags are stored against the file's content
+  hash, not its path** - so renaming an invoice or moving it to a
+  different client folder outside the app keeps its tags attached after
+  the next rescan.
+
+  A file that has vanished from disk is marked missing rather than
+  deleted, and a folder VAIO cannot read reports *why* ("that folder no
+  longer exists", "check its permissions") instead of quietly showing
+  an empty list - clearing a working index because a permissions prompt
+  had not been answered yet is the failure mode that rule exists to
+  prevent. Settings answers the same question while you are still
+  typing, with a live "Matches 6 folders, 28 PDFs" under the fields.
 
 Everything lands in a shared local SQLite database (`data/vaio.db`)
 so it accumulates across sessions instead of being lost between runs.
@@ -351,6 +399,20 @@ into a venv from before that change - the fix is on both scripts now.
   `openNoteModal` from the other tools' own files to open a detail view
   on click, the same functions a search jump already used, rather than
   duplicating that logic.
+- `api/documents.py` - Documents' routes plus the app-wide settings
+  store (`GET`/`PUT /settings`). Its literal segments (`/rescan`,
+  `/open`, `/tags`) are declared *before* any `/{id}` route, because
+  FastAPI matches in definition order - the other way round, "rescan"
+  is parsed as a file id and rejected as a bad int. `POST /open`
+  re-resolves the stored path and checks it is still under the
+  documents folder before handing anything to the OS, so a stale or
+  crafted id cannot open something outside it.
+- `storage/docscan.py` - the folder walk. Strictly read-only: no
+  function in it opens a file for writing. Also owns the natural sort
+  key (digit runs zero-padded to a fixed width, so it stays a TEXT
+  column SQLite can `ORDER BY` directly) and the group heuristic.
+- `frontend/static/js/documents.js` - the Documents page and the
+  Settings modal.
 - `storage/db.py` - shared SQLite layer any tool can write into.
 - `app_paths.py` - where persistent data lives on disk.
 
@@ -410,6 +472,25 @@ executable), shared across every tool:
   in `finance_cells` as an EAV side table) that was removed, leaving them
   unreachable. `init_db()` now drops both on startup, so an older local
   database cleans itself up on first run.
+- `app_settings` - key, value, updated_at. A generic key/value store
+  for app-wide settings, currently `documents_path` and
+  `documents_terms`. Deliberately not a one-row settings table with a
+  column per option: a new setting is then a new row, not a migration.
+- `document_files` - path, filename, display_name, sort_key, folder,
+  group_name, size_bytes, mtime, year, content_hash, missing,
+  indexed_at. The Documents index - a cache of what the scan found, not
+  a system of record, so it can be thrown away and rebuilt by a rescan.
+  A file that has disappeared is flagged `missing` rather than deleted.
+- `document_tags` - name (unique), color, created_at. Tags are global,
+  not per-file, so the same "Paid" means the same thing everywhere. New
+  tags reuse an existing name that differs only in case: the UNIQUE
+  index is case-sensitive, so without that "Paid" typed over an
+  existing "paid" quietly becomes a second tag meaning the same thing.
+- `document_file_tags` - content_hash, tag_id. **Keyed by the file's
+  content hash, not its id or path**, which is what lets a tag survive
+  the file being renamed or moved to another folder outside the app.
+  The hash is sha256 of the file's size plus its first 64KB - enough to
+  tell two invoices apart without reading a 200MB file in full.
 
 ## Roadmap / not built yet
 
@@ -417,7 +498,12 @@ executable), shared across every tool:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
   - Invoice generator, turning a project's day-rate math and
-    Calculator's totals into an actual client-facing document.
+    Calculator's totals into an actual client-facing document. (The
+    *browser* half of this exists now - see Documents.)
+  - Documents, phase two: linking an indexed invoice to a Tracker
+    project, reconciling it against that project's Log rows, reading
+    amounts and dates out of the PDF itself (`pypdf`), and CSV export
+    for an accountant.
   - Asset & reference library - tagged textures, HDRIs, rigs, and
     moodboard images per project, distinct from Notes.
   - Render job tracker - job, cost, status, output per render-farm or
@@ -934,3 +1020,54 @@ rest of the app instead of drifting:
   not one, since the app's own default text color is dark now (light
   theme) and needs to flip the opposite way for a note whose own chosen
   color happens to be dark.
+
+**A hairline on the inverted panel has to be an ink wash, not
+`--border-soft`.** The app's board/table panels use the darker
+`--panel-alt` tone, and in both themes `--border-soft` sits within a
+point or two of it (`#e5e3dd` on `#e6e5e1`; `#272727` on `#262626`). A
+1px rule in that color renders and is simply invisible - Documents' row
+separators looked like they had never been written. `--ink-08`, the
+text ink at 8%, is the right token for a separator *inside* an inverted
+panel; `--border-soft` is for a border between a panel and the page.
+
+**A column of values only lines up if its grid track is a fixed width.**
+Each Documents row is its own grid, so an `auto` track sizes to that
+row's own content - the moment one row grew a tag chip, its date moved
+and the column wobbled down the page. A fixed track (`96px`) plus
+`text-align: right` gives one straight edge regardless of what the rows
+either side contain. `font-variant-numeric: tabular-nums` is the other
+half: without it a `1` and a `9` are different widths and the same
+column wobbles by a fraction.
+
+**Flexbox aligns margin boxes, so a heading's own margin misaligns the
+row it is centered in.** `.page-title` carries `margin-bottom: 20px`;
+putting it in a `display: flex; align-items: center` row beside a button
+centers *that margin box*, which drops the title 10px above the button
+it is supposed to sit level with. The fix is to zero the title's margin
+inside the row and move it to the row itself.
+
+**Deriving a group from "the folder above the folder" breaks on the
+first tree with an extra level.** `/Clients/Atlas/Invoices/x.pdf` gives
+"Atlas" and looks correct; `/Clients/Cedar/2024/Invoices/x.pdf` gives
+"2024", and every client with a year folder collapses into the same
+handful of meaningless groups. `docscan._group_of` walks *up* from the
+file instead, skipping names that carry no identity - the search terms
+themselves (an "Invoices" folder only says what is inside it, which is
+why the file matched) and bare years - and takes the first name left.
+
+**Anything keyed by path loses its data the first time a file moves.**
+Documents' tags are stored against a content hash for exactly this
+reason: the user reorganises their folders in Finder, not in VAIO, and
+a tag that vanishes when an invoice is filed into a different client
+folder is worse than no tag at all. The rule generalises - when the
+system of record is outside the app, key your own data to something
+the outside world does not renumber.
+
+**"Nothing found" and "could not look" must never render the same.** A
+rescan over an unreadable or missing folder returns a reason and leaves
+the existing index alone, rather than clearing it and showing an empty
+list - clearing a working list because a permissions prompt had not
+been answered yet is a data-loss bug wearing an empty state's clothes.
+The status line is left alone by the empty-state branch for the same
+reason: an empty index is precisely when "that folder no longer exists"
+is the thing you still need to see.

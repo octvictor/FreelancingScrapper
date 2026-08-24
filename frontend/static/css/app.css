@@ -373,6 +373,11 @@ button, input, select, textarea {
 .date-pop-action,
 .doc-delete-btn,
 .doc-name,
+.doc-row,
+.doc-row-action,
+.doc-tag-delete,
+.doc-tag-dot,
+.doc-tag-option,
 .due-soon-toast-close,
 .due-soon-toast-link,
 .finance-add-row-card,
@@ -482,6 +487,9 @@ table.project-table tbody td {
 .row-delete-btn:active,
 .note-delete-btn:active,
 .doc-delete-btn:active,
+.doc-row-action:active,
+.doc-tag-delete:active,
+.doc-tag-dot:active,
 .finance-card-delete:active,
 .finance-card-toggle:active,
 .due-soon-toast-close:active,
@@ -791,6 +799,7 @@ table.project-table tbody td {
 #page-notes > .panel,
 #page-tracker > .panel,
 #page-gatherer > .panel,
+#page-documents > .panel,
 #page-finance > .panel {
     background: var(--panel-alt);
     border: none;
@@ -4323,4 +4332,409 @@ input.date-field-native {
 
 @media (prefers-reduced-motion: reduce) {
     .date-trigger { transition: none; }
+}
+
+/* ---------- Documents ----------
+   A browser over a folder of PDFs on disk. The list is the feature: the
+   whole point is seeing every invoice from every client at once instead
+   of walking a folder tree, so the row is built to be scanned in a
+   column - name hard left, everything else right-aligned and quiet.
+
+   Class prefix note: .doc-item / .doc-name / .doc-delete-btn already
+   belong to Project Manager's per-project attachments. Everything here
+   is .doc-row-* or lives under #page-documents, so the two never meet. */
+
+/* Flexbox aligns margin boxes, so leaving .page-title's own 20px bottom
+   margin in place here would centre the title 10px above the button
+   rather than with it. The margin moves to the row instead. */
+.doc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.doc-head .page-title {
+    margin-bottom: 0;
+}
+
+.doc-rescan-btn {
+    flex-shrink: 0;
+}
+
+.doc-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+/* Same pill as the shell's search, but this one filters an already-loaded
+   list rather than querying the app, so it lives in the panel it filters. */
+.doc-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 12px;
+    background: var(--panel);
+    border-radius: var(--radius-full);
+    flex: 0 1 260px;
+    min-width: 160px;
+}
+
+/* Element-qualified for the same reason .overview-search-input is: the
+   generic input[type="text"] rule would otherwise draw its bordered box
+   inside the pill. */
+input#doc-search-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--field-text);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 300;
+}
+
+input#doc-search-input::placeholder {
+    color: var(--field-muted);
+    opacity: 1;
+}
+
+.doc-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Years sit at the far end so the two filter rows never read as one
+   long undifferentiated strip of buttons. */
+.doc-filters-right {
+    margin-left: auto;
+}
+
+.doc-filters .view-toggle-btn {
+    font-size: 12px;
+    padding: 5px 11px;
+}
+
+.doc-status {
+    font-size: 11.5px;
+    color: var(--text-faint);
+    margin: 0 0 10px 0;
+    min-height: 14px;
+}
+
+.doc-group + .doc-group {
+    margin-top: 14px;
+}
+
+/* The folder a file came from, as a quiet label rather than a heading -
+   it is orientation, not a section title competing with the filenames. */
+.doc-group-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 0 4px 6px;
+}
+
+.doc-group-count {
+    font-size: 10.5px;
+    letter-spacing: 0;
+    color: var(--text-faint);
+    background: var(--ink-06);
+    border-radius: var(--radius-pill);
+    padding: 1px 7px;
+}
+
+/* The date column is a fixed width, not auto: each row is its own grid, so
+   an auto column sized to its own content would put every row's date at a
+   different x and the column would wobble down the page as tag counts
+   varied. Fixed width + right alignment gives one straight edge. */
+.doc-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 96px 26px 26px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px 8px 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+/* --ink-08, not --border-soft: this list sits on the inverted (--panel-alt)
+   panel, where --border-soft and the panel itself are within a point of
+   each other and the hairline simply does not render. A wash of the text
+   ink stays visible on either ground. */
+.doc-row + .doc-row {
+    box-shadow: inset 0 1px 0 var(--ink-08);
+}
+
+.doc-row:hover {
+    background: var(--ink-05);
+}
+
+.doc-row:active {
+    background: var(--row-press);
+}
+
+.doc-row-name {
+    font-size: 13px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.doc-row-tags {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+/* Dates line up as a column down the list, so they get tabular figures -
+   without them a 1 and a 9 are different widths and the column wobbles. */
+.doc-row-date {
+    font-size: 11.5px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: right;
+}
+
+/* The two per-row buttons stay dim until the row is hovered: at rest the
+   list should read as filenames, not as a grid of controls. They never
+   disappear on touch, where there is no hover to reveal them. */
+.doc-row-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-faint);
+    font-size: 13px;
+    line-height: 1;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .doc-row-action {
+        opacity: 0;
+    }
+    .doc-row:hover .doc-row-action,
+    .doc-row-action:focus-visible {
+        opacity: 1;
+    }
+}
+
+.doc-row-action:hover {
+    color: var(--text);
+    background: var(--ink-08);
+}
+
+.doc-tag {
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--pill-neutral-bg);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.doc-empty {
+    margin: 6px 0 0 0;
+}
+
+/* ---------- Documents: tag popover ----------
+   .popover-panel is display:none and .open sets no display of its own -
+   every popover type declares its own (see the .date-popover note). */
+.doc-tag-popover.open {
+    display: block;
+}
+
+.doc-tag-popover {
+    width: 220px;
+    padding: 6px;
+}
+
+.doc-tag-option input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    accent-color: var(--checkbox-checked);
+    cursor: pointer;
+}
+
+.doc-tag-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.doc-tag-option:hover {
+    background: var(--ink-07);
+}
+
+/* A button, not a swatch: it opens the app's one color picker. Sized up
+   from a pure indicator so it is actually clickable. */
+.doc-tag-dot {
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    border: 1px solid var(--ink-14);
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.doc-tag-dot:hover {
+    border-color: var(--text-muted);
+}
+
+.doc-tag-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.doc-tag-delete {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.doc-tag-delete:hover {
+    color: var(--danger-text);
+    background: var(--red-tint);
+}
+
+.doc-tag-new {
+    padding: 4px 6px 2px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+}
+
+input#doc-tag-new-input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--field-text);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 8px;
+    outline: none;
+}
+
+/* ---------- Settings modal ---------- */
+
+.sb-settings-btn {
+    color: var(--text-muted);
+}
+
+.sb-settings-btn:hover {
+    color: var(--text);
+}
+
+.settings-modal {
+    max-width: 520px;
+    gap: 22px;
+}
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.settings-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+input.settings-input {
+    width: 100%;
+    background: var(--field);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--field-text);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    padding: 9px 11px;
+    outline: none;
+}
+
+input.settings-input:focus {
+    border-color: var(--text-muted);
+}
+
+.settings-hint {
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--text-faint);
+    margin: 0;
+}
+
+/* Answers the field while it is still on screen: how many folders and
+   PDFs the current path and terms actually match. Without it a search
+   term can only be judged by the list it eventually produces, and a term
+   that quietly missed half the folder looks exactly like a correct one. */
+.settings-preview {
+    font-size: 12px;
+    margin: 0;
+    padding: 9px 11px;
+    border-radius: var(--radius-md);
+    min-height: 16px;
+}
+
+.settings-preview:empty {
+    display: none;
+}
+
+.settings-preview.is-ok {
+    background: var(--green-tint);
+    color: var(--green-text);
+}
+
+.settings-preview.is-warn {
+    background: var(--amber-tint);
+    color: var(--amber-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .doc-row-action,
+    .doc-row {
+        transition: none;
+    }
 }

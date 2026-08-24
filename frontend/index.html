@@ -63,6 +63,10 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
                         <span>Calculator</span>
                     </button>
+                    <button class="sb-item" type="button" data-page="documents">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                        <span>Documents</span>
+                    </button>
                 </div>
 
                 <div class="sb-foot">
@@ -72,6 +76,10 @@
                             <svg class="sb-theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
                         </span>
                         <span id="theme-toggle-label">Dark</span>
+                    </button>
+                    <button class="sb-item sb-settings-btn" type="button" id="settings-open-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span>Settings</span>
                     </button>
                 </div>
             </nav>
@@ -248,6 +256,31 @@
                         <span class="finance-total-label">Sum</span>
                         <span class="finance-total-value" id="finance-sum-value">$0.00</span>
                     </div>
+                </div>
+            </section>
+
+            <section id="page-documents" style="display:none;">
+                <div class="doc-head">
+                    <h1 class="page-title">Documents</h1>
+                    <button class="btn doc-rescan-btn" type="button" id="doc-rescan-btn">Rescan</button>
+                </div>
+
+                <div class="panel">
+                    <div class="doc-controls">
+                        <div class="doc-search">
+                            <span class="overview-search-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
+                            </span>
+                            <input type="text" id="doc-search-input" placeholder="Search documents" autocomplete="off">
+                        </div>
+                        <div class="doc-filters" id="doc-group-filters"></div>
+                        <div class="doc-filters doc-filters-right" id="doc-year-filters"></div>
+                    </div>
+                    <p class="doc-status" id="doc-status"></p>
+                    <div id="doc-list"></div>
+                </div>
+                <div class="notes-foot">
+                    <button class="btn-text" type="button" id="doc-expand-btn" style="display:none;">Show more</button>
                 </div>
             </section>
             </div>
@@ -443,6 +476,28 @@
                 <button class="btn btn-danger-text" id="note-modal-delete-btn" type="button">Delete note</button>
             </div>
         </div>
+
+    </div>
+
+    <div class="modal-backdrop" id="settings-modal-backdrop" style="display:none;">
+        <div class="modal settings-modal">
+            <button class="modal-close" id="settings-modal-close" type="button" title="Close">&times;</button>
+            <h2 class="page-section-title">Settings</h2>
+
+            <div class="settings-field">
+                <label class="settings-label" for="settings-docs-path">Documents path</label>
+                <input type="text" id="settings-docs-path" class="settings-input" placeholder="/Users/you/Work/Clients" spellcheck="false">
+                <p class="settings-hint">The folder VAIO indexes. It is only ever read &mdash; nothing inside it is moved, renamed or deleted.</p>
+            </div>
+
+            <div class="settings-field">
+                <label class="settings-label" for="settings-docs-terms">Search for</label>
+                <input type="text" id="settings-docs-terms" class="settings-input" placeholder="Invoice, Fatura" spellcheck="false">
+                <p class="settings-hint">A PDF matches if any of these appears in its filename or in any folder above it. Separate with commas.</p>
+            </div>
+
+            <p class="settings-preview" id="settings-preview"></p>
+        </div>
     </div>
 
     <script src="/static/js/nav.js"></script>
@@ -452,5 +507,6 @@
     <script src="/static/js/notes.js"></script>
     <script src="/static/js/finance.js"></script>
     <script src="/static/js/overview.js"></script>
+    <script src="/static/js/documents.js"></script>
 </body>
 </html>
