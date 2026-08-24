@@ -454,7 +454,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h13"></path><path d="M13 12h8"></path><path d="M13 19h8"></path><path d="M3 10a2 2 0 0 0 2 2h3"></path><path d="M3 5v12a2 2 0 0 0 2 2h3"></path></svg>
             </button>
 
-            <textarea class="note-modal-plain" id="note-modal-body" placeholder="Take a note..."></textarea>
+            <!-- Two elements, one field. The div is what you read: it renders
+                 the note's links as real anchors, which a <textarea> can
+                 never do. Clicking anywhere in it that is not a link swaps
+                 in the textarea with the caret where you clicked, so it
+                 still behaves like one plain editable box. -->
+            <div class="note-modal-plain note-modal-view" id="note-modal-view" tabindex="0" role="textbox"
+                 aria-label="Note body" aria-multiline="true"></div>
+            <textarea class="note-modal-plain" id="note-modal-body" placeholder="Take a note..." style="display:none;"></textarea>
 
             <div id="note-modal-items-wrap" style="display:none;">
                 <div class="checklist-list" id="note-modal-items-list"></div>

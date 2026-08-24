@@ -16,6 +16,11 @@
     --accent: #282828;
     --accent-text: #fafafa;
     --accent-blue: #3f7ca8;
+    /* Links in body text, which --accent-blue cannot serve: at 14px on
+       the light panel it measures 4.32:1, under the 4.5:1 that normal
+       text needs. Darkened to 5.57:1. The dark theme's blue already
+       clears it, so only this end of the ramp moves. */
+    --link: #336a91;
     --green: #22c55e;
     --red: #e57373;
     --danger-text: #c0392b;
@@ -205,6 +210,7 @@
     --accent: #ebebeb;
     --accent-text: #131313;
     --accent-blue: #7fb4d8;
+    --link: #7fb4d8;
     --green: #34d06a;
     --red: #e88b8b;
     --danger-text: #f09a90;
@@ -2542,13 +2548,16 @@ table.project-table tbody tr:hover td {
     color: var(--accent-blue);
 }
 
+/* Shared by the textarea and the read view that swaps with it. Every
+   metric here has to hold for both: the two elements occupy the same box
+   and trade places on a click, so a single difference in font, line-height
+   or padding shows up as text jumping the moment you start editing. */
 .note-modal-plain {
     display: block;
     width: 100%;
     background: transparent;
     border: none;
     outline: none;
-    resize: vertical;
     color: var(--text);
     font-family: inherit;
     font-size: 14px;
@@ -2557,7 +2566,37 @@ table.project-table tbody tr:hover td {
     padding: 0;
 }
 
+/* The textarea grows to its own content now (see the input handler in
+   notes.js), which is what lets a long note swap in without collapsing to
+   a 220px scroller - and makes a drag-handle nothing but a way to fight
+   that, hence no resize. */
+.note-modal-plain#note-modal-body {
+    resize: none;
+    overflow: hidden;
+}
+
 .note-modal-plain::placeholder {
+    color: var(--text-faint);
+}
+
+/* pre-wrap is what makes the view render a textarea's text identically:
+   newlines kept, runs of spaces kept, long words broken rather than
+   overflowing the modal. */
+.note-modal-view {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    cursor: text;
+}
+
+.note-modal-view:focus-visible {
+    outline: 1px solid var(--text-faint);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+}
+
+.note-modal-view.is-empty::before {
+    content: "Take a note...";
     color: var(--text-faint);
 }
 
@@ -3474,6 +3513,35 @@ input.kanban-col-title-input:focus {
    overflow-wrap/word-break handle a single long unbroken run of
    characters (a URL, a run-on word) that would otherwise overflow the
    card's fixed width instead of wrapping like normal text does. */
+/* Links inside note text. On the neutral modal they take the app's blue;
+   on a card they cannot, because the card's background is whatever colour
+   the user picked and a fixed blue is unreadable against half of them.
+   There the underline carries the affordance and the colour is inherited -
+   the same reasoning as .note-card-light / .note-card-dark, which is the
+   one sanctioned place in this stylesheet where a note's own colour
+   decides its ink. */
+.note-link {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    overflow-wrap: anywhere;
+}
+
+.note-link:hover {
+    text-decoration-thickness: 2px;
+}
+
+/* Only cards that carry a colour. An uncoloured card sits on the app's own
+   panel, where the blue is both readable and the thing that says "link" -
+   inheriting there would leave the underline doing all the work for no
+   reason. */
+.note-card.note-card-light .note-link,
+.note-card.note-card-dark .note-link {
+    color: inherit;
+    text-decoration-color: currentColor;
+}
+
 .note-preview-body {
     color: var(--text);
     font-size: 13.5px;

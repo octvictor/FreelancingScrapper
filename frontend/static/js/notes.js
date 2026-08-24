@@ -42,14 +42,14 @@ function notePreviewContentHtml(note) {
         const rows = shown.map((item) => `
             <div class="note-preview-item ${item.checked ? "checked" : ""}">
                 <input type="checkbox" class="checklist-checkbox" data-item-id="${item.id}" ${item.checked ? "checked" : ""}>
-                <span>${escapeAttr(item.text) || " "}</span>
+                <span>${linkifyHtml(item.text) || " "}</span>
             </div>
         `).join("");
         const more = items.length > shown.length ? `<div class="note-preview-more">+${items.length - shown.length} more</div>` : "";
         return `<div class="note-preview-items">${rows}${more}</div>`;
     }
     return note.body
-        ? `<div class="note-preview-body">${escapeAttr(note.body)}</div>`
+        ? `<div class="note-preview-body">${linkifyHtml(note.body)}</div>`
         : `<div class="note-preview-empty">Empty note</div>`;
 }
 
@@ -146,7 +146,10 @@ function wireNoteCard(card) {
     const noteId = parseInt(card.dataset.id, 10);
 
     card.addEventListener("click", (e) => {
-        if (e.target.closest("[data-role='color'], [data-role='delete'], .note-drag-handle, .checklist-checkbox")) return;
+        // .note-link is in this list for the same reason the checkbox is:
+        // the card is one big button that opens the note, and a link inside
+        // it has to win over that or it could never be followed.
+        if (e.target.closest("[data-role='color'], [data-role='delete'], .note-drag-handle, .checklist-checkbox, .note-link")) return;
         openNoteModal(noteId);
     });
 
@@ -291,12 +294,22 @@ function openNoteModal(noteId) {
 
     if (note.type === "list") {
         $("note-modal-body").style.display = "none";
+        $("note-modal-view").style.display = "none";
         $("note-modal-items-wrap").style.display = "";
         renderNoteModalItems(note.items || []);
     } else {
-        $("note-modal-body").style.display = "";
         $("note-modal-body").value = note.body || "";
         $("note-modal-items-wrap").style.display = "none";
+        // A note with no body yet opens straight into the editor - there is
+        // nothing to read, and making you click an empty box first would be
+        // a step for nothing. Anything with content opens as reading.
+        $("note-modal-body").style.display = note.body ? "none" : "";
+        $("note-modal-view").style.display = note.body ? "" : "none";
+        paintNoteView(note.body || "");
+        if (!note.body) {
+            autoGrowChecklistText($("note-modal-body"));
+            $("note-modal-body").focus();
+        }
     }
 }
 
@@ -396,9 +409,93 @@ async function toggleNoteType() {
 
 $("note-modal-type-toggle").addEventListener("click", toggleNoteType);
 
+// ---------- Body: read view <-> edit textarea ----------
+// A <textarea> cannot contain an anchor, so a note's links can never be
+// clickable inside one. The modal keeps the textarea as the only editor and
+// puts a rendered div in front of it: you read the note with live links,
+// and clicking anywhere that is not a link swaps the textarea in with the
+// caret where you clicked. One field as far as the note is concerned - the
+// textarea is still what gets saved.
+
+function paintNoteView(body) {
+    const view = $("note-modal-view");
+    view.innerHTML = body ? linkifyHtml(body) : "";
+    view.classList.toggle("is-empty", !body);
+}
+
+function showNoteBodyView() {
+    if ($("note-modal-body").style.display === "none") return;
+    paintNoteView($("note-modal-body").value);
+    $("note-modal-body").style.display = "none";
+    $("note-modal-view").style.display = "";
+}
+
+// Maps a point in the rendered view to an index in the plain text, so the
+// caret lands where the click did instead of at the end of the note. The
+// view renders the same characters in the same order, just split across
+// text nodes and anchors, so summing the lengths of everything before the
+// clicked node gives the offset directly.
+function noteTextOffsetAt(x, y) {
+    const view = $("note-modal-view");
+    let node = null, offset = 0;
+    if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(x, y);
+        if (pos) { node = pos.offsetNode; offset = pos.offset; }
+    } else if (document.caretRangeFromPoint) {
+        const range = document.caretRangeFromPoint(x, y);
+        if (range) { node = range.startContainer; offset = range.startOffset; }
+    }
+    if (!node || !view.contains(node)) return null;
+
+    let total = 0;
+    const walker = document.createTreeWalker(view, NodeFilter.SHOW_TEXT);
+    let current;
+    while ((current = walker.nextNode())) {
+        if (current === node) return total + offset;
+        total += current.textContent.length;
+    }
+    return null;
+}
+
+function showNoteBodyEditor(caretIndex) {
+    const box = $("note-modal-body");
+    if (box.style.display !== "none") return;
+    $("note-modal-view").style.display = "none";
+    box.style.display = "";
+    // Grown to its content before anything else: the view is as tall as the
+    // whole note, and a fixed-height textarea would collapse a long one to
+    // 220px the instant you clicked into it.
+    autoGrowChecklistText(box);
+    box.focus();
+    const at = caretIndex === null || caretIndex === undefined ? box.value.length : caretIndex;
+    box.setSelectionRange(at, at);
+}
+
+$("note-modal-view").addEventListener("mousedown", (e) => {
+    // Let a link be a link. Everything else is "I want to type here".
+    if (e.target.closest(".note-link")) return;
+    // Before the default action, so the browser does not first try to put a
+    // selection in a div that is about to be hidden.
+    e.preventDefault();
+    showNoteBodyEditor(noteTextOffsetAt(e.clientX, e.clientY));
+});
+
+// Reachable without a mouse: the view is focusable, and Enter opens it for
+// editing the way clicking into it does.
+$("note-modal-view").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.metaKey || e.ctrlKey) return;
+    e.preventDefault();
+    showNoteBodyEditor(null);
+});
+
+$("note-modal-body").addEventListener("input", (e) => autoGrowChecklistText(e.target));
+
 $("note-modal-body").addEventListener("blur", () => {
     if (activeNoteId === null) return;
     saveNoteField(activeNoteId, { body: $("note-modal-body").value.trim() || null });
+    // Back to the reading view, so the links you just typed are live
+    // immediately rather than only after a reopen.
+    showNoteBodyView();
 });
 
 $("note-modal-delete-btn").addEventListener("click", async () => {

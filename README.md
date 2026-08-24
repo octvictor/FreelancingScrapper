@@ -530,6 +530,36 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**A textarea cannot hold a link, so the note body is two elements.** The
+modal keeps `#note-modal-body` as the only editor and puts
+`#note-modal-view` in front of it - a div rendering the same text with real
+anchors. Click a link and it opens; click anywhere else and the textarea
+swaps in with the caret where you clicked (`caretPositionFromPoint`, then
+sum the lengths of the text nodes before it to get the plain-text index).
+Blur saves and swaps back, so a link you just typed is live immediately.
+
+Three things keep the swap from showing. Both elements share
+`.note-modal-plain`, so font, line-height and padding cannot drift apart.
+The view needs `white-space: pre-wrap` to reproduce a textarea's newlines
+and space runs. And the textarea auto-grows to its content - without that,
+a long note collapses from its full height into a 220px scroller the moment
+you click into it.
+
+`linkifyHtml` in nav.js escapes first and builds the anchors from the
+escaped pieces, so a note's own body can never inject markup. The URL
+pattern is deliberately narrow - `http(s)://` and bare `www.` only. Anything
+loose enough to catch `vaio.app` also catches `e.g.`, and a false link
+mid-sentence is worse than a missed one. Trailing `.,;:!?` is given back to
+the sentence; brackets only when unbalanced, so a `..._(disambiguation)`
+link survives.
+
+Links use `--link`, not `--accent-blue`: at 14px on the light panel the
+accent measures 4.32:1, under the 4.5:1 normal text needs. On a *coloured*
+note card they inherit `currentColor` instead and let the underline carry
+the affordance - the card's background is whatever the user picked, and no
+fixed blue is readable against all of them. Same reasoning as
+`.note-card-light` / `.note-card-dark`.
+
 **Disclosures are `grid-template-rows: 0fr -> 1fr`, and the padding goes on
 a child.** Documents stacks two sections (Invoices, NFs) and Settings
 stacks its groups, so both collapse. The grid-row trick animates to the

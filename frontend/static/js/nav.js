@@ -17,6 +17,64 @@ function autoGrowChecklistText(el) {
     el.style.height = el.scrollHeight + "px";
 }
 
+// ---------- Links in free text ----------
+// Turns the URLs inside a plain-text blob into real anchors. The text is
+// escaped first and the anchors are built from the escaped pieces, so this
+// never becomes a way to inject markup through a note's own body.
+//
+// Deliberately narrow: http(s):// and bare www. only. A pattern loose
+// enough to catch "vaio.app" also catches "e.g." and every sentence that
+// ends without a space after the full stop, and a false link in the middle
+// of a sentence is worse than a missed one you can paste in full.
+const URL_PATTERN = /\b(?:https?:\/\/|www\.)[^\s<>"']+/gi;
+
+// Trailing punctuation is almost never part of the URL - it is the
+// sentence's. Brackets only count as trailing when they are unbalanced, so
+// a Wikipedia-style ...(disambiguation) link survives.
+function trimUrlTail(url) {
+    let end = url.length;
+    while (end > 0) {
+        const ch = url[end - 1];
+        if (".,;:!?".includes(ch)) { end--; continue; }
+        if (ch === ")" || ch === "]" || ch === "}") {
+            const open = { ")": "(", "]": "[", "}": "{" }[ch];
+            const slice = url.slice(0, end);
+            const opens = slice.split(open).length - 1;
+            const closes = slice.split(ch).length - 1;
+            if (closes > opens) { end--; continue; }
+        }
+        break;
+    }
+    return url.slice(0, end);
+}
+
+function linkifyHtml(text) {
+    if (!text) return "";
+    let out = "";
+    let last = 0;
+    URL_PATTERN.lastIndex = 0;
+    let match;
+    while ((match = URL_PATTERN.exec(text)) !== null) {
+        const raw = trimUrlTail(match[0]);
+        const start = match.index;
+        out += escapeAttr(text.slice(last, start));
+        const href = raw.startsWith("www.") ? "https://" + raw : raw;
+        out += `<a class="note-link" href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer">${escapeAttr(raw)}</a>`;
+        last = start + raw.length;
+        // trimUrlTail can shorten the match, so the scan resumes at the
+        // real end of the link rather than past the punctuation it gave
+        // back - otherwise "a.com. b.com" would swallow the second URL.
+        URL_PATTERN.lastIndex = last;
+    }
+    out += escapeAttr(text.slice(last));
+    return out;
+}
+
+function textHasLink(text) {
+    URL_PATTERN.lastIndex = 0;
+    return !!text && URL_PATTERN.test(text);
+}
+
 // ---------- Shared inline icons ----------
 // Lucide, inlined rather than fetched: the app ships as a single offline
 // bundle, so an icon font or sprite request would be one more thing that
