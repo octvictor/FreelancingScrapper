@@ -548,6 +548,15 @@ nothing to paginate and the print comes out blank. And Export blurs the
 focused field first: the blur handler is what saves, so exporting straight
 after typing would otherwise print the value from before the last edit.
 
+**`overflow: hidden` zeroes a flex item's minimum size.** `.settings-group`
+carries it for the border radius, and inside the modal's flex column that
+let the group shrink *below its own content* on a short window rather than
+pushing the modal past its `max-height`. The group clipped its last fields,
+and since the modal then never overflowed there was nothing to scroll to
+reach them - the fields were simply gone. `flex-shrink: 0` is what makes the
+modal scroll instead. Measured at an 800px window: the group was 588px tall
+around 692px of content, with `scrollHeight === clientHeight` on the modal.
+
 **Nothing personal ships with the app.** The "invoice from" block, the
 payment notes, the contact line, the Wise link and @ and the payment image
 all start empty, with the form's placeholders saying what goes in each. A

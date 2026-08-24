@@ -4889,6 +4889,13 @@ input#doc-tag-new-input {
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-md);
     overflow: hidden;
+    /* flex-shrink:0 is load-bearing, not tidying. `overflow: hidden` sets a
+       flex item's automatic minimum size to 0, so inside the modal's flex
+       column this group shrank below its own content on a short window
+       instead of pushing the modal past its max-height. The group clipped
+       its last fields, and because the modal never overflowed there was
+       nothing to scroll to reach them. */
+    flex-shrink: 0;
 }
 
 .settings-group-head {
