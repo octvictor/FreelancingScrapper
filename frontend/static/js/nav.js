@@ -17,6 +17,32 @@ function autoGrowChecklistText(el) {
     el.style.height = el.scrollHeight + "px";
 }
 
+// ---------- Shared inline icons ----------
+// Lucide, inlined rather than fetched: the app ships as a single offline
+// bundle, so an icon font or sprite request would be one more thing that
+// can fail. Every one of these is drawn at 16px inside a 24px button -
+// the geometry Calculator's row controls established - so the whole app
+// shares one icon size rather than each surface inventing its own.
+//
+// TRASH is the delete affordance app-wide. It replaced a "\u00d7" glyph
+// everywhere, which read as "close" as often as "delete" and rendered at
+// whatever the surrounding font felt like.
+
+const ICON_TRASH_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>' +
+    '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>' +
+    '<line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>';
+
+const ICON_ARROW_UP_RIGHT_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></svg>';
+
+const ICON_TAG_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path>' +
+    '<circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>';
+
 // Calculator's row Title field (finance.js) sits in a compact pill that
 // hugs its own text rather than filling the row - a plain <input> can't
 // size itself to its value, so a hidden sibling <span class="...-sizer">

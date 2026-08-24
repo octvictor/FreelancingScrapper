@@ -53,8 +53,8 @@ function docRowHtml(file) {
             <span class="doc-row-name">${escapeAttr(file.display_name)}</span>
             <span class="doc-row-tags">${docTagChipsHtml(file)}</span>
             <span class="doc-row-date">${docDate(file.mtime)}</span>
-            <button class="doc-row-action" data-role="tag" type="button" title="Tags">&#9733;</button>
-            <button class="doc-row-action" data-role="reveal" type="button" title="Show in folder">&#8599;</button>
+            <button class="doc-row-action" data-role="tag" type="button" title="Tags">${ICON_TAG_SVG}</button>
+            <button class="doc-row-action doc-row-open" data-role="reveal" type="button" title="Show in folder">${ICON_ARROW_UP_RIGHT_SVG}</button>
         </div>
     `;
 }
@@ -267,7 +267,7 @@ function openDocTagPopover(trigger, fileId) {
                 <input type="checkbox" data-tag-id="${t.id}" ${active.has(t.id) ? "checked" : ""}>
                 <button type="button" class="doc-tag-dot" data-color-tag="${t.id}" title="Tag color" style="background:${t.color || "var(--border)"};"></button>
                 <span class="doc-tag-name">${escapeAttr(t.name)}</span>
-                <button type="button" class="doc-tag-delete" data-delete-tag="${t.id}" title="Delete tag">&times;</button>
+                <button type="button" class="doc-tag-delete" data-delete-tag="${t.id}" title="Delete tag">${ICON_TRASH_SVG}</button>
             </label>
         `).join("")}
         <div class="doc-tag-new">

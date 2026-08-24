@@ -27,7 +27,7 @@ function noteItemHtml(item) {
         <div class="checklist-item ${item.checked ? "checked" : ""}" data-id="${item.id}">
             <input type="checkbox" class="checklist-checkbox" ${item.checked ? "checked" : ""}>
             <textarea class="cell-input checklist-text" data-field="text" placeholder="List item" rows="1">${escapeAttr(item.text)}</textarea>
-            <button class="row-delete-btn" data-role="delete-item" title="Delete item">&times;</button>
+            <button class="row-delete-btn" data-role="delete-item" title="Delete item">${ICON_TRASH_SVG}</button>
         </div>
     `;
 }
@@ -69,7 +69,7 @@ function noteCardHtml(note) {
                 <button class="note-color-btn color-dot-btn" data-role="color" type="button" title="Note color">
                     <span class="color-dot"></span>
                 </button>
-                <button class="row-delete-btn note-delete-btn" data-role="delete" type="button" title="Delete note">&times;</button>
+                <button class="row-delete-btn note-delete-btn" data-role="delete" type="button" title="Delete note">${ICON_TRASH_SVG}</button>
             </div>
         </div>
     `;

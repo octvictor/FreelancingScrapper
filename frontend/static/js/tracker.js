@@ -287,7 +287,7 @@ function docRowHtml(doc, projectId) {
     return `
         <div class="doc-item" data-doc-id="${doc.id}">
             <a href="/api/tracker/projects/${projectId}/docs/${doc.id}" target="_blank" rel="noopener" class="doc-name">${escapeAttr(doc.filename)}</a>
-            <button class="doc-delete-btn" data-doc-id="${doc.id}" type="button" title="Delete doc">&times;</button>
+            <button class="doc-delete-btn" data-doc-id="${doc.id}" type="button" title="Delete doc">${ICON_TRASH_SVG}</button>
         </div>
     `;
 }
@@ -333,7 +333,7 @@ function taskRowHtml(task) {
                 </div>
             </td>
             <td><input type="date" class="cell-input date-input" data-field="task_date" value="${task.task_date || ""}"></td>
-            <td><button class="row-delete-btn" data-role="delete" title="Delete task">&times;</button></td>
+            <td><button class="row-delete-btn" data-role="delete" title="Delete task">${ICON_TRASH_SVG}</button></td>
         </tr>
     `;
 }
@@ -855,7 +855,7 @@ function checklistItemHtml(item) {
         <div class="checklist-item ${item.checked ? "checked" : ""}" data-id="${item.id}">
             <input type="checkbox" class="checklist-checkbox" ${item.checked ? "checked" : ""}>
             <textarea class="cell-input checklist-text" data-field="text" placeholder="Checklist item" rows="1">${escapeAttr(item.text)}</textarea>
-            <button class="row-delete-btn" data-role="delete" title="Delete item">&times;</button>
+            <button class="row-delete-btn" data-role="delete" title="Delete item">${ICON_TRASH_SVG}</button>
         </div>
     `;
 }

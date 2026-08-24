@@ -262,7 +262,7 @@ function todoStepHtml(step) {
         <div class="checklist-item ${step.checked ? "checked" : ""}" data-id="${step.id}">
             <input type="checkbox" class="checklist-checkbox" ${step.checked ? "checked" : ""}>
             <textarea class="cell-input checklist-text" data-field="text" placeholder="Step" rows="1">${escapeAttr(step.text)}</textarea>
-            <button class="row-delete-btn" data-role="delete" title="Delete step">&times;</button>
+            <button class="row-delete-btn" data-role="delete" title="Delete step">${ICON_TRASH_SVG}</button>
         </div>
     `;
 }

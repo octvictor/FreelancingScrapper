@@ -41,7 +41,7 @@ function gathererRowHtml(entry) {
             <td>
                 <div class="url-cell">
                     <input type="text" class="cell-input" data-field="url" value="${escapeAttr(entry.url)}" placeholder="https://...">
-                    <a class="url-open-link" data-role="open-link" href="${escapeAttr(normalizeUrl(entry.url))}" target="_blank" rel="noopener" title="Open link">&#8599;</a>
+                    <a class="url-open-link" data-role="open-link" href="${escapeAttr(normalizeUrl(entry.url))}" target="_blank" rel="noopener" title="Open link">${ICON_ARROW_UP_RIGHT_SVG}</a>
                 </div>
             </td>
             <td>
@@ -57,7 +57,7 @@ function gathererRowHtml(entry) {
                 </select>
             </td>
             <td><input type="date" class="cell-input date-input" data-field="sent_date" value="${entry.sent_date || ""}"></td>
-            <td><button class="row-delete-btn" data-role="delete" title="Delete row">&times;</button></td>
+            <td><button class="row-delete-btn" data-role="delete" title="Delete row">${ICON_TRASH_SVG}</button></td>
         </tr>
     `;
 }

@@ -163,12 +163,6 @@ const FINANCE_TOGGLE_ICON_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
     '<path d="M12 7v4"></path><path d="M7.998 9.003a5 5 0 1 0 8-.005"></path><circle cx="12" cy="12" r="10"></circle></svg>';
 
-const FINANCE_DELETE_ICON_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-    '<path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>' +
-    '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>' +
-    '<line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>';
-
 function financeRowHtml(row) {
     const isOff = !row.active;
     // Per the user's wireframe: the row's color only tints the card
@@ -195,7 +189,7 @@ function financeRowHtml(row) {
             </div>
             <div class="finance-card-right">
                 <button class="finance-card-toggle" data-role="toggle" type="button" title="${isOff ? "Turn row back on" : "Turn row off"}">${FINANCE_TOGGLE_ICON_SVG}</button>
-                <button class="finance-card-delete" data-role="delete" title="Delete row">${FINANCE_DELETE_ICON_SVG}</button>
+                <button class="finance-card-delete" data-role="delete" title="Delete row">${ICON_TRASH_SVG}</button>
                 <div class="finance-card-value-field">
                     <span class="currency-prefix cost-prefix">${financeCurrencySymbol()}</span>
                     <input type="number" class="finance-card-value ${financeValueClass(row.value)}" data-field="value" step="0.01" placeholder="0.00" value="${row.value ?? ""}">

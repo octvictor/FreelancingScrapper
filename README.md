@@ -530,6 +530,30 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**One icon size, one delete icon.** Every small icon button in the app is
+a 16px Lucide glyph centred in a 24px box: `.row-delete-btn`,
+`.note-delete-btn`, `.doc-delete-btn`, `.doc-tag-delete`, `.doc-row-action`,
+`.url-open-link` and Calculator's `.finance-card-delete` /
+`.finance-card-toggle`. Calculator set that geometry first and the rest
+follow it, so a delete weighs the same in a table row, a note card and a
+tag list. The icons themselves live in nav.js (`ICON_TRASH_SVG`,
+`ICON_ARROW_UP_RIGHT_SVG`, `ICON_TAG_SVG`) rather than being re-typed per
+file - inline SVG, not an icon font, because the app has to work offline.
+
+Two traps sit in that block. The size lives in a shared `svg { }` rule
+because none of those button rules set an svg size themselves, so there is
+nothing for it to collide with wherever they appear in the file - the box
+geometry, which *does* collide, is written into each rule instead. And a
+text glyph and an SVG cannot share a row: sizing a `&times;` means
+`font-size` and `padding`, sizing an icon means `width`/`height`, so
+converting one button in a row means converting all of them or the two
+will not align.
+
+Delete buttons keep whichever colour treatment their surface already had:
+neutral at rest and red on hover nearly everywhere, always-red only on
+note cards, where the button sits alone in the card footer with nothing to
+hover first.
+
 **Notes is a grid, not CSS multi-column, and that is about reading order.**
 Multi-column fills column-major - all the way down column one, then down
 column two - so a new note appeared beneath the first card while the space
