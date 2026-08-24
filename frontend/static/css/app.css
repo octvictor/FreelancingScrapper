@@ -146,6 +146,9 @@
     --dur-pop: 150ms;
     --dur-modal-in: 200ms;
     --dur-modal-out: 150ms;
+    /* A section unfolding to its own height - longer than a popover,
+       still inside the sub-300ms band a UI transition has to stay in. */
+    --dur-disclose: 220ms;
 
     /* scale() is relative, so one value cannot serve a 120px button and a
        22px icon - the small tier presses harder to read at all. Tokens
@@ -375,6 +378,8 @@ button, input, select, textarea {
 .doc-name,
 .doc-row,
 .doc-row-action,
+.doc-section-head,
+.settings-group-head,
 .doc-tag-delete,
 .doc-tag-dot,
 .doc-tag-option,
@@ -4392,6 +4397,108 @@ input.date-field-native {
     flex-shrink: 0;
 }
 
+/* ---------- Document sections (Invoices / NFs) ---------- */
+/* Two kinds share this page, so each gets a disclosure rather than a tab
+   bar: tabs would hide one list behind the other and make "do I have an NF
+   for this?" a two-click question. Stacked sections answer it by scrolling.
+   NFs start closed - see docViewFor() - so the page opens on the list you
+   came for rather than on two half-lists. */
+
+.doc-section + .doc-section {
+    margin-top: 18px;
+}
+
+/* The head is a button for keyboard and screen-reader reasons but must not
+   look like one: it reads as the section's title, with the caret as the
+   only affordance. */
+.doc-section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 6px 2px;
+    margin-bottom: 10px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.doc-section-title {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+.doc-section-count {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--pill-neutral-bg);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.doc-section-count:empty {
+    display: none;
+}
+
+/* 0fr -> 1fr on a single grid row: the browser animates to the content's
+   own height, so a section of any length opens correctly without JS
+   measuring it and without a max-height guess that either clips a long
+   list or stalls on a short one. overflow:hidden on the child is what
+   makes the row actually clip while it is collapsing. */
+.doc-section-body,
+.settings-group-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--dur-disclose) var(--ease-out);
+}
+
+.doc-section.open > .doc-section-body,
+.settings-group.open > .settings-group-body {
+    grid-template-rows: 1fr;
+}
+
+.doc-section-inner,
+.settings-group-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* The caret is the whole affordance on a head that is otherwise a title,
+   so it rotates rather than swapping glyphs - the rotation is what says
+   the section went somewhere rather than being replaced. */
+.settings-caret {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    transition: transform var(--dur-hover) var(--ease-out), color var(--dur-hover) ease;
+}
+
+.settings-caret svg {
+    width: 14px;
+    height: 14px;
+}
+
+.doc-section.open .settings-caret,
+.settings-group.open .settings-caret {
+    transform: rotate(90deg);
+}
+
+.doc-section-head:hover .settings-caret,
+.settings-group-head:hover .settings-caret {
+    color: var(--text);
+}
+
 .doc-controls {
     display: flex;
     align-items: center;
@@ -4416,8 +4523,9 @@ input.date-field-native {
 
 /* Element-qualified for the same reason .overview-search-input is: the
    generic input[type="text"] rule would otherwise draw its bordered box
-   inside the pill. */
-input#doc-search-input {
+   inside the pill. Selected through .doc-search rather than by id, since
+   there is now one of these per document kind. */
+.doc-search input[type="text"] {
     flex: 1;
     min-width: 0;
     background: transparent;
@@ -4429,7 +4537,7 @@ input#doc-search-input {
     font-weight: 300;
 }
 
-input#doc-search-input::placeholder {
+.doc-search input[type="text"]::placeholder {
     color: var(--field-muted);
     opacity: 1;
 }
@@ -4699,6 +4807,77 @@ input#doc-tag-new-input {
     gap: 22px;
 }
 
+/* Settings is a list of collapsed groups, not a list of fields. Documents
+   alone is four inputs and two folder paths; showing every group's fields
+   at once would make finding the one you came for a scanning exercise
+   that gets worse with each group added. */
+.settings-group {
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.settings-group-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    background: none;
+    border: none;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.settings-group-head:hover {
+    background: var(--panel);
+}
+
+.settings-group-title {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Says what is inside without opening it, which is the whole point of
+   collapsing the group in the first place. */
+.settings-group-hint {
+    margin-left: auto;
+    font-size: 11.5px;
+    color: var(--text-faint);
+}
+
+/* Padding lives on the content, not on the grid item. An item's padding is
+   inside its own overflow:hidden, so padding here would keep the collapsed
+   group 18px tall instead of 0 - a closed section with a visible sliver. */
+#settings-docs-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 2px 14px 16px;
+}
+
+/* One block per document kind. The rule above it is what keeps Invoices
+   and NFs from reading as one long run of four unrelated fields. */
+.settings-kind + .settings-kind {
+    padding-top: 18px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.settings-kind {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-kind-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    margin: 0;
+}
+
 .settings-field {
     display: flex;
     flex-direction: column;
@@ -4765,6 +4944,13 @@ input.settings-input:focus {
 @media (prefers-reduced-motion: reduce) {
     .doc-row-action,
     .doc-row {
+        transition: none;
+    }
+    /* The disclosures snap instead of sliding. The caret keeps rotating -
+       it is the state indicator, and losing it would leave no sign of
+       which sections are open. */
+    .doc-section-body,
+    .settings-group-body {
         transition: none;
     }
 }

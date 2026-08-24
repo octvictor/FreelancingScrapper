@@ -265,23 +265,12 @@
                     <button class="btn doc-rescan-btn" type="button" id="doc-rescan-btn">Rescan</button>
                 </div>
 
-                <div class="panel">
-                    <div class="doc-controls">
-                        <div class="doc-search">
-                            <span class="overview-search-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
-                            </span>
-                            <input type="text" id="doc-search-input" placeholder="Search documents" autocomplete="off">
-                        </div>
-                        <div class="doc-filters" id="doc-group-filters"></div>
-                        <div class="doc-filters doc-filters-right" id="doc-year-filters"></div>
-                    </div>
-                    <p class="doc-status" id="doc-status"></p>
-                    <div id="doc-list"></div>
-                </div>
-                <div class="notes-foot">
-                    <button class="btn-text" type="button" id="doc-expand-btn" style="display:none;">Show more</button>
-                </div>
+                <!-- One .doc-section per kind, built by documents.js from a
+                     single template so Invoices and NFs cannot drift apart.
+                     The shells are built once and only their lists re-render,
+                     which is what keeps a search field's focus and caret
+                     while you type into it. -->
+                <div id="doc-sections"></div>
             </section>
             </div>
         </div>
@@ -484,19 +473,28 @@
             <button class="modal-close" id="settings-modal-close" type="button" title="Close">&times;</button>
             <h2 class="page-section-title">Settings</h2>
 
-            <div class="settings-field">
-                <label class="settings-label" for="settings-docs-path">Documents path</label>
-                <input type="text" id="settings-docs-path" class="settings-input" placeholder="/Users/you/Work/Clients" spellcheck="false">
-                <p class="settings-hint">The folder VAIO indexes. It is only ever read &mdash; nothing inside it is moved, renamed or deleted.</p>
+            <!-- Settings is a list of collapsed groups rather than a list of
+                 fields: Documents alone is four inputs, and it will not be
+                 the only group here for long. Every group starts closed, so
+                 you open the one you came to change. -->
+            <div class="settings-group">
+                <button class="settings-group-head" type="button" id="settings-docs-toggle"
+                        aria-expanded="false" aria-controls="settings-docs-body">
+                    <span class="settings-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span>
+                    <span class="settings-group-title">Documents</span>
+                    <span class="settings-group-hint">Folders and search terms</span>
+                </button>
+                <div class="settings-group-body" id="settings-docs-body">
+                    <!-- Two wrappers, not one: .settings-group-inner is the
+                         grid item that clips, and padding has to sit on
+                         something inside it. An element's own padding is not
+                         clipped by its own overflow, so padding on the item
+                         itself keeps the collapsed group 18px tall. -->
+                    <div class="settings-group-inner">
+                        <div id="settings-docs-fields"></div>
+                    </div>
+                </div>
             </div>
-
-            <div class="settings-field">
-                <label class="settings-label" for="settings-docs-terms">Search for</label>
-                <input type="text" id="settings-docs-terms" class="settings-input" placeholder="Invoice, Fatura" spellcheck="false">
-                <p class="settings-hint">A PDF matches if any of these appears in its filename or in any folder above it. Separate with commas.</p>
-            </div>
-
-            <p class="settings-preview" id="settings-preview"></p>
         </div>
     </div>
 

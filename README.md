@@ -530,6 +530,48 @@ executable), shared across every tool:
 
 ## Design system notes
 
+**Disclosures are `grid-template-rows: 0fr -> 1fr`, and the padding goes on
+a child.** Documents stacks two sections (Invoices, NFs) and Settings
+stacks its groups, so both collapse. The grid-row trick animates to the
+content's own height with no JavaScript measuring it, and no `max-height`
+guess that either clips a long list or stalls on a short one.
+
+The trap is that an element's own padding sits *inside* its own
+`overflow: hidden`, so padding on the grid item leaves the collapsed
+section that many pixels tall - an 18px sliver under a closed group. The
+item does the clipping (`overflow: hidden; min-height: 0`) and a child
+inside it carries the padding. `#settings-docs-fields` is that child.
+
+**Two kinds, one template.** Invoices and NFs are the same browser pointed
+at two folders, so the page renders one section template twice from the
+kind list the server sends, and all view state (`docView`) is keyed by
+kind. Nothing in `documents.js` names "invoice" or "nf" except the default
+that decides which one starts open.
+
+The section shells are built **once** and only their lists re-render.
+Rebuilding the shell on every keystroke would replace the search `<input>`
+under the cursor and throw away focus and caret position mid-word.
+
+**Everything about an index is per kind.** `document_files` is keyed
+`UNIQUE (kind, path)`, not `UNIQUE (path)`: the two folders can legitimately
+overlap, and with one row per path whichever scan ran second would steal
+the row from the first. Rescan, the missing-file sweep and the
+outside-the-folder check in `POST /open` are all scoped the same way - an
+invoice rescan must not mark every NF missing, and an NF path must not be
+validated against the invoice root.
+
+The one thing deliberately **shared** across kinds is tags: "Paid" means
+the same thing on either, and a per-kind vocabulary would be the same list
+maintained twice.
+
+**The list caps at a fixed 10, not at what fits the window.** Every other
+long list here uses `applyRowFit`; two stacked sections have no single
+"what fits" answer, and a list whose length changes when you resize the
+window is worse than one you can predict. Group headers count the whole
+group rather than the rows the cap left visible - "ATLAS 15" over ten rows
+says there are five more behind Show more, where "ATLAS 10" would claim the
+list is complete.
+
 **One icon size, one delete icon.** Every small icon button in the app is
 a 16px Lucide glyph centred in a 24px box: `.row-delete-btn`,
 `.note-delete-btn`, `.doc-delete-btn`, `.doc-tag-delete`, `.doc-row-action`,

@@ -1,7 +1,12 @@
-"""API routes for Documents: a read-only browser over a folder of PDFs the
+"""API routes for Documents: a read-only browser over folders of PDFs the
 user nominates, plus the app's general settings store.
 
-Nothing here writes to the scanned folder. The only filesystem calls are
+Documents indexes two *kinds* - invoices and NFs - which are the same
+machinery pointed at two different folders with two different search terms.
+Every route below is scoped by kind for that reason: rescanning invoices
+must never touch the NF index, and vice versa.
+
+Nothing here writes to the scanned folders. The only filesystem calls are
 the walk in storage/docscan.py, and handing a path to the OS to open.
 """
 from __future__ import annotations
@@ -20,13 +25,32 @@ db.init_db()
 
 router = APIRouter()
 
-PATH_KEY = "documents_path"
-TERMS_KEY = "documents_terms"
+# The two kinds, in the order the page stacks them. Adding a third is a
+# line here plus a section in the page - nothing else in this file names
+# "invoice" or "nf" directly.
+KINDS = ("invoice", "nf")
+KIND_LABELS = {"invoice": "Invoices", "nf": "NFs"}
+
+
+def _keys(kind: str) -> tuple[str, str]:
+    return f"documents_{kind}_path", f"documents_{kind}_terms"
+
+
+def _valid_kind(kind: str) -> str:
+    if kind not in KINDS:
+        raise HTTPException(400, f"Unknown document kind: {kind}")
+    return kind
 
 
 class DocumentSettings(BaseModel):
+    kind: str
     documents_path: str | None = None
     documents_terms: str | None = None
+
+
+class RescanRequest(BaseModel):
+    # None means every kind - what the page's own Rescan sends.
+    kind: str | None = None
 
 
 class TagCreate(BaseModel):
@@ -47,38 +71,43 @@ class OpenRequest(BaseModel):
     reveal: bool = False
 
 
-def _current() -> tuple[str, list[str]]:
-    settings = db.get_settings([PATH_KEY, TERMS_KEY])
-    return settings[PATH_KEY] or "", docscan.parse_terms(settings[TERMS_KEY])
+def _current(kind: str) -> tuple[str, list[str]]:
+    path_key, terms_key = _keys(kind)
+    settings = db.get_settings([path_key, terms_key])
+    return settings[path_key] or "", docscan.parse_terms(settings[terms_key])
+
+
+def _kind_settings(kind: str) -> dict:
+    path, terms = _current(kind)
+    _, terms_key = _keys(kind)
+    return {
+        "kind": kind,
+        "label": KIND_LABELS[kind],
+        "documents_path": path,
+        "documents_terms": db.get_setting(terms_key) or "",
+        "preview": docscan.preview(path, terms),
+    }
 
 
 # ---------- Settings ----------
 
 @router.get("/settings")
 def read_settings():
-    path, terms = _current()
-    return {
-        "documents_path": path,
-        "documents_terms": db.get_setting(TERMS_KEY) or "",
-        "preview": docscan.preview(path, terms),
-    }
+    return {"kinds": [_kind_settings(kind) for kind in KINDS]}
 
 
 @router.put("/settings")
 def write_settings(payload: DocumentSettings):
-    """Saves both fields and answers with the match count, so the Settings
-    field can say "4 folders, 37 PDFs" rather than leaving you to judge a
-    search term by staring at the list it produced."""
+    """Saves one kind's two fields and answers with that kind's match count,
+    so the Settings field can say "4 folders, 37 PDFs" rather than leaving
+    you to judge a search term by staring at the list it produced."""
+    kind = _valid_kind(payload.kind)
+    path_key, terms_key = _keys(kind)
     if payload.documents_path is not None:
-        db.set_setting(PATH_KEY, payload.documents_path.strip())
+        db.set_setting(path_key, payload.documents_path.strip())
     if payload.documents_terms is not None:
-        db.set_setting(TERMS_KEY, payload.documents_terms.strip())
-    path, terms = _current()
-    return {
-        "documents_path": path,
-        "documents_terms": db.get_setting(TERMS_KEY) or "",
-        "preview": docscan.preview(path, terms),
-    }
+        db.set_setting(terms_key, payload.documents_terms.strip())
+    return _kind_settings(kind)
 
 
 # ---------- Index ----------
@@ -88,21 +117,38 @@ def write_settings(payload: DocumentSettings):
 
 @router.get("/files")
 def list_files():
-    return {"files": db.list_document_files(), "tags": db.list_document_tags()}
+    """Both kinds in one response. The page renders them as two sections but
+    shares one tag vocabulary, and one request keeps the two lists from
+    arriving a frame apart."""
+    return {
+        "files": db.list_document_files(),
+        "tags": db.list_document_tags(),
+        "kinds": [{"kind": k, "label": KIND_LABELS[k]} for k in KINDS],
+    }
 
 
-@router.post("/rescan")
-def rescan():
-    path, terms = _current()
+def _rescan_kind(kind: str) -> dict:
+    path, terms = _current(kind)
     check = docscan.preview(path, terms)
     if not check["ok"]:
         # An unreadable folder must not look like an empty one - clearing the
         # index here would silently throw away a working list because of a
         # permissions prompt that had not been answered yet.
-        return {"ok": False, "reason": check["reason"], "indexed": 0, "added": 0, "missing": 0}
-    records = docscan.scan(path, terms, known=db.known_document_files())
-    result = db.replace_document_index(records)
-    return {"ok": True, "reason": None, **result}
+        return {"kind": kind, "ok": False, "reason": check["reason"],
+                "indexed": 0, "added": 0, "missing": 0}
+    records = docscan.scan(path, terms, known=db.known_document_files(kind))
+    result = db.replace_document_index(kind, records)
+    return {"kind": kind, "ok": True, "reason": None, **result}
+
+
+@router.post("/rescan")
+def rescan(payload: RescanRequest | None = None):
+    """One kind, or every kind when none is named. Each kind reports its own
+    outcome: a missing NF folder is not a reason to hide that the invoice
+    scan succeeded."""
+    kinds = KINDS if payload is None or payload.kind is None else (_valid_kind(payload.kind),)
+    results = [_rescan_kind(kind) for kind in kinds]
+    return {"results": results, "ok": any(r["ok"] for r in results)}
 
 
 @router.post("/open")
@@ -112,7 +158,9 @@ def open_file(payload: OpenRequest):
     if record is None:
         raise HTTPException(404, "File not found in the index")
 
-    root, _ = _current()
+    # Checked against the root of *this file's* kind. Using either root for
+    # every file would let an NF path pass the invoice folder's check.
+    root, _ = _current(record["kind"])
     target = Path(record["path"])
     try:
         # The id comes from the client, so the path it resolves to is checked
@@ -122,7 +170,7 @@ def open_file(payload: OpenRequest):
         target_resolved = target.resolve()
         target_resolved.relative_to(root_resolved)
     except (ValueError, OSError):
-        raise HTTPException(400, "That file is outside the documents folder")
+        raise HTTPException(400, "That file is outside its documents folder")
 
     if not target_resolved.exists():
         raise HTTPException(404, "That file is no longer on disk")

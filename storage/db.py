@@ -135,9 +135,14 @@ CREATE TABLE IF NOT EXISTS app_settings (
     updated_at TEXT NOT NULL
 );
 
+/* One row per (file, kind). Invoices and NFs are indexed separately and
+   can legitimately point at overlapping trees, so a file that matches both
+   searches belongs in both lists - which a UNIQUE(path) alone would
+   silently prevent, letting whichever scan ran second steal the row. */
 CREATE TABLE IF NOT EXISTS document_files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    path TEXT NOT NULL UNIQUE,
+    kind TEXT NOT NULL DEFAULT 'invoice',
+    path TEXT NOT NULL,
     filename TEXT NOT NULL,
     display_name TEXT NOT NULL,
     sort_key TEXT NOT NULL,
@@ -148,7 +153,8 @@ CREATE TABLE IF NOT EXISTS document_files (
     year INTEGER,
     content_hash TEXT NOT NULL,
     missing INTEGER NOT NULL DEFAULT 0,
-    indexed_at TEXT NOT NULL
+    indexed_at TEXT NOT NULL,
+    UNIQUE (kind, path)
 );
 
 CREATE TABLE IF NOT EXISTS document_tags (
@@ -166,6 +172,7 @@ CREATE TABLE IF NOT EXISTS document_file_tags (
 );
 
 CREATE INDEX IF NOT EXISTS idx_document_files_hash ON document_files(content_hash);
+CREATE INDEX IF NOT EXISTS idx_document_files_kind ON document_files(kind, missing);
 
 CREATE TABLE IF NOT EXISTS finance_tables (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -208,6 +215,21 @@ def get_connection():
 
 def init_db() -> None:
     with get_connection() as conn:
+        # Runs *before* the schema script, not after it like every other
+        # migration here. `document_files` shipped indexing one kind of
+        # document, so it predates `kind` and its UNIQUE(path) - and SQLite
+        # cannot drop a constraint in place. Left until later, the schema
+        # script's own "CREATE INDEX ... ON document_files(kind, missing)"
+        # would hit the old table first and fail the whole startup.
+        #
+        # Dropping it is safe: the index is a disposable mirror of the
+        # user's own folders that the next rescan rebuilds in full, and
+        # tags live in `document_file_tags` keyed by content hash rather
+        # than by file id, so they survive this untouched.
+        doc_columns = {row["name"] for row in conn.execute("PRAGMA table_info(document_files)")}
+        if doc_columns and "kind" not in doc_columns:
+            conn.execute("DROP TABLE document_files")
+
         conn.executescript(SCHEMA)
         # `projects` shipped before `description`/`currency` existed, so an
         # existing local DB's table predates the columns above - CREATE
@@ -261,6 +283,25 @@ def init_db() -> None:
         todo_task_columns = {row["name"] for row in conn.execute("PRAGMA table_info(todo_tasks)")}
         if "due_date" not in todo_task_columns:
             conn.execute("ALTER TABLE todo_tasks ADD COLUMN due_date TEXT")
+
+        # ...and Documents' settings were a single unlabelled pair before
+        # there were two kinds to keep apart. Whatever folder and terms the
+        # user had configured were for invoices, so they move across under
+        # the invoice keys rather than being dropped on the floor.
+        legacy_path = conn.execute(
+            "SELECT value FROM app_settings WHERE key='documents_path'"
+        ).fetchone()
+        if legacy_path is not None:
+            for legacy, current in (("documents_path", "documents_invoice_path"),
+                                    ("documents_terms", "documents_invoice_terms")):
+                row = conn.execute("SELECT value FROM app_settings WHERE key=?", (legacy,)).fetchone()
+                already = conn.execute("SELECT value FROM app_settings WHERE key=?", (current,)).fetchone()
+                if row is not None and already is None:
+                    conn.execute(
+                        "INSERT INTO app_settings (key, value, updated_at) VALUES (?,?,?)",
+                        (current, row["value"], _now()),
+                    )
+                conn.execute("DELETE FROM app_settings WHERE key=?", (legacy,))
 
         # `notes` shipped before `type` existed - same story.
         note_columns = {row["name"] for row in conn.execute("PRAGMA table_info(notes)")}
@@ -1207,60 +1248,76 @@ def set_setting(key: str, value: str | None) -> None:
 # in this module ever writes to them - the index is a read-only mirror, and
 # the only rows deleted are ones for files that are gone.
 
-def replace_document_index(records: list[dict]) -> dict:
-    """Swaps the whole index for a fresh scan in one transaction.
+def replace_document_index(kind: str, records: list[dict]) -> dict:
+    """Swaps one kind's slice of the index for a fresh scan, in one
+    transaction.
 
-    Files that vanished are marked missing rather than deleted, so tags
-    keyed to their hash survive a file that comes back later. Returns what
-    changed so the UI can report it without diffing the list itself.
+    Scoped to `kind` throughout: rescanning invoices must not mark every NF
+    missing just because that scan did not produce them. Files that vanished
+    are marked missing rather than deleted, so tags keyed to their hash
+    survive a file that comes back later. Returns what changed so the UI can
+    report it without diffing the list itself.
     """
     now = _now()
     with get_connection() as conn:
-        before = {row["path"] for row in conn.execute("SELECT path FROM document_files")}
+        before = {
+            row["path"]
+            for row in conn.execute("SELECT path FROM document_files WHERE kind=?", (kind,))
+        }
         seen = {rec["path"] for rec in records}
 
         for rec in records:
             conn.execute(
                 "INSERT INTO document_files "
-                "(path, filename, display_name, sort_key, folder, group_name, "
+                "(kind, path, filename, display_name, sort_key, folder, group_name, "
                 " size_bytes, mtime, year, content_hash, missing, indexed_at) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,0,?) "
-                "ON CONFLICT(path) DO UPDATE SET "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?) "
+                "ON CONFLICT(kind, path) DO UPDATE SET "
                 "  filename=excluded.filename, display_name=excluded.display_name, "
                 "  sort_key=excluded.sort_key, folder=excluded.folder, "
                 "  group_name=excluded.group_name, size_bytes=excluded.size_bytes, "
                 "  mtime=excluded.mtime, year=excluded.year, "
                 "  content_hash=excluded.content_hash, missing=0, indexed_at=excluded.indexed_at",
-                (rec["path"], rec["filename"], rec["display_name"], rec["sort_key"],
+                (kind, rec["path"], rec["filename"], rec["display_name"], rec["sort_key"],
                  rec["folder"], rec["group_name"], rec["size_bytes"], rec["mtime"],
                  rec["year"], rec["content_hash"], now),
             )
 
         gone = before - seen
         for path in gone:
-            conn.execute("UPDATE document_files SET missing=1 WHERE path=?", (path,))
+            conn.execute(
+                "UPDATE document_files SET missing=1 WHERE kind=? AND path=?", (kind, path)
+            )
 
         return {"indexed": len(records), "added": len(seen - before), "missing": len(gone)}
 
 
-def known_document_files() -> dict[str, dict]:
-    """path -> {mtime, size_bytes, content_hash}, so a rescan can skip
-    hashing anything whose mtime and size are unchanged."""
+def known_document_files(kind: str) -> dict[str, dict]:
+    """path -> {mtime, size_bytes, content_hash} for one kind, so a rescan
+    can skip hashing anything whose mtime and size are unchanged."""
     with get_connection() as conn:
         return {
             row["path"]: dict(row)
             for row in conn.execute(
-                "SELECT path, mtime, size_bytes, content_hash FROM document_files"
+                "SELECT path, mtime, size_bytes, content_hash FROM document_files WHERE kind=?",
+                (kind,),
             )
         }
 
 
-def list_document_files(include_missing: bool = False) -> list[dict]:
+def list_document_files(kind: str | None = None, include_missing: bool = False) -> list[dict]:
     with get_connection() as conn:
-        where = "" if include_missing else " WHERE missing = 0"
+        clauses, params = [], []
+        if not include_missing:
+            clauses.append("missing = 0")
+        if kind is not None:
+            clauses.append("kind = ?")
+            params.append(kind)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         rows = conn.execute(
-            f"SELECT * FROM document_files{where} ORDER BY group_name IS NULL, "
-            "group_name COLLATE NOCASE, sort_key"
+            f"SELECT * FROM document_files{where} ORDER BY kind, group_name IS NULL, "
+            "group_name COLLATE NOCASE, sort_key",
+            params,
         ).fetchall()
         files = [dict(row) for row in rows]
 
@@ -1283,9 +1340,12 @@ def get_document_file(file_id: int) -> dict | None:
         return dict(row) if row else None
 
 
-def clear_document_index() -> None:
+def clear_document_index(kind: str | None = None) -> None:
     with get_connection() as conn:
-        conn.execute("DELETE FROM document_files")
+        if kind is None:
+            conn.execute("DELETE FROM document_files")
+        else:
+            conn.execute("DELETE FROM document_files WHERE kind=?", (kind,))
 
 
 # ---------- Document tags ----------
