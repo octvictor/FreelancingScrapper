@@ -494,12 +494,36 @@ executable), shared across every tool:
 
 ## Roadmap / not built yet
 
+Open threads on things that already exist, roughly in the order they are
+worth doing:
+
+- **Match the invoice layout to the real one.** The exported invoice
+  reproduces the structure of the source PDF but not its visual design -
+  the sandbox it was built in has no PDF rasterizer, so the layout was
+  written from the extracted text and the typography is the app's own.
+- **Invoice row reorder.** `reorder_invoice_rows` and
+  `PUT /rows/reorder` exist and work; nothing in the editor calls them.
+  Needs a grip and `flipReorder`, the same pattern Notes and Projects use.
+- **Save an exported invoice straight into the Invoices folder**, so it
+  appears in the list on the next rescan without a save-as dialog. Needs
+  a server-side renderer, which is the reason it is not done.
+- **Links inside the Notes modal's list items.** They are clickable on
+  the card but the modal's items are still plain textareas; the body
+  already does the view/edit swap that would be needed.
+- **The Due Soon toast duplicates Overview's own Due Soon panel** - two
+  places saying the same thing.
+- **Uncoloured Calculator rows read flat in light mode.**
+- **Ten items still carry retired note/list/row colours** from before the
+  palette was retuned.
+
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
     Manager, for prospecting before a job is active.
-  - Invoice generator, turning a project's day-rate math and
-    Calculator's totals into an actual client-facing document. (The
-    *browser* half of this exists now - see Documents.)
+  - Wiring the invoice editor to the rest of the app: filling a new
+    invoice's rows from a project's Log instead of typing them, and
+    auto-incrementing the invoice number from the last one. (The editor
+    and the browser both exist now - this is the join between them, and
+    it is deliberately absent: every field is typed by hand today.)
   - Documents, phase two: linking an indexed invoice to a Tracker
     project, reconciling it against that project's Log rows, reading
     amounts and dates out of the PDF itself (`pypdf`), and CSV export
