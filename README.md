@@ -560,9 +560,37 @@ outside-the-folder check in `POST /open` are all scoped the same way - an
 invoice rescan must not mark every NF missing, and an NF path must not be
 validated against the invoice root.
 
-The one thing deliberately **shared** across kinds is tags: "Paid" means
-the same thing on either, and a per-kind vocabulary would be the same list
-maintained twice.
+The one thing deliberately **shared** across kinds is the tag vocabulary:
+"Paid" means the same thing on either, and a per-kind list would be the
+same list maintained twice. Tag *assignments* are per file.
+
+**Tags hang off (kind, path), not off the file's bytes.** Hash-keying was
+tried first, so a tag would follow a renamed or moved invoice. It does not
+survive contact with a real folder: `_hash_file` is the size plus the first
+64KB, duplicates are ordinary here ("NF_XDS - Copy (2)"), and byte-identical
+files therefore share a hash - so tagging one silently tagged every copy,
+across both kinds, since a hash carries no kind either.
+
+Following a rename is now done in `replace_document_index`, and only where
+it cannot be wrong: if exactly one path with hash H vanished in this scan
+and exactly one new path with the same H appeared, that is a rename and the
+tags move. With copies in play neither side is a single path, the rule does
+not fire, and the tag is dropped rather than guessed at.
+
+That check is why `before` must exclude rows already marked `missing`.
+Including them made `gone` cumulative - every file that had ever vanished
+reappeared in it on every scan - which both reported a forever-growing
+"N missing" in the status line and gave the rename check four candidate
+sources where there was one.
+
+**Group chrome only appears when there is more than one group.** A file's
+group is the first folder above it that is neither a bare year nor named
+after a search term, so files sitting loose in the folder you nominated
+resolve to none at all. With a single group the list grew an "UNGROUPED"
+header over every row and an "Ungrouped" chip beside "All" that filtered
+nothing. `docIsGrouped()` gates both, and `docVisibleFiles` ignores a stale
+group selection when it returns false - otherwise a rescan that flattens a
+tree empties the list with no chip left on screen to explain why.
 
 **The list caps at a fixed 10, not at what fits the window.** Every other
 long list here uses `applyRowFit`; two stacked sections have no single

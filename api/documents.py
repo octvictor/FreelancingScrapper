@@ -226,7 +226,8 @@ def set_file_tags(file_id: int, payload: TagIds):
     record = db.get_document_file(file_id)
     if record is None:
         raise HTTPException(404, "File not found in the index")
-    # Stored against the hash, not the id, so the tags follow the file if it
-    # is renamed or moved outside the app.
-    db.set_document_file_tags(record["content_hash"], payload.tag_ids)
+    # Stored against (kind, path) - this file, not every file that happens
+    # to share its bytes. A rename or move is picked up on the next rescan
+    # instead, where it can be told apart from a copy.
+    db.set_document_file_tags(record["kind"], record["path"], payload.tag_ids)
     return {"ok": True}

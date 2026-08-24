@@ -163,12 +163,17 @@ CREATE TABLE IF NOT EXISTS document_tags (
     color TEXT
 );
 
-/* Keyed to the file's bytes, not its id or path: rename or move an invoice
-   outside the app and the tag still finds it. */
+/* Keyed to the file, not to its bytes. Hash-keying was tried first so a
+   tag would follow a renamed or moved invoice, but duplicates are ordinary
+   in these folders ("NF_XDS - Copy (2)") and byte-identical files share a
+   hash, so tagging one silently tagged every copy - across both kinds,
+   since a hash carries no kind either. Following a rename is now handled
+   where it can be done unambiguously instead: see replace_document_index. */
 CREATE TABLE IF NOT EXISTS document_file_tags (
-    content_hash TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    path TEXT NOT NULL,
     tag_id INTEGER NOT NULL REFERENCES document_tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (content_hash, tag_id)
+    PRIMARY KEY (kind, path, tag_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_document_files_hash ON document_files(content_hash);
@@ -227,10 +232,41 @@ def init_db() -> None:
         # tags live in `document_file_tags` keyed by content hash rather
         # than by file id, so they survive this untouched.
         doc_columns = {row["name"] for row in conn.execute("PRAGMA table_info(document_files)")}
+
+        # `document_file_tags` was keyed by content hash before it was keyed
+        # by file. Read the assignments out first, while both old tables are
+        # still readable, and translate hash -> the files that currently
+        # carry it. Every file with that hash is kept, because that is
+        # exactly what was on screen before this ran: the leak this change
+        # fixes is a *future* tag hitting every copy, not a licence to
+        # silently drop tags the user can already see. Untagging the copies
+        # they did not mean is now one click each.
+        tag_columns = {row["name"] for row in conn.execute("PRAGMA table_info(document_file_tags)")}
+        rescued_tags: list[tuple[str, str, int]] = []
+        if tag_columns and "content_hash" in tag_columns and doc_columns:
+            # Two shapes to read from: a DB upgrading from the build before
+            # last has no `kind` column at all, and everything it holds was
+            # an invoice.
+            kind_expr = "f.kind" if "kind" in doc_columns else "'invoice' AS kind"
+            rescued_tags = [
+                (row["kind"], row["path"], row["tag_id"])
+                for row in conn.execute(
+                    f"SELECT {kind_expr}, f.path, ft.tag_id FROM document_file_tags ft "
+                    "JOIN document_files f ON f.content_hash = ft.content_hash"
+                )
+            ]
+            conn.execute("DROP TABLE document_file_tags")
+
         if doc_columns and "kind" not in doc_columns:
             conn.execute("DROP TABLE document_files")
 
         conn.executescript(SCHEMA)
+
+        for kind, path, tag_id in rescued_tags:
+            conn.execute(
+                "INSERT OR IGNORE INTO document_file_tags (kind, path, tag_id) VALUES (?,?,?)",
+                (kind, path, tag_id),
+            )
         # `projects` shipped before `description`/`currency` existed, so an
         # existing local DB's table predates the columns above - CREATE
         # TABLE IF NOT EXISTS won't retroactively add them, so patch them
@@ -1260,9 +1296,16 @@ def replace_document_index(kind: str, records: list[dict]) -> dict:
     """
     now = _now()
     with get_connection() as conn:
+        # Only rows that were actually present. Including already-missing
+        # ones made `gone` cumulative - every file that had ever vanished
+        # came back in it on every scan, so the status line reported a
+        # growing "N missing" forever and the rename check below saw four
+        # candidate sources where there was one.
         before = {
             row["path"]
-            for row in conn.execute("SELECT path FROM document_files WHERE kind=?", (kind,))
+            for row in conn.execute(
+                "SELECT path FROM document_files WHERE kind=? AND missing=0", (kind,)
+            )
         }
         seen = {rec["path"] for rec in records}
 
@@ -1288,6 +1331,37 @@ def replace_document_index(kind: str, records: list[dict]) -> dict:
             conn.execute(
                 "UPDATE document_files SET missing=1 WHERE kind=? AND path=?", (kind, path)
             )
+
+        # Follow a rename or a move, but only when it is unambiguous. Tags
+        # hang off (kind, path), so a file that came back under a new name
+        # would otherwise arrive untagged. If exactly one path with hash H
+        # vanished and exactly one new path with the same H appeared, that
+        # is a rename and the tags move with it. If a hash has copies -
+        # "NF_XDS - Copy (2)" and friends - neither side is a single path,
+        # the rule does not fire, and nothing is guessed at.
+        added = seen - before
+        if gone and added:
+            by_hash: dict[str, dict[str, list[str]]] = {}
+            for rec in records:
+                if rec["path"] in added:
+                    by_hash.setdefault(rec["content_hash"], {"gone": [], "new": []})["new"].append(rec["path"])
+            for path in gone:
+                row = conn.execute(
+                    "SELECT content_hash FROM document_files WHERE kind=? AND path=?", (kind, path)
+                ).fetchone()
+                if row and row["content_hash"] in by_hash:
+                    by_hash[row["content_hash"]]["gone"].append(path)
+            for sides in by_hash.values():
+                if len(sides["gone"]) != 1 or len(sides["new"]) != 1:
+                    continue
+                old_path, new_path = sides["gone"][0], sides["new"][0]
+                conn.execute(
+                    "UPDATE OR IGNORE document_file_tags SET path=? WHERE kind=? AND path=?",
+                    (new_path, kind, old_path),
+                )
+                conn.execute(
+                    "DELETE FROM document_file_tags WHERE kind=? AND path=?", (kind, old_path)
+                )
 
         return {"indexed": len(records), "added": len(seen - before), "missing": len(gone)}
 
@@ -1321,16 +1395,16 @@ def list_document_files(kind: str | None = None, include_missing: bool = False) 
         ).fetchall()
         files = [dict(row) for row in rows]
 
-        tags: dict[str, list[dict]] = {}
+        tags: dict[tuple[str, str], list[dict]] = {}
         for row in conn.execute(
-            "SELECT ft.content_hash, t.id, t.name, t.color FROM document_file_tags ft "
+            "SELECT ft.kind, ft.path, t.id, t.name, t.color FROM document_file_tags ft "
             "JOIN document_tags t ON t.id = ft.tag_id ORDER BY t.name COLLATE NOCASE"
         ):
-            tags.setdefault(row["content_hash"], []).append(
+            tags.setdefault((row["kind"], row["path"]), []).append(
                 {"id": row["id"], "name": row["name"], "color": row["color"]}
             )
         for f in files:
-            f["tags"] = tags.get(f["content_hash"], [])
+            f["tags"] = tags.get((f["kind"], f["path"]), [])
         return files
 
 
@@ -1391,11 +1465,11 @@ def delete_document_tag(tag_id: int) -> None:
         conn.execute("DELETE FROM document_tags WHERE id=?", (tag_id,))
 
 
-def set_document_file_tags(content_hash: str, tag_ids: list[int]) -> None:
+def set_document_file_tags(kind: str, path: str, tag_ids: list[int]) -> None:
     with get_connection() as conn:
-        conn.execute("DELETE FROM document_file_tags WHERE content_hash=?", (content_hash,))
+        conn.execute("DELETE FROM document_file_tags WHERE kind=? AND path=?", (kind, path))
         for tag_id in tag_ids:
             conn.execute(
-                "INSERT OR IGNORE INTO document_file_tags (content_hash, tag_id) VALUES (?,?)",
-                (content_hash, tag_id),
+                "INSERT OR IGNORE INTO document_file_tags (kind, path, tag_id) VALUES (?,?,?)",
+                (kind, path, tag_id),
             )

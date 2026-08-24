@@ -63,12 +63,31 @@ function docFilesOfKind(kind) {
     return docFiles.filter((f) => f.kind === kind);
 }
 
+// Grouping only earns its keep when there is more than one group. Files
+// sitting loose in the folder you nominated - or under folders that all
+// carry the search term, which is the same thing - resolve to no group at
+// all, and the list then grew a "UNGROUPED" header over every row plus an
+// "Ungrouped" chip beside "All" that filtered nothing out. One group means
+// no headers and no group filter.
+function docGroupsOf(kind) {
+    return Array.from(new Set(docFilesOfKind(kind).map((f) => f.group_name || "Ungrouped"))).sort();
+}
+
+function docIsGrouped(kind) {
+    return docGroupsOf(kind).length > 1;
+}
+
 function docVisibleFiles(kind) {
     const view = docViewFor(kind);
     const q = view.query.trim().toLowerCase();
+    // The group filter is ignored when there is nothing to group by. A
+    // rescan can flatten a tree that used to have folders, and a stale
+    // selection would then match nothing and empty the list with no chip
+    // left on screen to explain why.
+    const grouped = docIsGrouped(kind);
     return docFilesOfKind(kind).filter((f) =>
         docMatchesQuery(f, q) &&
-        (view.group === "All" || (f.group_name || "Ungrouped") === view.group) &&
+        (!grouped || view.group === "All" || (f.group_name || "Ungrouped") === view.group) &&
         (view.year === "All" || String(f.year) === view.year)
     );
 }
@@ -188,9 +207,10 @@ function renderDocList(kind) {
     const shown = view.expanded ? files : files.slice(0, DOC_PAGE_SIZE);
     const hidden = files.length - shown.length;
 
-    // Grouped only when no group filter is active - once you have picked
-    // one client, a single header above the whole list says nothing.
-    if (view.group === "All") {
+    // Grouped only when there is something to group by, and only while no
+    // group filter is active - once you have picked one client, a single
+    // header above the whole list says nothing either.
+    if (view.group === "All" && docIsGrouped(kind)) {
         // A group's header counts every file it matched, not the subset the
         // cap left visible: "ATLAS 15" above ten rows says there are five
         // more behind Show more, where "ATLAS 10" would claim the list is
@@ -224,10 +244,9 @@ function renderDocList(kind) {
 function renderDocFilters(kind) {
     const view = docViewFor(kind);
     const files = docFilesOfKind(kind);
-    const groups = Array.from(new Set(files.map((f) => f.group_name || "Ungrouped"))).sort();
     const years = Array.from(new Set(files.map((f) => String(f.year)))).sort().reverse();
-    $(`doc-group-filters-${kind}`).innerHTML = files.length
-        ? ["All", ...groups]
+    $(`doc-group-filters-${kind}`).innerHTML = docIsGrouped(kind)
+        ? ["All", ...docGroupsOf(kind)]
             .map((g) => `<button type="button" class="view-toggle-btn ${g === view.group ? "active" : ""}" data-group="${escapeAttr(g)}">${escapeAttr(g)}</button>`)
             .join("")
         : "";
