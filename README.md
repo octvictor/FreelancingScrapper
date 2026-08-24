@@ -548,6 +548,13 @@ nothing to paginate and the print comes out blank. And Export blurs the
 focused field first: the blur handler is what saves, so exporting straight
 after typing would otherwise print the value from before the last edit.
 
+**Nothing personal ships with the app.** The "invoice from" block, the
+payment notes, the contact line, the Wise link and @ and the payment image
+all start empty, with the form's placeholders saying what goes in each. A
+seeded default would mean a name, a home address, bank and routing numbers
+and a phone number living in this repository and its history forever - so
+they are typed once into Settings and stay on the machine that typed them.
+
 **Settings holds defaults, not a live include.** A new invoice copies the
 "invoice from" block, the payment notes and the contact line out of
 Settings; editing them later changes the next invoice, never one already

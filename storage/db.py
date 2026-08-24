@@ -177,6 +177,10 @@ CREATE TABLE IF NOT EXISTS invoices (
     total_text TEXT,
     notes TEXT,
     contact TEXT,
+    /* 'rows' or 'free'. Both are kept when you switch, so flipping to free
+       typing and back does not throw the rows away. */
+    body_mode TEXT NOT NULL DEFAULT 'rows',
+    free_body TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -378,6 +382,14 @@ def init_db() -> None:
                         (current, row["value"], _now()),
                     )
                 conn.execute("DELETE FROM app_settings WHERE key=?", (legacy,))
+
+        # `invoices` shipped with rows as the only way to write a body -
+        # same patch-in-by-hand story as the columns above.
+        invoice_columns = {row["name"] for row in conn.execute("PRAGMA table_info(invoices)")}
+        if invoice_columns and "body_mode" not in invoice_columns:
+            conn.execute("ALTER TABLE invoices ADD COLUMN body_mode TEXT NOT NULL DEFAULT 'rows'")
+        if invoice_columns and "free_body" not in invoice_columns:
+            conn.execute("ALTER TABLE invoices ADD COLUMN free_body TEXT")
 
         # `notes` shipped before `type` existed - same story.
         note_columns = {row["name"] for row in conn.execute("PRAGMA table_info(notes)")}
@@ -1471,6 +1483,7 @@ INVOICE_FIELDS = (
     "title", "bill_from", "bill_to", "project_number", "invoice_number",
     "invoice_date", "due_date", "project_label", "summary_label",
     "summary_year", "total_text", "notes", "contact",
+    "body_mode", "free_body",
 )
 
 INVOICE_ROW_FIELDS = (

@@ -5041,7 +5041,13 @@ input.settings-input:focus {
     flex-shrink: 0;
 }
 
+/* width:100% and not just the input rule above it: that one is
+   element-qualified as input.settings-input, so it never reached a
+   textarea. Inside a .settings-field the flex column stretched them anyway
+   and it went unnoticed - until one landed in a plain div and fell back to
+   its cols attribute, about 165px wide. */
 textarea.settings-textarea {
+    width: 100%;
     resize: none;
     overflow: hidden;
     line-height: 1.5;
@@ -5146,8 +5152,31 @@ textarea.inv-cell-strong {
     color: var(--text);
 }
 
+/* Lined up with the row's *first* line of fields, not centred in the row.
+   The project cell is two stacked textareas, so it is taller than every
+   other cell - centring put the button halfway down a two-line row while
+   every input it belongs to sat at the top. The offset is (input height 34
+   - button height 24) / 2, which lands it on the first input's centreline. */
 .inv-row .row-delete-btn {
-    align-self: center;
+    align-self: start;
+    margin-top: 5px;
+}
+
+.inv-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.inv-wise-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 14px;
+}
+
+textarea.inv-free-body {
+    min-height: 240px;
+    line-height: 1.6;
 }
 
 .inv-total-row {
@@ -5311,11 +5340,30 @@ input.inv-total-input {
     margin-bottom: 2mm;
 }
 
-.pr-payment-image {
-    max-width: 60mm;
-    height: auto;
+.pr-free-body {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    font-size: 10pt;
+    line-height: 1.6;
+}
+
+/* Pushed to the foot of page two by margin-top:auto on the flex column, so
+   the payment card sits at the bottom of the page rather than floating
+   directly under however long the notes happened to be. */
+.pr-payment {
+    display: flex;
+    align-items: flex-end;
+    gap: 6mm;
     margin-top: auto;
-    align-self: flex-start;
+}
+
+.pr-payment-image {
+    max-width: 55mm;
+    height: auto;
+}
+
+.pr-wise-line {
+    font-size: 9.5pt;
 }
 
 /* Export = window.print() with this class on <body>. Everything that is not

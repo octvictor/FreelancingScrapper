@@ -101,8 +101,31 @@ const INVOICE_FIELD_IDS = [
     "inv-title", "inv-bill-from", "inv-bill-to", "inv-project-number",
     "inv-invoice-number", "inv-invoice-date", "inv-due-date",
     "inv-project-label", "inv-summary-label", "inv-summary-year",
-    "inv-total-text", "inv-notes", "inv-contact",
+    "inv-total-text", "inv-notes", "inv-contact", "inv-free-body",
 ];
+
+// The body of the invoice is either the row table or one plain field. Both
+// are stored, always - switching to free typing and back must not throw the
+// rows away, and switching back and forth while deciding is exactly what
+// anyone does.
+function applyBodyMode() {
+    const free = (activeInvoice && activeInvoice.body_mode) === "free";
+    $("inv-free-wrap").style.display = free ? "" : "none";
+    $("inv-rows-block").style.display = free ? "none" : "";
+    $("inv-mode-toggle").querySelectorAll("[data-mode]").forEach((btn) => {
+        btn.classList.toggle("active", (btn.dataset.mode === "free") === free);
+    });
+    if (free) autoGrowChecklistText($("inv-free-body"));
+}
+
+$("inv-mode-toggle").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-mode]");
+    if (!btn || !activeInvoice) return;
+    if (activeInvoice.body_mode === btn.dataset.mode) return;
+    activeInvoice.body_mode = btn.dataset.mode;
+    applyBodyMode();
+    saveInvoiceField("body_mode", btn.dataset.mode);
+});
 
 const ROW_FIELDS = ["project_title", "project_desc", "client", "agency", "dates", "day_rate", "days_worked", "total"];
 
@@ -113,13 +136,13 @@ function invoiceRowHtml(row) {
     return `
         <div class="inv-row" data-row-id="${row.id}">
             <div class="inv-row-project">
-                ${cell("project_title", "LogiDiscount First Pass...", "inv-cell-strong")}
+                ${cell("project_title", "Task", "inv-cell-strong")}
                 ${cell("project_desc", "What was done")}
             </div>
-            ${cell("client", "DISCORD")}
-            ${cell("agency", "MA")}
-            ${cell("dates", "April 01")}
-            ${cell("day_rate", "$300,00")}
+            ${cell("client", "Client")}
+            ${cell("agency", "—")}
+            ${cell("dates", "Date")}
+            ${cell("day_rate", "Rate")}
             ${cell("days_worked", "1")}
             ${cell("total", "—")}
             <button class="row-delete-btn" data-role="delete-row" type="button" title="Remove row">${ICON_TRASH_SVG}</button>
@@ -150,6 +173,7 @@ async function openInvoiceModal(invoiceId, preloaded) {
         if (el.tagName === "TEXTAREA") autoGrowChecklistText(el);
     });
     renderInvoiceRows();
+    applyBodyMode();
 }
 
 function closeInvoiceModal() {
@@ -291,8 +315,14 @@ function renderInvoicePrint(inv) {
         </tr>
     `).join("");
 
+    const wise = [invoiceDefaults.invoice_wise_link, invoiceDefaults.invoice_wise_handle]
+        .filter((v) => (v || "").trim())
+        .map((v) => `<div class="pr-wise-line">${escapeAttr(v)}</div>`).join("");
     const image = invoiceDefaults.payment_image
         ? `<img class="pr-payment-image" src="/api/invoices/payment-image" alt="">`
+        : "";
+    const payment = (wise || image)
+        ? `<section class="pr-payment">${image}<div class="pr-wise">${wise}</div></section>`
         : "";
 
     $("invoice-print").innerHTML = `
@@ -302,7 +332,9 @@ function renderInvoicePrint(inv) {
                 <div class="pr-label">Project</div>
                 <div class="pr-banner-value">${escapeAttr(inv.project_label || "")}</div>
             </div>
-            <table class="pr-table">
+            ${inv.body_mode === "free"
+                ? `<div class="pr-free-body">${printLines(inv.free_body)}</div>`
+                : `<table class="pr-table">
                 <thead>
                     <tr>
                         <th class="pr-project"></th><th>client</th><th>agency</th><th>dates</th>
@@ -310,7 +342,7 @@ function renderInvoicePrint(inv) {
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
-            </table>
+            </table>`}
             <footer class="pr-foot">
                 <div class="pr-summary">
                     <div>${escapeAttr(inv.summary_label || "")}</div>
@@ -333,7 +365,7 @@ function renderInvoicePrint(inv) {
                 <div class="pr-notes-label">Contact</div>
                 ${printLines(inv.contact)}
             </section>
-            ${image}
+            ${payment}
         </article>
     `;
 }
@@ -365,6 +397,8 @@ async function loadInvoiceDefaults() {
     $("settings-invoice-from").value = invoiceDefaults.invoice_from || "";
     $("settings-invoice-notes").value = invoiceDefaults.invoice_notes || "";
     $("settings-invoice-contact").value = invoiceDefaults.invoice_contact || "";
+    $("settings-invoice-wise-link").value = invoiceDefaults.invoice_wise_link || "";
+    $("settings-invoice-wise-handle").value = invoiceDefaults.invoice_wise_handle || "";
     paintPaymentImage();
 }
 
@@ -384,12 +418,15 @@ function paintPaymentImage() {
     }
 }
 
-["settings-invoice-from", "settings-invoice-notes", "settings-invoice-contact"].forEach((id) => {
+["settings-invoice-from", "settings-invoice-notes", "settings-invoice-contact",
+ "settings-invoice-wise-link", "settings-invoice-wise-handle"].forEach((id) => {
     $(id).addEventListener("blur", async () => {
         const body = {
             invoice_from: $("settings-invoice-from").value,
             invoice_notes: $("settings-invoice-notes").value,
             invoice_contact: $("settings-invoice-contact").value,
+            invoice_wise_link: $("settings-invoice-wise-link").value,
+            invoice_wise_handle: $("settings-invoice-wise-handle").value,
         };
         const resp = await fetch("/api/invoices/defaults", {
             method: "PUT",

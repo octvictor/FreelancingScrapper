@@ -33,14 +33,24 @@ NOTES_KEY = "invoice_notes"
 CONTACT_KEY = "invoice_contact"
 PAYMENT_IMAGE_KEY = "invoice_payment_image"
 
-DEFAULT_KEYS = [FROM_KEY, NOTES_KEY, CONTACT_KEY]
-
 PAYMENT_IMAGE_DIR = app_paths.DATA_DIR / "invoice_assets"
 
 # Images only, and by extension rather than by the browser's content-type,
 # which is trivially wrong for uploads. The page embeds whatever this
 # accepts directly in an <img>.
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
+
+
+WISE_LINK_KEY = "invoice_wise_link"
+WISE_HANDLE_KEY = "invoice_wise_handle"
+
+DEFAULT_KEYS_ALL = [FROM_KEY, NOTES_KEY, CONTACT_KEY, WISE_LINK_KEY, WISE_HANDLE_KEY]
+
+# Nothing is seeded and no payment image ships with the app. These fields
+# hold a name, a home address, bank account and routing numbers and a phone
+# number, and anything shipped as a default would live in the repository and
+# its history forever. They start empty, the form's placeholders say what
+# goes in each one, and what you type stays on your machine.
 
 
 class InvoiceUpdate(BaseModel):
@@ -57,6 +67,8 @@ class InvoiceUpdate(BaseModel):
     total_text: str | None = None
     notes: str | None = None
     contact: str | None = None
+    body_mode: str | None = None
+    free_body: str | None = None
 
 
 class RowUpdate(BaseModel):
@@ -78,11 +90,13 @@ class InvoiceDefaults(BaseModel):
     invoice_from: str | None = None
     invoice_notes: str | None = None
     invoice_contact: str | None = None
+    invoice_wise_link: str | None = None
+    invoice_wise_handle: str | None = None
 
 
 def _defaults() -> dict:
-    stored = db.get_settings(DEFAULT_KEYS)
-    return {key: stored[key] or "" for key in DEFAULT_KEYS}
+    stored = db.get_settings(DEFAULT_KEYS_ALL)
+    return {key: stored[key] or "" for key in DEFAULT_KEYS_ALL}
 
 
 def _payment_image_name() -> str | None:

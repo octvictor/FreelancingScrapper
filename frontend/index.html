@@ -516,8 +516,8 @@
                 <button class="settings-group-head" type="button" id="settings-invoice-toggle"
                         aria-expanded="false" aria-controls="settings-invoice-body">
                     <span class="settings-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span>
-                    <span class="settings-group-title">Invoices</span>
-                    <span class="settings-group-hint">Your details and payment info</span>
+                    <span class="settings-group-title">Payment Details</span>
+                    <span class="settings-group-hint">Your details, bank info and Wise</span>
                 </button>
                 <div class="settings-group-body" id="settings-invoice-body">
                     <div class="settings-group-inner">
@@ -537,6 +537,17 @@
                             <div class="settings-field">
                                 <label class="settings-label" for="settings-invoice-contact">Contact</label>
                                 <textarea id="settings-invoice-contact" class="settings-input settings-textarea" rows="2" spellcheck="false" placeholder="Name&#10;Email - phone"></textarea>
+                            </div>
+
+                            <div class="inv-wise-row">
+                                <div class="settings-field">
+                                    <label class="settings-label" for="settings-invoice-wise-link">Wise link</label>
+                                    <input type="text" id="settings-invoice-wise-link" class="settings-input" spellcheck="false" placeholder="wise.com/pay/me/yourname">
+                                </div>
+                                <div class="settings-field">
+                                    <label class="settings-label" for="settings-invoice-wise-handle">Wise @</label>
+                                    <input type="text" id="settings-invoice-wise-handle" class="settings-input" spellcheck="false" placeholder="@yourname">
+                                </div>
                             </div>
 
                             <div class="settings-field">
@@ -560,7 +571,7 @@
         <div class="modal modal-wide invoice-modal">
             <button class="modal-close" id="invoice-modal-close" type="button" title="Close">&times;</button>
 
-            <input type="text" class="modal-title-input" id="inv-title" data-field="title" placeholder="MASSIVE X DISCORD: INVOICE">
+            <input type="text" class="modal-title-input" id="inv-title" data-field="title" placeholder="Project name: invoice">
 
             <div class="inv-party-row">
                 <div class="settings-field">
@@ -595,20 +606,33 @@
             <h3 class="page-section-title inv-section-title">Project</h3>
             <div class="settings-field inv-project-label-field">
                 <label class="settings-label" for="inv-project-label">Project banner</label>
-                <input type="text" id="inv-project-label" class="settings-input" data-field="project_label" placeholder="MASSIVE X DISCORD">
+                <input type="text" id="inv-project-label" class="settings-input" data-field="project_label" placeholder="Project name">
             </div>
 
-            <div class="inv-rows-head">
-                <span>Project</span><span>Client</span><span>Agency</span><span>Dates</span>
-                <span>Day rate</span><span>Days worked</span><span>Total</span><span></span>
+            <div class="inv-mode-toggle" id="inv-mode-toggle">
+                <button type="button" class="view-toggle-btn" data-mode="rows">Rows</button>
+                <button type="button" class="view-toggle-btn" data-mode="free">Free type</button>
             </div>
-            <div id="inv-rows"></div>
-            <button class="btn btn-text" type="button" id="inv-add-row-btn">+ Add row</button>
+
+            <div id="inv-free-wrap" style="display:none;">
+                <textarea id="inv-free-body" class="settings-input settings-textarea inv-free-body"
+                          data-field="free_body" rows="12" spellcheck="false"
+                          placeholder="Write the body of the invoice however you like."></textarea>
+            </div>
+
+            <div id="inv-rows-block">
+                <div class="inv-rows-head">
+                    <span>Project</span><span>Client</span><span>Agency</span><span>Dates</span>
+                    <span>Day rate</span><span>Days worked</span><span>Total</span><span></span>
+                </div>
+                <div id="inv-rows"></div>
+                <button class="btn btn-text" type="button" id="inv-add-row-btn">+ Add row</button>
+            </div>
 
             <div class="inv-total-row">
                 <div class="settings-field">
                     <label class="settings-label" for="inv-summary-label">Summary</label>
-                    <input type="text" id="inv-summary-label" class="settings-input" data-field="summary_label" placeholder="MA March 31 ~ April 10">
+                    <input type="text" id="inv-summary-label" class="settings-input" data-field="summary_label" placeholder="Client, first day ~ last day">
                 </div>
                 <div class="settings-field">
                     <label class="settings-label" for="inv-summary-year">Year</label>
@@ -616,7 +640,7 @@
                 </div>
                 <div class="settings-field">
                     <label class="settings-label" for="inv-total-text">Total</label>
-                    <input type="text" id="inv-total-text" class="settings-input inv-total-input" data-field="total_text" placeholder="USD 2 700.00">
+                    <input type="text" id="inv-total-text" class="settings-input inv-total-input" data-field="total_text" placeholder="USD 0.00">
                 </div>
             </div>
 
