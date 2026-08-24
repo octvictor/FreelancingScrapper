@@ -98,10 +98,20 @@ function docTagChipsHtml(file) {
         .join("");
 }
 
-function docRowHtml(file) {
+// The folder replaces the group header the list used to carry: with a flat
+// list, two files called "NF_XDS - Copy (2)" in different folders are
+// indistinguishable, and the folder is the only thing that tells them
+// apart. Shown under the same condition as the group chips - when a kind
+// resolves to one group, every row would carry the same word and it says
+// nothing.
+function docRowHtml(file, withFolder) {
+    const folder = withFolder ? (file.group_name || "Ungrouped") : "";
     return `
         <div class="doc-row" data-id="${file.id}">
-            <span class="doc-row-name">${escapeAttr(file.display_name)}</span>
+            <span class="doc-row-main">
+                <span class="doc-row-name">${escapeAttr(file.display_name)}</span>
+                <span class="doc-row-folder">${escapeAttr(folder)}</span>
+            </span>
             <span class="doc-row-tags">${docTagChipsHtml(file)}</span>
             <span class="doc-row-date">${docDate(file.mtime)}</span>
             <button class="doc-row-action" data-role="tag" type="button" title="Tags">${ICON_TAG_SVG}</button>
@@ -213,7 +223,8 @@ function renderDocList(kind) {
     // happens to hold one file per folder turned that into a header above
     // every single row. Files still arrive sorted by group, so a client's
     // files stay adjacent - they just are not fenced off from each other.
-    list.innerHTML = shown.map(docRowHtml).join("");
+    const withFolder = docIsGrouped(kind);
+    list.innerHTML = shown.map((f) => docRowHtml(f, withFolder)).join("");
 
     expandBtn.style.display = hidden > 0 || view.expanded ? "" : "none";
     expandBtn.textContent = view.expanded ? "Show less" : `Show ${hidden} more`;

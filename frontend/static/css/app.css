@@ -4598,11 +4598,44 @@ input.date-field-native {
 }
 
 .doc-row-name {
+    flex: 0 1 auto;
+    min-width: 0;
     font-size: 13px;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* The filename and its folder share one grid cell rather than taking a
+   column each. A column would have to disappear when a kind has only one
+   group and the label is empty - and a removed grid item does not leave a
+   blank column behind, it shifts every column after it, so the dates and
+   buttons would slide one place left on exactly those lists. Inside a flex
+   parent, display:none on an empty label takes its `gap` with it and
+   nothing else moves. */
+.doc-row-main {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* The folder is what gives way first when the row runs out of room: a
+   folder you can only half read still tells two identical filenames apart,
+   a filename cut short does not. */
+.doc-row-folder {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11px;
+    color: var(--text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.doc-row-folder:empty {
+    display: none;
 }
 
 .doc-row-tags {

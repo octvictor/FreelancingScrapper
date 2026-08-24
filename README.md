@@ -583,6 +583,16 @@ reappeared in it on every scan - which both reported a forever-growing
 "N missing" in the status line and gave the rename check four candidate
 sources where there was one.
 
+**The filename and its folder share one grid cell.** The folder label is
+empty when a kind has only one group, and a `display: none` grid item does
+not leave a blank column behind - it shifts every column after it, so the
+dates and buttons would slide one place left on exactly those lists. Inside
+a flex parent, `display: none` on an empty label takes its `gap` with it
+and nothing else moves. The folder is also the side that gives way when the
+row runs out of room (`flex: 1 1 auto` against the name's `0 1 auto`): a
+folder you can only half read still tells two identical filenames apart, a
+filename cut short does not.
+
 **The list is flat; grouping lives in the filter chips.** A file's group is
 the first folder above it that is neither a bare year nor named after a
 search term. That is a decent guess at "which client", and a poor one at
