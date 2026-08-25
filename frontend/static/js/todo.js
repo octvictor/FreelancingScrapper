@@ -205,9 +205,16 @@ async function openTodoTaskModal(listId, id) {
     $("todo-modal-title").value = task.title || "";
     $("todo-modal-due-date").value = task.due_date || "";
     $("todo-modal-notes").value = task.notes || "";
-    renderTodoSteps(task.steps || []);
 
+    // Shown BEFORE the steps are built, not after. Each step's text is a
+    // <textarea rows="1"> grown to its own scrollHeight, and an element
+    // inside a display:none parent measures zero - so every step came out
+    // collapsed to a sliver with its text clipped. Nothing paints between
+    // two JavaScript statements, so there is no flash of the previous task.
+    // Same trap the note modal hit; see the README.
     $("todo-modal-backdrop").style.display = "flex";
+
+    renderTodoSteps(task.steps || []);
     $("todo-modal-title").focus();
 }
 

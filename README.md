@@ -28,8 +28,9 @@ the default on launch, reached through the sidebar like any other page.
   field right below it drops a line straight into Notes on Enter, no
   need to leave the page. Below that, two paired rows - Today's Focus
   (up to 5 incomplete to-dos, newest first, check one off right there
-  without navigating) beside Due Soon (up to 5 active projects with a
-  deadline, soonest first, an urgency-colored dot), then Active
+  without navigating) beside Due Soon (up to 5 to-do tasks that are
+  overdue, due today, or due within `DUE_SOON_DAYS` - the same window
+  the toast uses, soonest first, an urgency-colored dot), then Active
   Projects beside Recent Notes - both capped at 3, tighter above than
   the row above them since there's less in them - and a small visual
   strip of the 4 most recently *created* notes at the bottom (each one
@@ -136,8 +137,8 @@ the default on launch, reached through the sidebar like any other page.
   Everything autosaves on blur/change. Loosely inspired by Trello's
   card language (colored stripe + a checklist badge) but rebuilt in the
   app's own palette/type, not Trello's chrome. A **Due Soon** toast
-  (bottom-right corner) checks for tasks due today or in the next
-  couple of days whenever the app loads
+  (bottom-right corner) checks for tasks that are overdue, due today,
+  or due within `DUE_SOON_DAYS` (3) whenever the app loads
   and every 30 minutes while the tab stays open - in-app only, no
   email/Slack/background job - listing them with the same urgency-dot
   convention; dismissing it holds for the rest of the session, and
@@ -514,8 +515,6 @@ worth doing:
 - **Links inside the Notes modal's list items.** They are clickable on
   the card but the modal's items are still plain textareas; the body
   already does the view/edit swap that would be needed.
-- **The Due Soon toast duplicates Overview's own Due Soon panel** - two
-  places saying the same thing.
 - **Uncoloured Calculator rows read flat in light mode.**
 - **Ten items still carry retired note/list/row colours** from before the
   palette was retuned.
@@ -751,6 +750,14 @@ and a row is simply as tall as its tallest card. The card's old
 layout's row gap, and leaving it alongside the grid's `gap` doubles the
 space between rows.
 
+**A heading is a promise about the query behind it.** Overview's Due Soon
+panel and the Due Soon toast are two surfaces for one question, and they
+answered it differently - the toast used a 2-day window, the panel had no
+date filter at all and just listed the five soonest dated tasks, so a task
+due in three months sat under a heading that says "Due Soon". Both now go
+through `DUE_SOON_DAYS` in db.py. Where two places name the same thing,
+the window they mean by it belongs in one constant, not in each query.
+
 **Show a modal before you fill it, not after.** `openNoteModal` set
 `display: flex` as its last statement, after building the content - and a
 list note's items are `<textarea rows="1">` grown to their own
@@ -760,6 +767,18 @@ came out clipped. The modal is shown first now; nothing paints between two
 JavaScript statements, so there is no flash of the previous note. This is
 the same trap the fit-to-window caps hit, in a different place - anything
 that measures itself has to run after its container is laid out.
+
+The To Do task modal had the identical bug and it shipped for months
+before anyone noticed, because a one-line step looks fine either way -
+`openTodoTaskModal` called `renderTodoSteps` and only then set
+`display: flex`, so every step's textarea was written `height: 0px` and
+rendered 16px tall against a real content height of 32px (50px for a step
+that wraps). Worth knowing how to check this: `offsetHeight` alone tells
+you nothing, and `scrollHeight > clientHeight` gives a false positive
+because `clientHeight` excludes padding. Force `height: auto`, read
+`scrollHeight`, put the height back - if that number is bigger than
+`offsetHeight`, the field is clipped. If a fourth place turns up, the
+answer is the same one: show it, then fill it.
 
 **Reordering is FLIP, and the thing in your hand is not dimmed.** Native
 HTML5 drag reorders by calling `insertBefore`, which is instant - every

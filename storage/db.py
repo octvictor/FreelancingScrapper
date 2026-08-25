@@ -831,7 +831,14 @@ def delete_todo_list(list_id: int) -> None:
         conn.execute("DELETE FROM todo_lists WHERE id=?", (list_id,))
 
 
-def list_due_soon_todo_tasks(days_ahead: int = 2) -> list[dict]:
+# "Due soon" means today, overdue, or inside this many days. Defined once
+# because two things ask the question - Overview's panel and the toast - and
+# a panel headed "Due Soon" that answers a different question than the
+# notification is worse than either window being slightly wrong.
+DUE_SOON_DAYS = 3
+
+
+def list_due_soon_todo_tasks(days_ahead: int = DUE_SOON_DAYS) -> list[dict]:
     """Every incomplete task with a due date today, overdue, or within
     days_ahead days - across all lists. Backs the Due Soon notification
     toast, which is app-wide rather than scoped to one list."""
@@ -1187,10 +1194,14 @@ def get_overview_stats() -> dict:
         notes_count = conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
         finance_tables_count = conn.execute("SELECT COUNT(*) FROM finance_tables").fetchone()[0]
 
-        # Tasks with a due date, soonest first. Projects have deadlines too,
-        # but a project deadline is weeks out and a task's is the thing that
-        # decides what you do today - which is what this panel is for.
-        # Overdue sorts to the top for free, since it is just an earlier date.
+        # Tasks due within DUE_SOON_DAYS, soonest first. Projects have
+        # deadlines too, but a project deadline is weeks out and a task's is
+        # the thing that decides what you do today - which is what this panel
+        # is for. Overdue sorts to the top for free, being an earlier date.
+        #
+        # The date window is the point. Without it this listed the five
+        # soonest dated tasks whatever their date, so a task due in three
+        # months sat under a heading that says "Due Soon".
         due_soon = [
             dict(row)
             for row in conn.execute(
@@ -1198,7 +1209,9 @@ def get_overview_stats() -> dict:
                 "tl.title AS list_title, tl.color AS list_color "
                 "FROM todo_tasks t JOIN todo_lists tl ON tl.id = t.list_id "
                 "WHERE t.completed = 0 AND t.due_date IS NOT NULL AND t.due_date != '' "
-                "ORDER BY t.due_date ASC LIMIT 5"
+                "AND t.due_date <= date('now', ? || ' days') "
+                "ORDER BY t.due_date ASC LIMIT 5",
+                (str(DUE_SOON_DAYS),),
             ).fetchall()
         ]
 
