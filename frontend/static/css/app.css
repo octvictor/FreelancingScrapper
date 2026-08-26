@@ -624,7 +624,14 @@ table.project-table tbody td {
 .sb-brand {
     display: flex;
     align-items: center;
-    gap: 8px;
+    /* Tighter than it looks, and tighter than the nav items below on
+       purpose. The asterisk's ink stops 4.4px short of its own 19px box
+       (a nav icon's stops 1.3px short), so the 8px this used to be
+       measured 12.4px of actual air - wider than the 11.3px between a nav
+       icon and its label, even though the CSS number was smaller. 4px
+       brings the optical gap to ~8.4px, which reads as one wordmark
+       rather than as another row of the list. */
+    gap: 4px;
     padding-left: 4px;
     font-size: 19px;
     font-weight: 500;
@@ -736,7 +743,12 @@ table.project-table tbody td {
     border: none;
     color: var(--text);
     font-size: 12px;
-    font-weight: 400;
+    /* Medium, not Regular. These are the app's top-level destinations at
+       12px, and at that size Regular reads as faint against everything
+       they sit beside. The active tab is marked by its fill and shadow
+       rather than by weight, so making every tab Medium takes nothing
+       away from it. */
+    font-weight: 500;
     font-family: inherit;
     text-align: left;
     cursor: pointer;
@@ -3747,7 +3759,7 @@ input.overview-search-input {
     border: none;
     outline: none;
     color: var(--text);
-    font-weight: 300;
+    font-weight: 400;
     font-size: 12px;
 }
 
@@ -3867,7 +3879,7 @@ input.qc-input {
     border: none;
     outline: none;
     color: var(--text);
-    font-weight: 300;
+    font-weight: 400;
     font-size: 13px;
 }
 
@@ -4625,7 +4637,7 @@ input.date-field-native {
     color: var(--field-text);
     font-family: inherit;
     font-size: 12px;
-    font-weight: 300;
+    font-weight: 400;
 }
 
 .doc-search input[type="text"]::placeholder {

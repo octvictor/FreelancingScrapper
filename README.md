@@ -763,6 +763,17 @@ and a row is simply as tall as its tallest card. The card's old
 layout's row gap, and leaving it alongside the grid's `gap` doubles the
 space between rows.
 
+**An icon's box is wider than its ink, so a gap next to one is not the
+gap you set.** The brand asterisk's ink stops 4.4px short of its own 19px
+`<svg>` box; a nav icon's stops 1.3px short of its 16px box. So the
+wordmark's 8px gap measured 12.4px of real air while the nav items' 10px
+gap measured 11.3px - the smaller CSS number looked *further apart*, which
+is exactly what got reported. It is now 4px, for ~8.4px optical, reading
+as one lockup rather than another row of the list. When something beside
+an icon looks wrong by a couple of pixels, measure the ink (`getBBox()`
+plus half the stroke width, scaled by box width over viewBox width), not
+the element.
+
 **A height set from `scrollHeight` is short by the border.** Everything
 here is `box-sizing: border-box` (the `*` rule), so a height covers
 content, padding *and* border - but `scrollHeight` only reports content
@@ -1180,10 +1191,16 @@ rest of the app instead of drifting:
   etc. in `:root` now hold the light palette (dark mode is parked, not
   deleted - it'll come back as a toggle). Every page uses the same
   Google Sans Flex family (`frontend/static/fonts/`, Light 300, Regular
-  400, Medium 500, Bold 700) - the sidebar/header are Light per the
-  Figma spec, the rest of the app kept whatever weights it already had.
-  Don't reintroduce a second typeface for a single element (the "VAIO"
-  brand wordmark briefly used a serif before this shipped) - one face,
+  400, Medium 500, Bold 700). Light started out on the sidebar and the
+  search fields, per the Figma spec, and has since been walked back off
+  every one of them: the sidebar tabs are Medium (they are the app's
+  top-level destinations, and 12px Regular read as faint beside
+  everything around them), and the three search inputs are Regular. The
+  `@font-face` for 300 is still declared and the file still ships, but
+  nothing asks for it - a rule that wants Light will work, there just
+  isn't one. Don't reintroduce a second typeface for a single element
+  (the "VAIO" brand wordmark briefly used a serif before this
+  shipped) - one face,
   used consistently, is the whole point. Only request weights that have
   a real `@font-face` file backing them (300/400/500/700) - asking for
   an unbacked weight like 600 makes the browser synthesize a faux-bold
