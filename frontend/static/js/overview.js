@@ -173,12 +173,36 @@ $("cc-today-focus").addEventListener("click", async (e) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ completed: true }),
         });
+        // The same task can sit in both panels - Today's Focus lists the
+        // newest incomplete tasks, Due Soon the ones dated within
+        // DUE_SOON_DAYS - so checking it off here has to clear it there
+        // too, or one half of the screen says "done" while the other half
+        // still lists it as outstanding.
+        //
+        // Only that row is removed, rather than re-rendering the board:
+        // this panel is meant to keep the row you just ticked visible and
+        // struck through, and a full refresh would pull it out from under
+        // the cursor.
+        dropFromDueSoon(taskId);
         return;
     }
 
     navigateTo("todo");
     openTodoTaskModal(Number(listId), Number(taskId));
 });
+
+// Removes one task from the Due Soon panel, restoring the panel's empty
+// state if that was the last thing in it - an empty box with no offer to
+// act is worse than the box not being there.
+function dropFromDueSoon(taskId) {
+    const host = $("cc-due-soon");
+    const row = host.querySelector(`[data-role='cc-task'][data-id="${taskId}"]`);
+    if (!row) return;
+    row.remove();
+    if (!host.querySelector("[data-role='cc-task']")) {
+        host.innerHTML = ccEmptyHtml("+ Set a due date on a task", "todo");
+    }
+}
 
 // An empty panel is the moment you are most likely to want the missing
 // thing, so it offers the action instead of only reporting the absence.

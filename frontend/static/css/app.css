@@ -360,7 +360,7 @@ button, input, select, textarea {
    has the same specificity as its own component rule further down the
    file, so any component that wants different timing just declares its
    own `transition` and wins on source order - see .sb-item, which keeps
-   its 0.15s box-shadow, and the Calculator title, which keeps its own.
+   its var(--dur-pop) box-shadow, and the Calculator title, which keeps its own.
 
    Measured before this existed: 53 of 56 hover rules in the file were
    hard cuts, and the whole stylesheet contained exactly one :active rule
@@ -752,7 +752,7 @@ table.project-table tbody td {
     font-family: inherit;
     text-align: left;
     cursor: pointer;
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color var(--dur-pop) ease, box-shadow var(--dur-pop) ease;
 }
 
 .sb-item svg {
@@ -2304,7 +2304,7 @@ table.project-table tbody tr:hover td {
     display: inline-block;
     font-size: 11px;
     color: var(--text-faint);
-    transition: transform 0.15s ease;
+    transition: transform var(--dur-pop) ease;
     transform: rotate(-90deg);
 }
 
@@ -3188,7 +3188,7 @@ input.kanban-col-title-input:focus {
     border-radius: 50%;
     background: var(--dot-color, var(--border));
     box-shadow: 0 0 0 1px var(--ring-15);
-    transition: width 0.12s ease, height 0.12s ease;
+    transition: width var(--dur-hover) ease, height var(--dur-hover) ease;
 }
 
 .color-dot-btn:hover .color-dot,
@@ -3658,7 +3658,7 @@ input.kanban-col-title-input:focus {
     line-height: 1;
     cursor: grab;
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--dur-pop) ease;
 }
 
 .note-card:hover .note-drag-handle {
@@ -3906,9 +3906,17 @@ input.qc-input {
     margin: 0 0 14px;
 }
 
+/* minmax(0, 1fr), not 1fr. A bare 1fr is minmax(auto, 1fr), and `auto`
+   as a minimum means the column will not shrink below its content's
+   min-content width - so on a narrower window these two columns kept
+   their full size and pushed the whole page into a horizontal scroll
+   (46px over at 1280, 302px at 1024). The rows inside already truncate
+   properly; they were never given the chance. This is the grid twin of
+   the flex trap noted further down - there, `overflow: hidden` zeroes a
+   flex item's automatic minimum size; here, only minmax(0, ...) does. */
 .cc-cols {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 18px;
 }
 
@@ -3970,7 +3978,7 @@ input.qc-input {
     border-radius: var(--radius-lg);
     padding: 16px 12px;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color var(--dur-pop) ease, color var(--dur-pop) ease;
 }
 
 .empty-action:hover {
@@ -4346,7 +4354,7 @@ input.date-field-native {
     padding: 7px 12px 7px 10px;
     cursor: pointer;
     white-space: nowrap;
-    transition: border-color 0.15s ease;
+    transition: border-color var(--dur-pop) ease;
 }
 
 .date-trigger:hover { border-color: var(--border); }

@@ -944,14 +944,22 @@ Roughly seventy literals were spread through the stylesheet before dark
 mode; they are gone, and the two blocks are checked for parity (same token
 names on both sides) rather than by eye.
 
-There are exactly two sanctioned exceptions, both in Notes: the
-`.note-card-light` / `.note-card-dark` ramps and `.note-chip-dark-text` /
-`.note-chip-light-text`. Those inks are chosen against the note's *own*
+There are three sanctioned exceptions. Two are in Notes: the
+`.note-card-light` / `.note-card-dark` ramps and, on Overview's note
+chips, `.chip-dark-text` / `.chip-light-text` (the class names carry no
+`note-` prefix - overview.js builds them as bare `chip-*`). Those inks are
+chosen against the note's *own*
 user-picked color, which does not change when the theme does, so they must
 not follow the theme. The bug that proves the rule: the note chip on
 Overview only had a class for the light-ink case, so a pale note fell
 through to `--text` - fine on paper, invisible the moment `--text` went
 pale. If a surface carries a user color, both ink cases need a class.
+
+The third is the invoice print layout (`.pr-*`, near the bottom of the
+stylesheet). That one is ink on paper: black on white whichever theme the
+app is in, because a printed invoice is not a themed surface. Its literals
+are deliberate and should stay literals - tokens there would make the
+printout follow the screen, which is the opposite of what is wanted.
 
 **A picked card color has to clear two rules that pull against each
 other.** The picker's swatches tint a whole surface - a note, a To Do

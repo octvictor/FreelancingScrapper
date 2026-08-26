@@ -879,9 +879,16 @@ def list_due_soon_todo_tasks(days_ahead: int = DUE_SOON_DAYS) -> list[dict]:
     days_ahead days - across all lists. Backs the Due Soon notification
     toast, which is app-wide rather than scoped to one list."""
     with get_connection() as conn:
+        # due_date != '' matters as much as IS NOT NULL, and is easy to
+        # drop. A task with no due date stores "", not NULL - and SQLite
+        # compares strings, where '' sorts before every date, so
+        # "'' <= date('now','3 days')" is TRUE. Without this guard every
+        # dateless task was reported as due soon, and ORDER BY put them at
+        # the top of the toast. Overview's panel already had the guard,
+        # which is why only the toast was over-counting.
         rows = conn.execute(
             "SELECT id, title, due_date, list_id FROM todo_tasks "
-            "WHERE completed = 0 AND due_date IS NOT NULL "
+            "WHERE completed = 0 AND due_date IS NOT NULL AND due_date != '' "
             "AND due_date <= date('now', ? || ' days') "
             "ORDER BY due_date ASC",
             (str(days_ahead),),
