@@ -82,10 +82,6 @@ class RowUpdate(BaseModel):
     total: str | None = None
 
 
-class RowOrder(BaseModel):
-    row_ids: list[int]
-
-
 class InvoiceDefaults(BaseModel):
     invoice_from: str | None = None
     invoice_notes: str | None = None
@@ -213,12 +209,6 @@ def create_row(invoice_id: int):
     if db.get_invoice(invoice_id) is None:
         raise HTTPException(404, "Invoice not found")
     return db.add_invoice_row(invoice_id)
-
-
-@router.put("/{invoice_id}/rows/reorder")
-def reorder_rows(invoice_id: int, payload: RowOrder):
-    db.reorder_invoice_rows(invoice_id, payload.row_ids)
-    return {"ok": True}
 
 
 @router.put("/{invoice_id}/rows/{row_id}")

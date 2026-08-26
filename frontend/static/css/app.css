@@ -1583,7 +1583,8 @@ table.task-table td:nth-child(6) {
    .checklist-text below looks identical to every plain-input cell
    without the two drifting apart over time. */
 input.cell-input,
-textarea.cell-input {
+textarea.cell-input,
+.checklist-text-view {
     width: 100%;
     background: var(--panel-alt);
     border: 1px solid var(--border);
@@ -2679,6 +2680,28 @@ table.project-table tbody tr:hover td {
 .checklist-item.checked .checklist-text {
     color: var(--text-faint);
     text-decoration: line-through;
+}
+
+/* The read half of a list row that contains a link (notes.js). It shares
+   .cell-input and .checklist-text with the textarea it stands in for, so
+   the two boxes are the same box by construction rather than by two sets
+   of numbers kept in step by hand - swapping one for the other must not
+   move the row by a pixel.
+   pre-wrap for the same reason .note-modal-view uses it: it has to render
+   a textarea's text identically, runs of spaces and all. min-height keeps
+   an emptied row the height of one line instead of collapsing to nothing,
+   and text cursor says it is editable, which it is - one click away. */
+.checklist-text-view {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-height: 1.4em;
+    cursor: text;
+}
+
+.checklist-text-view:focus-visible {
+    border-color: var(--text-muted);
+    outline: none;
 }
 
 .modal-side-tabs {
@@ -4628,6 +4651,14 @@ input.date-field-native {
    should not read as one strip of chips. */
 .doc-sort {
     padding-left: 10px;
+}
+
+/* The drafts section has no search or filters, so its controls row holds
+   the sort alone - and a lone flex item sits at the start unless told
+   otherwise. Pushed to the right edge so all three sections' sort chips
+   line up in the same column down the page. */
+.doc-controls-sort-only {
+    justify-content: flex-end;
 }
 
 .doc-sort .view-toggle-btn {

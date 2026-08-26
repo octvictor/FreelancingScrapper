@@ -188,6 +188,10 @@ CREATE TABLE IF NOT EXISTS invoices (
 CREATE TABLE IF NOT EXISTS invoice_rows (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+    -- The order rows were added in, and only that. Rows are not draggable
+    -- and deliberately so: an invoice is typed top to bottom, and the one
+    -- thing a drag could do here is silently reorder what was already
+    -- checked. New rows land at the bottom, which is where they belong.
     position INTEGER NOT NULL DEFAULT 0,
     project_title TEXT,
     project_desc TEXT,
@@ -422,6 +426,38 @@ def init_db() -> None:
             conn.execute("ALTER TABLE finance_rows ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
 
         orphan_rows = conn.execute("SELECT COUNT(*) FROM finance_rows WHERE table_id IS NULL").fetchone()[0]
+        # Ten notes, to-do lists and Calculator rows were still carrying
+        # colours from the palette that was retired when COLOR_PRESETS
+        # (nav.js) was retuned - pale mints and slate blues that no swatch
+        # in the picker can produce any more. They looked like a different
+        # app's colours sitting next to the current ones, and reaching one
+        # of them again meant remembering which item already had it.
+        #
+        # Mapped by hue in CIELAB rather than by eye: every retired colour
+        # is within 25 degrees of hue of the preset it moves to, and the
+        # three greens are within 3. Lightness is not preserved because it
+        # cannot be - the retired set ran from near-white to near-black and
+        # every current preset sits at L*47 - so hue is what carries the
+        # colour's identity across.
+        #
+        # A one-time rewrite, not a display-time translation: these are the
+        # user's own choices and they should stay editable as normal
+        # afterwards. It re-runs harmlessly, since none of the old values
+        # can be chosen again.
+        for old, new in (
+            ("#C2E0CE", "#417B5E"),   # pale mint    -> green
+            ("#5C8C74", "#417B5E"),   # mid green    -> green
+            ("#2E4A3D", "#417B5E"),   # dark green   -> green
+            ("#88A8BF", "#4272A7"),   # pale blue    -> blue
+            ("#597792", "#4272A7"),   # slate blue   -> blue
+            ("#C6D9E6", "#4272A7"),   # palest blue  -> blue
+        ):
+            for table in ("notes", "todo_lists", "finance_rows"):
+                conn.execute(
+                    f"UPDATE {table} SET color=? WHERE color=? COLLATE NOCASE",
+                    (new, old),
+                )
+
         if orphan_rows:
             legacy_currency = "USD"
             has_settings_table = conn.execute(
@@ -1595,15 +1631,6 @@ def update_invoice_row(row_id: int, **fields) -> dict | None:
 def delete_invoice_row(row_id: int) -> None:
     with get_connection() as conn:
         conn.execute("DELETE FROM invoice_rows WHERE id=?", (row_id,))
-
-
-def reorder_invoice_rows(invoice_id: int, row_ids: list[int]) -> None:
-    with get_connection() as conn:
-        for position, row_id in enumerate(row_ids):
-            conn.execute(
-                "UPDATE invoice_rows SET position=? WHERE id=? AND invoice_id=?",
-                (position, row_id, invoice_id),
-            )
 
 
 # ---------- Document tags ----------

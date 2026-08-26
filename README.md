@@ -496,28 +496,23 @@ executable), shared across every tool:
 
 ## Roadmap / not built yet
 
-Open threads on things that already exist, roughly in the order they are
-worth doing:
+Open threads on things that already exist. There are no small ones left
+at the moment - the list below was worked through, and what remains is
+either decided against or a real piece of work.
 
-- **Save an exported invoice into the Invoices folder automatically**, so
-  it appears in the list on the next rescan without a save-as dialog.
-  Blocked on producing PDF bytes without a person in the loop: the browser
-  can only make a PDF through its own print dialog, and JavaScript cannot
-  choose a destination folder. Doing it properly means a server-side
-  headless renderer (Playwright, which this app used to depend on and
-  which would print the same HTML through the same Chromium) at the cost
-  of a browser download on first run. Until then it is the print dialog,
-  which the user has said is fine - and the filename there is theirs to
-  type, deliberately not pre-filled.
-- **Invoice row reorder.** `reorder_invoice_rows` and
-  `PUT /rows/reorder` exist and work; nothing in the editor calls them.
-  Needs a grip and `flipReorder`, the same pattern Notes and Projects use.
-- **Links inside the Notes modal's list items.** They are clickable on
-  the card but the modal's items are still plain textareas; the body
-  already does the view/edit swap that would be needed.
-- **Uncoloured Calculator rows read flat in light mode.**
-- **Ten items still carry retired note/list/row colours** from before the
-  palette was retuned.
+Settled, so nobody reopens them:
+
+- **Exporting an invoice straight into the Invoices folder** is not
+  happening. The browser can only make a PDF through its own print dialog
+  and JavaScript cannot choose a destination folder, so it would take a
+  server-side headless renderer and a browser download on first run. The
+  print dialog is the export, by decision and not by omission.
+- **Invoice rows are not reorderable**, and the code that could have done
+  it has been removed rather than left dangling. An invoice is typed top
+  to bottom; the only thing a drag could do is silently reorder something
+  already checked.
+- **Uncoloured Calculator rows** read flat in light mode and that is
+  fine - it was looked at and left alone.
 
 - Roadmap of possible future tools/pages, not yet designed:
   - Lead pipeline (Lead → Quoted → Won/Lost), upstream of Project
@@ -563,6 +558,24 @@ The invoice this was built from writes `1 / 2` days, `$300,00` rates,
 `April 09/10` dates and a total the user decides; a form that insisted on
 numbers would fight all of that and win nothing. The grand total is a field
 like any other.
+
+**Sort by what the column is showing, and be strict about reading it.**
+All three sections on Documents - the invoices written here, plus Invoices
+and NFs on disk - carry the same Name/Date chips at the same right edge
+(`SORT_CARET` is shared in nav.js so a caret cannot mean "ascending" in
+one and "descending" in another). Clicking the active chip reverses it;
+switching chips resets the direction to suit the key, since dates want
+newest first and names want A to Z.
+
+Reading a *typed* date is where the care goes. An invoice's date is free
+text, and `Date.parse` will read almost anything - it turns `April 09/10`
+into 9 April **2010** and `1 / 2` into 2 January 2001, both years nobody
+typed. The danger is silent misreading, not failure. So a typed date is
+only trusted when it names a four-digit year *and* parses to that same
+year; everything else falls back to `created_at`, which is a real date, so
+the list stays sorted by date throughout rather than dropping an invoice
+into 1970. `April 9-10, 2026` is the case that proves the year check earns
+its keep - it has a full year, and `Date.parse` still reads it as 2010.
 
 **Export is `window.print()` over a hidden layout, not a second renderer.**
 `#invoice-print` is rendered from the invoice, `body` gets
@@ -749,6 +762,37 @@ and a row is simply as tall as its tallest card. The card's old
 `margin-bottom` had to go at the same time - that was the multi-column
 layout's row gap, and leaving it alongside the grid's `gap` doubles the
 space between rows.
+
+**A height set from `scrollHeight` is short by the border.** Everything
+here is `box-sizing: border-box` (the `*` rule), so a height covers
+content, padding *and* border - but `scrollHeight` only reports content
+and padding. `autoGrowChecklistText` assigned one straight to the other
+for a long time, which left every auto-growing textarea in the app - To Do
+steps, note bodies and items, invoice cells - exactly two pixels shy of
+its own text. Nothing looked broken, because a single line has enough
+leading to absorb 2px; it only surfaced when a field of this kind had to
+sit flush beside a `<div>` sized the normal way and the two disagreed. The
+helper now adds the border widths back on.
+
+**A `<textarea>` cannot contain a link, so anything with clickable links
+in it is two elements.** The note body and each list item of a list note
+keep a textarea and a rendered view of the same text, and swap. Three
+things make the swap invisible: the view carries the same classes as the
+textarea it stands in for, so the two boxes are one box by construction
+rather than two sets of numbers kept in step by hand; `white-space:
+pre-wrap` makes the view render a textarea's text identically, runs of
+spaces and all; and `textOffsetInView` (nav.js) maps the click back to a
+plain-text index by walking text nodes, so the caret lands where you
+clicked instead of at the end - across an anchor boundary too. `mousedown`
+does the swap, not `click`, and it returns early inside `.note-link` so a
+link stays a link.
+One deliberate asymmetry: the body always swaps to a view, but a list item
+only does so once it actually contains a link. A checklist is tabbed
+through and typed into, and making every row cost a click to focus would
+tax the common case to serve the rare one.
+Contrast is tighter here than on the note body: `--link` on `--panel-alt`
+(the field's own fill) measures 4.61:1 in light and 6.79:1 in dark, so it
+passes AA but has little room. Re-measure before darkening `--panel-alt`.
 
 **A heading is a promise about the query behind it.** Overview's Due Soon
 panel and the Due Soon toast are two surfaces for one question, and they

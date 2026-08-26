@@ -260,8 +260,6 @@ function renderDocList(kind) {
     expandBtn.textContent = view.expanded ? "Show less" : `Show ${hidden} more`;
 }
 
-const SORT_CARET = { asc: "\u2191", desc: "\u2193" };
-
 function renderDocSort(kind) {
     const view = docViewFor(kind);
     const host = $(`doc-sort-${kind}`);

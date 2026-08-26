@@ -22,11 +22,24 @@ let activeNoteId = null;
 
 // ---------- Card previews ----------
 
+// Each row carries both a textarea and a rendered view of the same text,
+// the way the note body does - a <textarea> cannot contain an anchor, so a
+// link inside one can never be clicked.
+//
+// Unlike the body, the view is only used for rows that actually contain a
+// link. A checklist is a thing you tab down and type into, and making every
+// row cost a click to focus would tax the common case to serve the rare
+// one. A row with no link is a plain textarea and behaves exactly as it
+// always has; a row with a link reads as a link until you click off it.
 function noteItemHtml(item) {
+    const linked = textHasLink(item.text);
     return `
         <div class="checklist-item ${item.checked ? "checked" : ""}" data-id="${item.id}">
             <input type="checkbox" class="checklist-checkbox" ${item.checked ? "checked" : ""}>
-            <textarea class="cell-input checklist-text" data-field="text" placeholder="List item" rows="1">${escapeAttr(item.text)}</textarea>
+            <textarea class="cell-input checklist-text" data-field="text" placeholder="List item" rows="1"
+                      ${linked ? 'style="display:none;"' : ""}>${escapeAttr(item.text)}</textarea>
+            <div class="cell-input checklist-text checklist-text-view" tabindex="0" role="textbox"
+                 ${linked ? "" : 'style="display:none;"'}>${linkifyHtml(item.text)}</div>
             <button class="row-delete-btn" data-role="delete-item" title="Delete item">${ICON_TRASH_SVG}</button>
         </div>
     `;
@@ -430,33 +443,6 @@ function showNoteBodyView() {
     $("note-modal-view").style.display = "";
 }
 
-// Maps a point in the rendered view to an index in the plain text, so the
-// caret lands where the click did instead of at the end of the note. The
-// view renders the same characters in the same order, just split across
-// text nodes and anchors, so summing the lengths of everything before the
-// clicked node gives the offset directly.
-function noteTextOffsetAt(x, y) {
-    const view = $("note-modal-view");
-    let node = null, offset = 0;
-    if (document.caretPositionFromPoint) {
-        const pos = document.caretPositionFromPoint(x, y);
-        if (pos) { node = pos.offsetNode; offset = pos.offset; }
-    } else if (document.caretRangeFromPoint) {
-        const range = document.caretRangeFromPoint(x, y);
-        if (range) { node = range.startContainer; offset = range.startOffset; }
-    }
-    if (!node || !view.contains(node)) return null;
-
-    let total = 0;
-    const walker = document.createTreeWalker(view, NodeFilter.SHOW_TEXT);
-    let current;
-    while ((current = walker.nextNode())) {
-        if (current === node) return total + offset;
-        total += current.textContent.length;
-    }
-    return null;
-}
-
 function showNoteBodyEditor(caretIndex) {
     const box = $("note-modal-body");
     if (box.style.display !== "none") return;
@@ -477,7 +463,7 @@ $("note-modal-view").addEventListener("mousedown", (e) => {
     // Before the default action, so the browser does not first try to put a
     // selection in a div that is about to be hidden.
     e.preventDefault();
-    showNoteBodyEditor(noteTextOffsetAt(e.clientX, e.clientY));
+    showNoteBodyEditor(textOffsetInView($("note-modal-view"), e.clientX, e.clientY));
 });
 
 // Reachable without a mouse: the view is focusable, and Enter opens it for
@@ -525,17 +511,64 @@ function wireNoteModalItemRow(row) {
         if (activeNoteId !== null) saveNoteItem(activeNoteId, itemId, { checked: checkbox.checked });
     });
 
-    const textInput = row.querySelector(".checklist-text");
-    autoGrowChecklistText(textInput);
+    const textInput = row.querySelector("textarea.checklist-text");
+    const view = row.querySelector(".checklist-text-view");
+
+    // Only ever grown while it is the visible half. autoGrowChecklistText
+    // reads scrollHeight, and a display:none element measures zero - so a
+    // linked row would otherwise be written height: 0px here and open as a
+    // sliver the moment you clicked into it. Same trap as the note and task
+    // modals, one level further down; see the README.
+    const showRowEditor = (caretIndex) => {
+        if (textInput.style.display !== "none") return;
+        view.style.display = "none";
+        textInput.style.display = "";
+        autoGrowChecklistText(textInput);
+        textInput.focus();
+        const at = caretIndex === null || caretIndex === undefined ? textInput.value.length : caretIndex;
+        textInput.setSelectionRange(at, at);
+    };
+
+    // A row only becomes a view once there is a link in it to click. Without
+    // one there is nothing the view can do that the textarea cannot, and
+    // swapping anyway would cost a click to get back to typing.
+    const showRowView = () => {
+        if (!textHasLink(textInput.value)) return;
+        view.innerHTML = linkifyHtml(textInput.value);
+        textInput.style.display = "none";
+        view.style.display = "";
+    };
+
+    if (textInput.style.display !== "none") autoGrowChecklistText(textInput);
     textInput.addEventListener("input", () => autoGrowChecklistText(textInput));
     textInput.addEventListener("blur", () => {
         if (activeNoteId !== null) saveNoteItem(activeNoteId, itemId, { text: textInput.value.trim() });
+        // Back to reading, so a link you just typed is live straight away
+        // rather than only after the note is reopened.
+        showRowView();
     });
     textInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
             textInput.blur();
         }
+    });
+
+    view.addEventListener("mousedown", (e) => {
+        // Let a link be a link. Everything else means "I want to type here".
+        if (e.target.closest(".note-link")) return;
+        // Before the default action, so the browser does not first put a
+        // selection in a div that is about to be hidden.
+        e.preventDefault();
+        showRowEditor(textOffsetInView(view, e.clientX, e.clientY));
+    });
+
+    // Reachable without a mouse: the view is focusable and Enter opens it
+    // for editing the way clicking into it does.
+    view.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" || e.metaKey || e.ctrlKey) return;
+        e.preventDefault();
+        showRowEditor(null);
     });
 
     row.querySelector("[data-role='delete-item']").addEventListener("click", async () => {

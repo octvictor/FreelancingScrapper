@@ -12,10 +12,29 @@ function $(id) {
 // and grows the row downward instead of scrolling its text out of
 // view. Resetting height to "auto" first is what lets scrollHeight
 // shrink back down when text is deleted, not just grow.
+// Grows a <textarea rows="1"> to fit its own text. Used by every checklist
+// row, the note body and the invoice cells.
+//
+// The border has to be added back on. Everything here is border-box (see
+// the `*` rule in app.css), so a height set on the element covers content,
+// padding AND border - but scrollHeight only measures content and padding.
+// Assigning one to the other therefore leaves the box short by exactly the
+// two border widths, and the last 2px of the text is clipped. It went
+// unnoticed for a long time because a single line has enough leading to
+// hide it; it shows up the moment a field of this kind has to sit flush
+// beside one that is sized normally.
 function autoGrowChecklistText(el) {
     el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
+    const style = getComputedStyle(el);
+    const border = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+    el.style.height = el.scrollHeight + border + "px";
 }
+
+// Which way a sort chip is pointing. Shared because three lists use the
+// same chips - Invoices, NFs and the drafts written here - and a caret that
+// meant "ascending" in one and "descending" in another would be a bug you
+// could only find by comparing two sections side by side.
+const SORT_CARET = { asc: "\u2191", desc: "\u2193" };
 
 // ---------- Links in free text ----------
 // Turns the URLs inside a plain-text blob into real anchors. The text is
@@ -68,6 +87,36 @@ function linkifyHtml(text) {
     }
     out += escapeAttr(text.slice(last));
     return out;
+}
+
+// Maps a point inside a linkified view back to an index in the plain text
+// it was rendered from, so clicking into a rendered note puts the caret
+// where the click landed rather than at the end. The view renders the same
+// characters in the same order, just split across text nodes and anchors,
+// so summing the lengths of everything before the clicked node gives the
+// offset directly. Returns null when the point is not in the view at all.
+//
+// Shared because two surfaces read the same way now - a note's body and
+// each of a list note's items.
+function textOffsetInView(view, x, y) {
+    let node = null, offset = 0;
+    if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(x, y);
+        if (pos) { node = pos.offsetNode; offset = pos.offset; }
+    } else if (document.caretRangeFromPoint) {
+        const range = document.caretRangeFromPoint(x, y);
+        if (range) { node = range.startContainer; offset = range.startOffset; }
+    }
+    if (!node || !view.contains(node)) return null;
+
+    let total = 0;
+    const walker = document.createTreeWalker(view, NodeFilter.SHOW_TEXT);
+    let current;
+    while ((current = walker.nextNode())) {
+        if (current === node) return total + offset;
+        total += current.textContent.length;
+    }
+    return null;
 }
 
 function textHasLink(text) {

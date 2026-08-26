@@ -33,6 +33,72 @@ function invoiceDate(inv) {
         || new Date(inv.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+// ---------- Sorting ----------
+// Date descending by default, which is the order the list already came in
+// before this existed (the API returns newest first).
+let invoiceSort = { key: "date", desc: true };
+
+// Sorts by what the Date column is *showing*: the typed invoice date when
+// there is one, the created date otherwise.
+//
+// Reading the typed one needs care, because Date.parse is far too willing.
+// The invoice this app was built from writes "April 09/10", and Date.parse
+// turns that into 9 April *2010* rather than refusing it - a year nobody
+// typed, dragging that invoice to the bottom of the list with nothing on
+// screen to explain why. "09/10" becomes 2001, and "1 / 2" - a days-worked
+// value - is a valid date to it too. The danger is silent misreading, not
+// failure to read.
+//
+// So: only trust a typed date that names its year in full and parses to
+// that same year. "April 15, 2026" and "2026-04-15" pass. "April 09/10"
+// has no four-digit year and is rejected. "15/04/2026" names its year but
+// Date.parse cannot read day-first, so it is rejected too rather than
+// guessed at. Anything rejected falls back to created_at, which is a real
+// date - so the list stays sorted by date throughout, never by 1970.
+function invoiceSortDate(inv) {
+    const typed = (inv.invoice_date || "").trim();
+    const year = typed.match(/\b(\d{4})\b/);
+    if (year) {
+        const parsed = Date.parse(typed);
+        if (!Number.isNaN(parsed) && new Date(parsed).getFullYear() === Number(year[1])) {
+            return parsed;
+        }
+    }
+    return Date.parse(inv.created_at) || 0;
+}
+
+function sortedInvoices() {
+    const sorted = invoices.slice();
+    if (invoiceSort.key === "date") {
+        sorted.sort((a, b) => invoiceSortDate(a) - invoiceSortDate(b));
+    } else {
+        // numeric: true so "Invoice 2" comes before "Invoice 10" rather
+        // than after it, the same natural order the scanner's sort_key
+        // gives the two indexed sections.
+        sorted.sort((a, b) => invoiceLabel(a).localeCompare(invoiceLabel(b), undefined, { numeric: true, sensitivity: "base" }));
+    }
+    // Descending is the ascending order reversed rather than a second
+    // comparator, so the two directions cannot disagree about ties.
+    if (invoiceSort.desc) sorted.reverse();
+    return sorted;
+}
+
+function invoiceSortHtml() {
+    // Hidden until there is something to reorder, matching the two scanned
+    // sections: one row cannot be sorted, and a control that does nothing
+    // is worse than no control.
+    if (invoices.length < 2) return "";
+    const chips = [["name", "Name"], ["date", "Date"]].map(([key, label]) => {
+        const active = invoiceSort.key === key;
+        const caret = active ? ` ${SORT_CARET[invoiceSort.desc ? "desc" : "asc"]}` : "";
+        return `<button type="button" class="view-toggle-btn ${active ? "active" : ""}" data-inv-sort="${key}"
+                        title="Sort by ${label.toLowerCase()}">${label}${caret}</button>`;
+    }).join("");
+    return `<div class="doc-controls doc-controls-sort-only">
+                <div class="doc-filters doc-sort">${chips}</div>
+            </div>`;
+}
+
 function renderInvoiceDrafts() {
     const host = $("invoice-drafts");
     if (!host) return;
@@ -49,8 +115,9 @@ function renderInvoiceDrafts() {
             <div class="doc-section-body" id="invoice-drafts-body">
                 <div class="doc-section-inner">
                     <div class="panel">
+                        ${invoiceSortHtml()}
                         <div class="doc-list">
-                            ${invoices.map((inv) => `
+                            ${sortedInvoices().map((inv) => `
                                 <div class="doc-row" data-invoice-id="${inv.id}">
                                     <span class="doc-row-main">
                                         <span class="doc-row-name">${escapeAttr(invoiceLabel(inv))}</span>
@@ -83,6 +150,23 @@ $("invoice-drafts").addEventListener("click", async (e) => {
         section.querySelector("[data-role='disclose']").setAttribute("aria-expanded", String(invoiceListOpen));
         return;
     }
+    const sortBtn = e.target.closest("[data-inv-sort]");
+    if (sortBtn) {
+        // Clicking the chip you are already sorted by reverses it - the only
+        // place a second direction can live without a third chip.
+        if (invoiceSort.key === sortBtn.dataset.invSort) {
+            invoiceSort.desc = !invoiceSort.desc;
+        } else {
+            invoiceSort.key = sortBtn.dataset.invSort;
+            // Dates want newest first and names want A to Z, so the default
+            // direction follows the key rather than persisting across a
+            // switch and putting the oldest invoice at the top.
+            invoiceSort.desc = sortBtn.dataset.invSort === "date";
+        }
+        renderInvoiceDrafts();
+        return;
+    }
+
     const row = e.target.closest("[data-invoice-id]");
     if (row) openInvoiceModal(Number(row.dataset.invoiceId));
 });
