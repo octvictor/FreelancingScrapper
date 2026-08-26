@@ -487,31 +487,31 @@ executable), shared across every tool:
   tags reuse an existing name that differs only in case: the UNIQUE
   index is case-sensitive, so without that "Paid" typed over an
   existing "paid" quietly becomes a second tag meaning the same thing.
-- `document_file_tags` - content_hash, tag_id. **Keyed by the file's
-  content hash, not its id or path**, which is what lets a tag survive
-  the file being renamed or moved to another folder outside the app.
-  The hash is sha256 of the file's size plus its first 64KB - enough to
-  tell two invoices apart without reading a 200MB file in full.
+- `document_file_tags` - kind, path, tag_id. **Keyed by where the file
+  is, not by what is in it.** It was keyed by content hash originally, so
+  that a tag would survive a rename outside the app - but two byte-identical
+  files share a hash, and tagging one silently tagged every copy, across
+  Invoices and NF's both. Renames are followed at scan time instead, and
+  only when unambiguous: one file gone, one file arrived, same hash.
 
 ## Roadmap / not built yet
 
 Open threads on things that already exist, roughly in the order they are
 worth doing:
 
-- **Save an exported invoice into the Invoices folder automatically.**
+- **Save an exported invoice into the Invoices folder automatically**, so
+  it appears in the list on the next rescan without a save-as dialog.
   Blocked on producing PDF bytes without a person in the loop: the browser
   can only make a PDF through its own print dialog, and JavaScript cannot
   choose a destination folder. Doing it properly means a server-side
   headless renderer (Playwright, which this app used to depend on and
   which would print the same HTML through the same Chromium) at the cost
-  of a browser download on first run. Until then the export names itself
-  correctly and the browser remembers the last folder.
+  of a browser download on first run. Until then it is the print dialog,
+  which the user has said is fine - and the filename there is theirs to
+  type, deliberately not pre-filled.
 - **Invoice row reorder.** `reorder_invoice_rows` and
   `PUT /rows/reorder` exist and work; nothing in the editor calls them.
   Needs a grip and `flipReorder`, the same pattern Notes and Projects use.
-- **Save an exported invoice straight into the Invoices folder**, so it
-  appears in the list on the next rescan without a save-as dialog. Needs
-  a server-side renderer, which is the reason it is not done.
 - **Links inside the Notes modal's list items.** They are clickable on
   the card but the modal's items are still plain textareas; the body
   already does the view/edit swap that would be needed.
