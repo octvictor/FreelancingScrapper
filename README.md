@@ -763,6 +763,31 @@ and a row is simply as tall as its tallest card. The card's old
 layout's row gap, and leaving it alongside the grid's `gap` doubles the
 space between rows.
 
+**An absolutely-positioned close button owns the corner it sits in, so
+the top row has to give it up.** `.modal-close` floats in the modal's
+top-right; every top row that stretched the full width ran underneath it -
+14x12px of overlap in Projects, Personal Projects, To Do, Settings and the
+invoice editor. It read badly, and it *behaved* badly: the title field's
+own top-right corner belonged to the button, so clicking there to place a
+caret closed the modal. `elementFromPoint` at the field's corner returned
+`modal-close`, which is the check worth repeating - overlap you can see is
+a nuisance, overlap that steals a click is a bug.
+Stretching top rows now reserve `--modal-close-gutter`, landing 45px from
+the modal's right edge - the clearance the note modal's toggle button
+already had, being the one top row that never collided. Written as
+`.modal-close + <specific>` rather than `.modal-close + *`, because a
+sibling that sizes to its own content does not need the gutter and would
+only be pushed off-centre by it.
+The margin alone was not enough for the title field, and the reason is
+worth remembering: the generic `input[type="text"]` rule gives it
+`width: 100%`, and under `border-box` a percentage width is measured
+against the container whatever the element's own margins are - so the box
+kept its full width and the margin just added dead space. `width: auto`
+hands sizing back to the flex column, which stretches to the container
+minus margins. Third time an element-qualified generic rule has quietly
+won an argument in this stylesheet; check for one whenever a width or a
+padding you set appears to do nothing.
+
 **An icon's box is wider than its ink, so a gap next to one is not the
 gap you set.** The brand asterisk's ink stops 4.4px short of its own 19px
 `<svg>` box; a nav icon's stops 1.3px short of its 16px box. So the

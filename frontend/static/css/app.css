@@ -155,6 +155,14 @@
        still inside the sub-300ms band a UI transition has to stay in. */
     --dur-disclose: 220ms;
 
+    /* Space the modal's top row gives up so it does not run under the
+       close button. The button's left edge sits 39px in from the modal's
+       right border (10px offset + 28px wide + 1px border) and the modal's
+       own padding already covers 25px of that, so 20px clears it and
+       leaves 6px of air - the same clearance the note modal's toggle
+       button already had, which was the one top row that never collided. */
+    --modal-close-gutter: 20px;
+
     /* scale() is relative, so one value cannot serve a 120px button and a
        22px icon - the small tier presses harder to read at all. Tokens
        rather than literals so reduced motion is a single switch below. */
@@ -2481,6 +2489,38 @@ table.project-table tbody tr:hover td {
     cursor: pointer;
     padding: 6px 9px;
     border-radius: var(--radius-sm);
+}
+
+/* The close button is absolutely positioned in the modal's top-right, so
+   anything in the flow that stretches the full width runs underneath it.
+   That was not only untidy: the title field's own top-right corner
+   belonged to the button, so clicking there to place a caret closed the
+   modal instead. Measured at 14px x 12px of overlap in Projects, Personal
+   Projects, To Do and Settings.
+   
+   Written as adjacency rather than as a blanket `.modal-close + *`
+   because the sibling that lands in the button's band is not always a
+   stretching one - the note modal's toggle button sits at its own width
+   and already clears the X. A new modal whose top row spans the width
+   needs to join this list; one that does not, does not. */
+.modal-close + .modal-title-input,
+.modal-close + .todo-modal-header,
+.modal-close + .page-section-title {
+    margin-right: var(--modal-close-gutter);
+}
+
+/* The margin alone does nothing to the title field. The generic
+   input[type="text"] rule gives it width: 100%, and under border-box a
+   percentage width is measured against the container regardless of the
+   element's own margins - so the box kept its full width and the margin
+   just added dead space beside it. width: auto hands the sizing back to
+   the flex column, which stretches the item to the container minus its
+   margins, which is what was wanted. Specificity is why this works at
+   all: (0,2,0) here beats the element-qualified (0,1,1) of the generic
+   rule. Same family of trap as .settings-textarea and
+   .overview-search-input further down. */
+.modal-close + input.modal-title-input {
+    width: auto;
 }
 
 .modal-close:hover {
