@@ -298,6 +298,29 @@ the default on launch, reached through the sidebar like any other page.
 Everything lands in a shared local SQLite database (`data/vaio.db`)
 so it accumulates across sessions instead of being lost between runs.
 
+## It opens in its own window, not a browser
+
+VAIO is a local server rendering plain HTML, but you never see a browser:
+`launcher.py` starts the server and hands its URL to a native window
+(pywebview). On Windows that window is the WebView2 control that ships
+with Edge, on macOS WKWebView, on Linux WebKitGTK - the OS's own web view,
+so nothing extra to install and no second browser engine bundled. No
+address bar, no tabs, and the taskbar entry says VAIO.
+
+Closing the window stops the server. The server thread is a daemon and
+pywebview owns the main thread, so there is nothing left running
+afterwards.
+
+Two fallbacks, both deliberate:
+
+- **No native window available** (a Linux box with no WebKitGTK) - it
+  opens your browser instead and says so. A worse-looking app beats no app.
+- **Port 8501 already in use** - it takes any free port instead of dying
+  with "address already in use", and the window is told which.
+
+Set `VAIO_BROWSER=1` to force the browser, which is what you want while
+editing the frontend, since the window has no devtools.
+
 ## Two ways to run this
 
 - **Packaged app** - build once, then just double-click an icon forever.
@@ -305,7 +328,7 @@ so it accumulates across sessions instead of being lost between runs.
 - **From source** - venv + a run script. Best if you're actively changing
   the frontend/backend, since edits take effect instantly (no rebuild).
 
-You can do both; they share the same local SQLite database.
+Both open the same window; they share the same local SQLite database.
 
 ### Option A: packaged app (double-click, no terminal after setup)
 
@@ -319,7 +342,13 @@ made on Mac won't run on Windows and vice versa):
 This creates `dist/VAIO` (`dist/VAIO.exe` on
 Windows) - a single self-contained file with Python and FastAPI bundled
 in. Move it wherever you like and double-click it to launch; it opens in
-your browser automatically.
+its own window. The build is `--windowed`, so no console sits behind it.
+
+Note the `--collect-all webview` flag in the build scripts: pywebview
+picks its platform backend by name at runtime, so PyInstaller cannot find
+it by following imports. Drop that flag and the built app still works but
+silently opens a browser instead of its own window - which looks exactly
+like the feature being broken.
 
 Re-run the build script only when you change `requirements.txt` or pull
 down new code - not for regular use.

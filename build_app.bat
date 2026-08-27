@@ -17,9 +17,14 @@ pip install -q pyinstaller
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
-pyinstaller --onefile --name VAIO ^
+REM --windowed: no console window flashing up behind the app.
+REM --collect-all webview: pywebview loads its platform backend by name at
+REM runtime, so PyInstaller cannot find it by following imports. Miss this
+REM and the built app silently falls back to a browser tab.
+pyinstaller --onefile --windowed --name VAIO ^
     --add-data "frontend;frontend" ^
     --collect-all uvicorn ^
+    --collect-all webview ^
     launcher.py
 
 echo.

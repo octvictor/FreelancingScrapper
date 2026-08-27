@@ -20,9 +20,13 @@ pip install -q pyinstaller
 
 rm -rf build dist
 
-pyinstaller --onefile --name VAIO \
+# --collect-all webview: pywebview loads its platform backend by name at
+# runtime, so PyInstaller cannot see it by following imports. Miss this and
+# the built app silently opens a browser instead of its own window.
+pyinstaller --onefile --windowed --name VAIO \
     --add-data "frontend:frontend" \
     --collect-all uvicorn \
+    --collect-all webview \
     launcher.py
 
 echo ""

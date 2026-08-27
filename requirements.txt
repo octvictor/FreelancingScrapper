@@ -1,3 +1,7 @@
 fastapi>=0.115
 uvicorn>=0.30
 python-multipart>=0.0.9
+# Opens the app in a native window instead of a browser tab. Uses the
+# OS's own webview - WebView2 (ships with Edge) on Windows, WKWebView on
+# macOS, WebKitGTK on Linux - so it adds no browser engine of its own.
+pywebview>=5.0

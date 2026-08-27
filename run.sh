@@ -16,5 +16,9 @@ fi
 source .venv/bin/activate
 pip install -q -r requirements.txt
 
-python -c "import time, webbrowser; time.sleep(1.2); webbrowser.open('http://127.0.0.1:8501')" &
-uvicorn server:app --reload --port 8501
+# launcher.py, not `uvicorn` directly: it starts the same server and then
+# opens the app in its own window instead of a browser tab. Set
+# VAIO_BROWSER=1 to get a browser (and its devtools) instead, which is what
+# you want while editing the frontend:
+#     VAIO_BROWSER=1 ./run.sh
+python launcher.py
