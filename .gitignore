@@ -10,6 +10,8 @@ data/project_docs/
 data/invoice_assets/
 # A backup zip is a copy of the whole database - never commit one.
 data/backups/
+# Written only when VAIO_DEBUG=1, to diagnose a launch that fails silently.
+vaio-launch.log
 
 # PyInstaller build artifacts
 build/

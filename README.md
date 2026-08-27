@@ -848,6 +848,28 @@ and a row is simply as tall as its tallest card. The card's old
 layout's row gap, and leaving it alongside the grid's `gap` doubles the
 space between rows.
 
+**A --windowed build has no stdout, and that breaks more than print().**
+PyInstaller's windowed mode gives the program `sys.stdout` and
+`sys.stderr` of `None`. Guarding our own `print()` was not enough: uvicorn's
+`Config.__init__` calls `logging.config.dictConfig` on a formatter that
+inspects `sys.stdout` to decide about colour, and raises
+`ValueError: Unable to configure formatter 'default'` before the server
+binds a port. The server thread died on its first line, the window opened
+onto nothing, and with no console the traceback had nowhere to go - the
+app just looked broken.
+`launcher.py` now points the missing streams at the null device *before
+uvicorn is imported*, which is why that repair sits above the imports
+rather than inside a function. Anything else that assumes the streams
+exist is fixed by the same line.
+This is the class of bug that only appears in the packaged build on the
+target OS: `--windowed` is a no-op on Linux, so every local test passed.
+The build workflow's smoke test is what caught it - it launches the built
+.exe and fails the job if the app never answers, which is the only reason
+it was found before a release went out rather than after. `VAIO_DEBUG=1`
+makes the launcher write `vaio-launch.log` beside the executable; the
+workflow dumps it on failure, and it is the first thing to ask for if the
+app ever refuses to open on someone's machine.
+
 **Copy a live SQLite file and you can get a torn one.** The backup in
 Settings uses `sqlite3`'s own backup API rather than `shutil.copy`, and
 the difference only shows up in the case that matters: the app is always

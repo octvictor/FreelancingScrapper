@@ -33,9 +33,33 @@ import threading
 import time
 import webbrowser
 
-import uvicorn
 
-from server import app
+# ---------------------------------------------------------------------
+# This has to run before uvicorn is imported, which is why it sits above
+# the rest of the imports rather than in a function.
+#
+# A PyInstaller --windowed build has no console, and gives the program
+# sys.stdout and sys.stderr of None. That is not merely inconvenient:
+# uvicorn's Config constructor calls logging.config.dictConfig on a
+# formatter that inspects sys.stdout to decide about colour, and raises
+# "ValueError: Unable to configure formatter 'default'" before the server
+# ever binds a port. The server thread then dies on the first line, the
+# window opens onto nothing, and there is no console for the traceback to
+# appear in - the app just sits there looking broken.
+#
+# Pointing the missing streams at the null device costs nothing and makes
+# every library that assumes they exist behave normally.
+def _repair_missing_std_streams() -> None:
+    for name in ("stdout", "stderr"):
+        if getattr(sys, name, None) is None:
+            setattr(sys, name, open(os.devnull, "w", encoding="utf-8"))
+
+
+_repair_missing_std_streams()
+
+import uvicorn  # noqa: E402  - must come after the streams are repaired
+
+from server import app  # noqa: E402
 
 HOST = "127.0.0.1"
 PREFERRED_PORT = 8501
@@ -43,19 +67,27 @@ WINDOW_TITLE = "VAIO"
 
 
 def _log(message: str) -> None:
-    """print() is not safe in this app.
+    """Says what happened, to wherever there is to say it.
 
-    The Windows build is packaged with --windowed so no console flashes up
-    behind the window, and PyInstaller gives a windowed app sys.stdout and
-    sys.stderr of None. A bare print() then dies on AttributeError - which
-    would crash the launcher on exactly the fallback path meant to rescue
-    it.
+    A windowed build has no console to read, so by default this goes to
+    the null device and nobody sees it - which is fine until the app will
+    not start and there is nothing to go on. Setting VAIO_DEBUG=1 also
+    writes it to vaio-launch.log beside the executable, which is what the
+    build workflow dumps when its smoke test fails, and what to ask for if
+    the app ever refuses to open on someone's machine.
     """
-    stream = sys.stderr or sys.stdout
-    if stream is None:
+    try:
+        print(message, file=sys.stderr)
+    except Exception:
+        pass
+
+    if os.environ.get("VAIO_DEBUG") != "1":
         return
     try:
-        print(message, file=stream)
+        import app_paths
+        log_path = app_paths.APP_ROOT / "vaio-launch.log"
+        with open(log_path, "a", encoding="utf-8") as fh:
+            fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {message}\n")
     except Exception:
         pass
 
@@ -166,6 +198,7 @@ def main() -> None:
     port = _free_port()
     server = _start_server(port)
     url = f"http://{HOST}:{port}"
+    _log(f"server started={server.started} url={url} frozen={getattr(sys, 'frozen', False)}")
 
     # An escape hatch for working on the app itself, where a browser's
     # devtools are worth more than the window.
