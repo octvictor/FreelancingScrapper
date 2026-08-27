@@ -1,5 +1,15 @@
+<!-- VAIO's brand mark, the same asterisk the sidebar shows. It used to be
+     an "F" on a dark tile, left over from when this project was called
+     FreelancingScrapper - so every tab and window said F for an app called
+     VAIO. Kept in step with assets/vaio.ico, which is this shape rendered
+     for the Windows taskbar. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#151517"/>
-  <text x="16" y="22" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif"
-        font-size="17" font-weight="700" fill="#f2f2f3" text-anchor="middle">F</text>
+  <rect width="32" height="32" rx="7" fill="#131313"/>
+  <g transform="translate(4 4)"
+     fill="none" stroke="#ebebeb" stroke-width="2.5"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 6v12"/>
+    <path d="M17.196 9 6.804 15"/>
+    <path d="m6.804 9 10.392 6"/>
+  </g>
 </svg>

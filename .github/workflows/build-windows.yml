@@ -1,0 +1,104 @@
+# Builds VAIO.exe on a real Windows machine, so nobody has to own one.
+#
+# PyInstaller does not cross-compile: a Windows .exe can only be produced
+# on Windows. This runs the same command build_app.bat runs, on GitHub's
+# windows-latest runner, and attaches the result to a Release - which is
+# what makes "download it on any computer and just run it" true.
+#
+# Two ways to trigger it:
+#   - push a tag starting with v (v1.0, v1.1, ...) -> builds AND publishes
+#     a Release with VAIO.exe attached, downloadable by anyone.
+#   - run it by hand from the Actions tab -> builds and leaves the .exe as
+#     a workflow artifact, without publishing anything.
+name: Build Windows app
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+# Needed to attach the .exe to a Release. Nothing else here writes.
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # Deliberately the same flags as build_app.bat. If the two drift,
+      # the download and a local build stop being the same program.
+      #   --windowed      no console window behind the app
+      #   --icon          the taskbar/Explorer icon, so it looks like a program
+      #   --collect-all webview  pywebview loads its backend by name at
+      #                   runtime, so PyInstaller cannot find it by imports
+      - name: Build VAIO.exe
+        run: >
+          pyinstaller --onefile --windowed --name VAIO
+          --icon assets/vaio.ico
+          --add-data "frontend;frontend"
+          --collect-all uvicorn
+          --collect-all webview
+          launcher.py
+
+      # Proves the thing actually starts before it is handed to anyone.
+      # A build that compiles but crashes on launch is worse than a failed
+      # build, because it gets published. VAIO_BROWSER=1 takes the
+      # deterministic path rather than trying to open a desktop window on
+      # a headless runner.
+      - name: Smoke-test the built exe
+        shell: pwsh
+        env:
+          VAIO_BROWSER: "1"
+        run: |
+          $proc = Start-Process -FilePath "dist\VAIO.exe" -PassThru
+          $ok = $false
+          foreach ($i in 1..60) {
+            Start-Sleep -Seconds 1
+            try {
+              $r = Invoke-WebRequest -Uri "http://127.0.0.1:8501/api/overview/stats" -UseBasicParsing -TimeoutSec 2
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch { }
+          }
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "VAIO.exe did not serve the app within 60s" }
+          Write-Host "VAIO.exe started and served the API."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VAIO-windows
+          path: dist/VAIO.exe
+          if-no-files-found: error
+
+      - name: Publish the Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/VAIO.exe
+          generate_release_notes: true
+          body: |
+            **Download `VAIO.exe` below and double-click it.** Nothing to
+            install - Python and everything else is inside the file.
+
+            Windows will show a blue "Windows protected your PC" box the
+            first time, because the file is not code-signed (a signing
+            certificate is a paid, per-year thing). Click **More info**,
+            then **Run anyway**. It only asks once per machine.
+
+            VAIO keeps its data in a `data` folder next to the .exe, so
+            put it somewhere it can stay - and if you copy that folder
+            along with the .exe, your projects, notes and invoices come
+            with it.

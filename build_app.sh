@@ -24,6 +24,7 @@ rm -rf build dist
 # runtime, so PyInstaller cannot see it by following imports. Miss this and
 # the built app silently opens a browser instead of its own window.
 pyinstaller --onefile --windowed --name VAIO \
+    --icon assets/vaio.ico \
     --add-data "frontend:frontend" \
     --collect-all uvicorn \
     --collect-all webview \

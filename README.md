@@ -323,14 +323,52 @@ editing the frontend, since the window has no devtools.
 
 ## Two ways to run this
 
-- **Packaged app** - build once, then just double-click an icon forever.
-  Best if you're not planning to edit the code.
-- **From source** - venv + a run script. Best if you're actively changing
-  the frontend/backend, since edits take effect instantly (no rebuild).
+- **Download VAIO.exe** (Windows) - nothing to install, no Python, no
+  terminal. This is the normal way to use it.
+- **Build it yourself** - if you're on Mac/Linux, or want a build of code
+  you just changed.
+- **From source** - venv + a run script. Only worth it while you're
+  actively editing the app, since changes take effect without a rebuild.
+  This is the one that shows a console window; the other two do not.
 
-Both open the same window; they share the same local SQLite database.
+All three open the same window and share the same local SQLite database.
 
-### Option A: packaged app (double-click, no terminal after setup)
+### Option A: download the .exe (Windows)
+
+Go to the repository's **Releases** page and download `VAIO.exe`. Put it
+somewhere it can live - a folder in Documents, say, not the Downloads
+folder - and double-click it. That's the whole install.
+
+Nothing else is needed: Python, FastAPI and the frontend are all inside
+that one file.
+
+Two things to expect the first time:
+
+- **"Windows protected your PC"**, a blue box, on first launch. That is
+  SmartScreen reacting to a file that isn't code-signed - signing
+  certificates are a paid yearly thing and this app doesn't have one.
+  Click **More info** -> **Run anyway**. It asks once per machine.
+- **A few seconds before the window appears.** A one-file build unpacks
+  itself to a temp folder on each launch. It is not doing anything on the
+  network - the app never leaves your machine.
+
+VAIO keeps its data in a `data` folder created next to the .exe. That is
+deliberate: copy the .exe *and* that folder to a USB stick or another
+computer and your projects, notes and invoices come with it. Leave the
+folder behind and the new machine starts empty.
+
+The .exe is built by GitHub Actions on a real Windows machine
+(`.github/workflows/build-windows.yml`) using the same flags
+`build_app.bat` uses, and the workflow refuses to publish a build that
+doesn't start - it launches the .exe and checks the app actually
+responds before attaching it to the Release.
+
+**To cut a new version:** push a tag beginning with `v`
+(`git tag v1.1 && git push origin v1.1`). That builds and publishes.
+Running the workflow by hand from the Actions tab builds it without
+publishing, leaving the .exe as a downloadable artifact instead.
+
+### Option B: build the app yourself
 
 One-time build, on the same OS you'll actually use the app on (a build
 made on Mac won't run on Windows and vice versa):
@@ -353,7 +391,7 @@ like the feature being broken.
 Re-run the build script only when you change `requirements.txt` or pull
 down new code - not for regular use.
 
-### Option B: from source (for actively editing the code)
+### Option C: from source (for actively editing the code)
 
 Just run:
 

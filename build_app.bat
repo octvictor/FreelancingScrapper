@@ -22,6 +22,7 @@ REM --collect-all webview: pywebview loads its platform backend by name at
 REM runtime, so PyInstaller cannot find it by following imports. Miss this
 REM and the built app silently falls back to a browser tab.
 pyinstaller --onefile --windowed --name VAIO ^
+    --icon assets/vaio.ico ^
     --add-data "frontend;frontend" ^
     --collect-all uvicorn ^
     --collect-all webview ^
