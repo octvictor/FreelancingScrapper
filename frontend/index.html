@@ -564,6 +564,31 @@
                     </div>
                 </div>
             </div>
+
+            <div class="settings-group">
+                <button class="settings-group-head" type="button" id="settings-backup-toggle"
+                        aria-expanded="false" aria-controls="settings-backup-body">
+                    <span class="settings-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span>
+                    <span class="settings-group-title">Backup</span>
+                    <span class="settings-group-hint">Take a copy of everything</span>
+                </button>
+                <div class="settings-group-body" id="settings-backup-body">
+                    <div class="settings-group-inner">
+                        <p class="settings-hint">One zip holding your database and every file you&rsquo;ve attached &mdash; projects, notes, to&#8209;dos, Studio Logs, Calculator, invoices, project documents and your payment image. Worth taking before you replace VAIO with a newer version.</p>
+
+                        <div class="backup-actions">
+                            <button class="btn" type="button" id="settings-backup-now">Back up now</button>
+                            <button class="btn-text" type="button" id="settings-backup-reveal">Open backups folder</button>
+                        </div>
+
+                        <p class="settings-hint backup-status" id="settings-backup-status"></p>
+
+                        <div id="settings-backup-list"></div>
+
+                        <p class="settings-hint backup-restore-note">The backups sit next to the app, so they go where it goes &mdash; copy one somewhere else as well if the drive itself is what you&rsquo;re worried about. To put a backup back: close VAIO, open the zip, and copy <code>data/vaio.db</code> over the one beside the app. That&rsquo;s deliberately by hand rather than a button, since restoring replaces everything you&rsquo;ve done since.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -675,5 +700,6 @@
     <script src="/static/js/overview.js"></script>
     <script src="/static/js/documents.js"></script>
     <script src="/static/js/invoices.js"></script>
+    <script src="/static/js/backup.js"></script>
 </body>
 </html>

@@ -3183,6 +3183,77 @@ input.kanban-col-title-input:focus {
     font-size: 12px;
 }
 
+/* ---------- Settings: Backup ---------- */
+
+.backup-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+/* Both buttons size to their own text here. .btn-text is width: 100% and
+   centred by default - it was built for the full-width "Show more" that
+   sits under a list - so dropped into a row beside another button it
+   stretched to 361px, squeezed "Back up now" to 93px and wrapped its
+   label onto two lines. Same shape of problem as the modal title field:
+   a shared class carrying a layout assumption from where it was born. */
+.backup-actions > .btn,
+.backup-actions > .btn-text {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+}
+
+/* Reserves its own line even when empty, so confirming a backup does not
+   shove the list below it down a row the moment the message appears. */
+.backup-status {
+    min-height: 1.4em;
+    overflow-wrap: anywhere;
+}
+
+.backup-status.is-error {
+    color: var(--danger-text);
+}
+
+.backup-list {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.backup-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.backup-row:last-child {
+    border-bottom: none;
+}
+
+.backup-row-when {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--text);
+}
+
+/* tabular-nums so a column of sizes lines up on the digits rather than
+   drifting with the glyph widths. */
+.backup-row-size {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.backup-empty,
+.backup-restore-note {
+    margin-top: 0;
+}
+
 /* The app's one color-picker trigger, used by every tool that has a
    color to set (Calculator's row color, To Do's list color, Notes'
    card color). Started as Calculator's row dot and was promoted to the

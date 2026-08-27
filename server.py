@@ -18,6 +18,7 @@ from api.finance import router as finance_router
 from api.overview import router as overview_router
 from api.documents import router as documents_router
 from api.invoices import router as invoices_router
+from api.backup import router as backup_router
 
 FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 
@@ -46,6 +47,7 @@ app.include_router(finance_router, prefix="/api/finance")
 app.include_router(overview_router, prefix="/api/overview")
 app.include_router(documents_router, prefix="/api/documents")
 app.include_router(invoices_router, prefix="/api/invoices")
+app.include_router(backup_router, prefix="/api/backups")
 app.mount("/static", NoCacheStaticFiles(directory=FRONTEND_DIR / "static"), name="static")
 
 

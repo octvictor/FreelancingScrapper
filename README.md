@@ -357,6 +357,24 @@ deliberate: copy the .exe *and* that folder to a USB stick or another
 computer and your projects, notes and invoices come with it. Leave the
 folder behind and the new machine starts empty.
 
+**Updating does not lose anything.** Drop the new `VAIO.exe` in beside the
+old one, replacing it, and leave the `data` folder alone. The database is
+never rebuilt on launch, only migrated: `init_db()` adds new tables with
+`CREATE TABLE IF NOT EXISTS` and new fields with `ALTER TABLE ADD COLUMN`,
+so a new version attaches its features to the data you already have. The
+one way to be confused is to run the new .exe from a *different* folder -
+it makes a fresh empty database there, and the old one sits untouched
+where you left it.
+
+**Take a backup first anyway.** Settings -> Backup -> *Back up now* writes
+a timestamped zip of the whole data folder into `data/backups`. There is
+no restore button, on purpose: putting a backup back means closing VAIO,
+opening the zip and copying `data/vaio.db` over the one beside the app,
+which is three deliberate steps rather than one button that replaces
+everything you have done since. Note the backups live beside the app, so
+they die with the disk - copy one somewhere else if that is the risk you
+care about.
+
 The .exe is built by GitHub Actions on a real Windows machine
 (`.github/workflows/build-windows.yml`) using the same flags
 `build_app.bat` uses, and the workflow refuses to publish a build that
@@ -829,6 +847,18 @@ and a row is simply as tall as its tallest card. The card's old
 `margin-bottom` had to go at the same time - that was the multi-column
 layout's row gap, and leaving it alongside the grid's `gap` doubles the
 space between rows.
+
+**Copy a live SQLite file and you can get a torn one.** The backup in
+Settings uses `sqlite3`'s own backup API rather than `shutil.copy`, and
+the difference only shows up in the case that matters: the app is always
+running when the button is pressed, and a plain copy taken mid-write can
+produce a file that opens fine and is missing the last thing you did - or
+that will not open at all. The backup API takes a consistent snapshot of a
+database being written to. The copy is verified by `PRAGMA integrity_check`
+in testing, which is the check worth repeating if this ever changes.
+The zip holds the uploaded files too, not just the database. A backup with
+the invoice row but not the payment image, or the project but not its
+briefing PDF, is one that only looks complete until you need it.
 
 **An absolutely-positioned close button owns the corner it sits in, so
 the top row has to give it up.** `.modal-close` floats in the modal's

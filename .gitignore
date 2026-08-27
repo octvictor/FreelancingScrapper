@@ -8,6 +8,8 @@ venv/
 data/*.db
 data/project_docs/
 data/invoice_assets/
+# A backup zip is a copy of the whole database - never commit one.
+data/backups/
 
 # PyInstaller build artifacts
 build/
